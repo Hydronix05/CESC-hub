@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Chatbase — Profiles</title>
+ <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<script src="theme-loader.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #0f0f18;
+    --surface: rgba(255,255,255,0.04);
+    --surface2: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.13);
+    --neon: #00f5a0;
+    --neon2: #00c3ff;
+    --text: #e8e8f0;
+    --text-bright: #f0f0f8;
+    --muted: #6b6b80;
+    --danger: #ff4d6d;
+    --yellow: #f5c400;
+    --sidebar-w: 240px;
+    --header-h: 62px;
+    --radius: 14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Syne',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; overflow-x:hidden; }
+  
+  /* BG */
+  .bg-canvas { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .bg-canvas::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(0,245,160,0.07) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 80% 80%,rgba(0,195,255,0.07) 0%,transparent 60%); animation:breathe 8s ease-in-out infinite alternate; }
+  @keyframes breathe { 0%{opacity:.6;transform:scale(1)} 100%{opacity:1;transform:scale(1.04)} }
+  .orb { position:absolute; border-radius:50%; filter:blur(80px); animation:float-orb linear infinite; pointer-events:none; }
+  .orb1 { width:300px; height:300px; background:rgba(0,245,160,0.05); top:10%; left:5%; animation-duration:22s; }
+  .orb2 { width:200px; height:200px; background:rgba(0,195,255,0.06); top:60%; right:8%; animation-duration:28s; animation-delay:-8s; }
+  @keyframes float-orb { 0%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-20px) translateX(20px)} 100%{transform:translateY(0) translateX(0)} }
+
+  /* SIDEBAR */
+  .sidebar { width:var(--sidebar-w); height:100vh; background:rgba(8,8,16,0.92); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:28px 16px; position:fixed; left:0; top:0; bottom:0; z-index:100; backdrop-filter:blur(24px); box-shadow:4px 0 40px rgba(0,0,0,0.4); }
+  .sidebar-logo { font-size:1.2rem; font-weight:800; margin-bottom:36px; padding-left:8px; display:flex; align-items:center; gap:8px; }
+  .logo-icon { width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg,var(--neon),var(--neon2)); display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:#000; animation:logo-pulse 3s ease-in-out infinite; flex-shrink:0; }
+  @keyframes logo-pulse { 0%,100%{box-shadow:0 0 8px rgba(0,245,160,0.4)} 50%{box-shadow:0 0 20px rgba(0,245,160,0.7),0 0 40px rgba(0,195,255,0.3)} }
+  .logo-text { color:var(--text-bright); }
+  .logo-dot { color:var(--neon); }
+  .nav-item { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--muted); text-decoration:none; font-size:0.9rem; font-weight:600; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); margin-bottom:4px; border:1px solid transparent; }
+  .nav-item:hover { color:var(--text-bright); background:var(--surface); transform:translateX(3px); }
+  .nav-item.active { color:var(--neon); background:rgba(0,245,160,0.08); border-color:rgba(0,245,160,0.2); }
+  .nav-icon { font-size:1.1rem; width:20px; text-align:center; flex-shrink:0; transition:transform 0.2s; }
+  .nav-item:hover .nav-icon { transform:scale(1.2); }
+  .sidebar-bottom { margin-top:auto; padding:10px 14px; font-size:0.78rem; color:var(--muted); display:flex; align-items:center; gap:6px; border-top:1px solid var(--border); }
+  .online-dot-sm { width:6px; height:6px; border-radius:50%; background:var(--neon); animation:pulse-dot 2s infinite; flex-shrink:0; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+
+  /* TOP HEADER */
+  .top-header { position:fixed; left:var(--sidebar-w); right:0; top:0; height:var(--header-h); background:rgba(8,8,16,0.88); border-bottom:1px solid var(--border); backdrop-filter:blur(24px); z-index:90; display:flex; align-items:center; justify-content:space-between; padding:0 32px 0 28px; box-shadow:0 4px 24px rgba(0,0,0,0.3); }
+  .header-title { font-size:1.05rem; font-weight:800; color:var(--text-bright); }
+  .header-sub { font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--muted); margin-top:1px; }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .hdr-btn { width:36px; height:36px; border-radius:9px; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem; transition:all 0.2s; text-decoration:none; color:var(--text); position:relative; flex-shrink:0; }
+  .hdr-btn:hover { border-color:rgba(0,245,160,0.35); color:var(--neon); transform:translateY(-1px); }
+  .notif-badge { position:absolute; top:-4px; right:-4px; min-width:17px; height:17px; border-radius:9px; background:var(--danger); color:#fff; font-size:0.58rem; font-weight:800; font-family:'Space Mono',monospace; display:none; align-items:center; justify-content:center; padding:0 3px; border:2px solid var(--bg); }
+  .notif-badge.show { display:flex; }
+  
+  .profile-chip { display:flex; align-items:center; gap:8px; padding:4px 12px 4px 4px; border-radius:40px; background:var(--surface); border:1px solid var(--border); cursor:pointer; transition:all 0.2s; position:relative; user-select:none; }
+  .profile-chip:hover { border-color:rgba(0,245,160,0.3); background:var(--surface2); }
+  .chip-av { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--neon2)); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:800; color:#000; overflow:hidden; position:relative; flex-shrink:0; }
+  .chip-av img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; border-radius:50%; }
+  .chip-av img.loaded { display:block; }
+  .chip-av span { position:relative; z-index:1; }
+  .chip-name { font-size:0.82rem; font-weight:700; color:var(--text-bright); }
+  .chip-arrow { font-size:0.65rem; color:var(--muted); transition:transform 0.25s; }
+  .profile-chip.open .chip-arrow { transform:rotate(180deg); }
+  .profile-dropdown { position:absolute; top:calc(100% + 10px); right:0; width:200px; background:rgba(10,10,22,0.98); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.6); opacity:0; transform:translateY(-8px) scale(0.97); pointer-events:none; transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1); z-index:200; }
+  .profile-dropdown.open { opacity:1; transform:translateY(0) scale(1); pointer-events:all; }
+  .dd-header { padding:12px 14px 10px; border-bottom:1px solid var(--border); }
+  .dd-name { font-size:0.88rem; font-weight:800; color:var(--text-bright); }
+  .dd-sub { font-size:0.68rem; font-family:'Space Mono',monospace; color:var(--muted); margin-top:1px; }
+  .dd-item { display:flex; align-items:center; gap:10px; padding:10px 14px; color:var(--text); font-size:0.84rem; font-weight:600; text-decoration:none; cursor:pointer; transition:background 0.15s; background:none; border:none; width:100%; font-family:'Syne',sans-serif; text-align:left; }
+  .dd-item:hover { background:var(--surface); color:var(--text-bright); }
+  .dd-item.logout { color:var(--danger); }
+  .dd-item.logout:hover { background:rgba(255,77,109,0.1); }
+  .dd-div { height:1px; background:var(--border); margin:3px 0; }
+
+  /* MAIN */
+  .main { margin-left:var(--sidebar-w); margin-top:var(--header-h); flex:1; padding:32px 40px; position:relative; z-index:1; max-width:100%; }
+  
+  .page-header { margin-bottom:24px; animation:slide-down 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .page-header h1 { font-size:2rem; font-weight:800; background:linear-gradient(90deg,var(--neon),var(--neon2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .page-header p { color:var(--muted); margin-top:4px; font-size:0.82rem; font-family:'Space Mono',monospace; }
+  @keyframes slide-down { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+
+  .search-bar { display:flex; gap:10px; margin-bottom:20px; }
+  .search-bar input { flex:1; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); outline:none; font-family:'Syne',sans-serif; font-size:0.9rem; transition:all 0.25s; }
+  .search-bar input:focus { border-color:rgba(0,245,160,0.4); background:rgba(255,255,255,0.06); }
+  .search-bar input::placeholder { color:var(--muted); }
+
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  @media(max-width:992px){ .grid { grid-template-columns:repeat(3,1fr); } }
+  @media(max-width:768px){ .grid { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:480px){ .grid { grid-template-columns:1fr; } }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; cursor:pointer; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); animation:card-enter 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .card:hover { transform:translateY(-3px); border-color:rgba(0,245,160,0.3); box-shadow:0 8px 30px rgba(0,0,0,0.25); }
+  @keyframes card-enter { from{opacity:0;transform:translateY(12px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+  .avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--neon2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.2rem; color:#000; overflow:hidden; margin-bottom:10px; flex-shrink:0; }
+  .avatar img { width:100%; height:100%; object-fit:cover; }
+  .username { font-weight:800; font-size:0.95rem; color:var(--text-bright); }
+  .bio { font-size:0.8rem; color:var(--muted); margin-top:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.4; }
+  .card-role { font-size:0.6rem; font-family:'Space Mono',monospace; text-transform:uppercase; color:var(--neon); background:rgba(0,245,160,0.08); padding:2px 8px; border-radius:4px; display:inline-block; margin-top:4px; }
+
+  .pagination { margin-top:24px; display:flex; justify-content:center; gap:10px; align-items:center; }
+  .pagination button { padding:8px 18px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font-family:'Syne',sans-serif; font-weight:600; font-size:0.85rem; transition:all 0.2s; }
+  .pagination button:hover:not(:disabled) { border-color:rgba(0,245,160,0.4); color:var(--neon); background:rgba(0,245,160,0.05); }
+  .pagination button:disabled { opacity:0.3; cursor:not-allowed; }
+  .pagination span { font-size:0.85rem; color:var(--muted); font-family:'Space Mono',monospace; min-width:60px; text-align:center; }
+
+  /* MODAL */
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:999; backdrop-filter:blur(8px); }
+  .modal.show { display:flex; }
+  .modal-card { width:340px; background:rgba(15,15,25,0.96); border:1px solid var(--border); border-radius:18px; padding:28px; animation:zoom 0.3s cubic-bezier(0.34,1.56,0.64,1) both; position:relative; text-align:center; }
+  @keyframes zoom { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .modal-close { position:absolute; top:12px; right:14px; cursor:pointer; font-size:1.2rem; color:var(--muted); transition:color 0.2s; background:none; border:none; }
+  .modal-close:hover { color:var(--text-bright); }
+  .modal-avatar { width:90px; height:90px; border-radius:50%; margin:0 auto 14px; background:linear-gradient(135deg,var(--neon),var(--neon2)); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:2.2rem; font-weight:800; color:#000; }
+  .modal-avatar img { width:100%; height:100%; object-fit:cover; }
+  .modal-name { font-size:1.3rem; font-weight:800; color:var(--text-bright); }
+  .modal-username { font-size:0.85rem; color:var(--muted); font-family:'Space Mono',monospace; margin:2px 0 8px; }
+  .modal-bio { font-size:0.88rem; color:var(--text); line-height:1.6; margin-top:6px; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px); z-index:999; padding:10px 22px; border-radius:40px; font-size:0.83rem; font-weight:700; opacity:0; transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1); white-space:nowrap; pointer-events:none; backdrop-filter:blur(12px); }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+  .toast.error { background:rgba(255,77,109,0.15); border:1px solid rgba(255,77,109,0.4); color:var(--danger); }
+  .toast.success { background:rgba(0,245,160,0.12); border:1px solid rgba(0,245,160,0.4); color:var(--neon); }
+
+  /* MOBILE */
+  .mobile-menu { display:none; position:fixed; top:14px; left:14px; z-index:200; background:rgba(10,10,20,0.9); border:1px solid var(--border); border-radius:8px; padding:7px 11px; cursor:pointer; font-size:1.1rem; backdrop-filter:blur(12px); }
+  @media(max-width:768px){
+    .sidebar { transform:translateX(-100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .sidebar.open { transform:translateX(0); }
+    .top-header { left:0; padding:0 14px 0 60px; }
+    .main { margin-left:0; padding:16px; }
+    .mobile-menu { display:block; }
+  }
+  @media(max-width:480px){ .chip-name { display:none; } }
+</style>
+</head>
+<body>
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div></div>
+<div class="toast" id="toast"></div>
+<div class="mobile-menu" onclick="toggleSidebar()">☰</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">C</div>
+    <span class="logo-text">CESC<span class="logo-dot">.</span>HUB</span>
+  </div>
+  <a href="index.html" class="nav-item"><span class="nav-icon">📰</span> Feed</a>
+  <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Chat Room</a>
+  <a href="profiles.html" class="nav-item active"><span class="nav-icon">👥</span> Profiles</a>
+  <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+  <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+  <div class="sidebar-bottom">
+    <span class="online-dot-sm"></span>
+    <span id="online-count">...</span> online now
+  </div>
+</aside>
+
+<!-- HEADER -->
+<header class="top-header">
+  <div>
+    <div class="header-title">Profiles</div>
+    <div class="header-sub" id="header-sub">browse the community</div>
+  </div>
+  <div class="header-right">
+    <a href="notifications.html" class="hdr-btn" title="Notifications">
+      🔔
+      <span class="notif-badge" id="notif-badge">0</span>
+    </a>
+    <div class="profile-chip" id="profile-chip" onclick="toggleDropdown()">
+      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
+      <span class="chip-name" id="chip-name">loading</span>
+      <span class="chip-arrow">▾</span>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="dd-header">
+          <div class="dd-name" id="dd-name">—</div>
+          <div class="dd-sub">CESC Chatbase member</div>
+        </div>
+        <a href="profiles.html" class="dd-item"><span style="width:20px;text-align:center">👤</span> My Profile</a>
+        <a href="settings.html" class="dd-item"><span style="width:20px;text-align:center">⚙️</span> Settings</a>
+        <a href="notifications.html" class="dd-item"><span style="width:20px;text-align:center">🔔</span> Notifications</a>
+        <div class="dd-div"></div>
+        <button class="dd-item logout" onclick="logout()"><span style="width:20px;text-align:center">🚪</span> Logout</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Profiles</h1>
+      <p id="profile-count">loading members...</p>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input id="search" placeholder="Search username..." oninput="changeSearch()" />
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="pagination">
+    <button onclick="prevPage()" id="prev-btn">Prev</button>
+    <span id="pageInfo">Page 1</span>
+    <button onclick="nextPage()" id="next-btn">Next</button>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal" id="modal" onclick="closeModal(event)">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal()">✖</button>
+    <div class="modal-avatar" id="mAvatar">?</div>
+    <div class="modal-name" id="mName">—</div>
+    <div class="modal-username" id="mUsername">@username</div>
+    <div class="modal-bio" id="mBio">No bio yet</div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const SUPABASE_URL = 'https://wojbqixkarjlvbgublsg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvamJxaXhrYXJqbHZiZ3VibHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjkxNDYsImV4cCI6MjEwMTY0NTE0Nn0.A2VpByFPSIi9bS8EkAh7VPsgjuiYFfgAyuwIz-sCcas';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true } });
+
+let session = null;
+let currentUser = null;
+let page = 0;
+let search = '';
+const limit = 16;
+let profilesCache = [];
+
+// ── TOAST ──
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── DROPDOWN ──
+window.toggleDropdown = function() {
+  const chip = document.getElementById('profile-chip');
+  const dd = document.getElementById('profile-dropdown');
+  const open = dd.classList.contains('open');
+  dd.classList.toggle('open', !open);
+  chip.classList.toggle('open', !open);
+};
+
+document.addEventListener('click', e => {
+  const chip = document.getElementById('profile-chip');
+  if (chip && !chip.contains(e.target)) {
+    document.getElementById('profile-dropdown')?.classList.remove('open');
+    chip.classList.remove('open');
+  }
+});
+
+// ── LOGOUT ──
+window.logout = async function() {
+  await supabase.auth.signOut();
+  window.location.href = 'login.html';
+};
+
+// ── ONLINE COUNT ──
+async function loadOnlineCount() {
+  const cutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('last_seen', cutoff);
+  document.getElementById('online-count').textContent = count ?? '?';
+  document.getElementById('header-sub').textContent = (count ?? '?') + ' online now';
+}
+
+// ── NOTIFICATIONS ──
+async function loadNotifCount() {
+  if (!session) return;
+  const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true })
+    .eq('recipient_id', session.user.id).eq('read', false);
+  const badge = document.getElementById('notif-badge');
+  if (count && count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+// ── AVATAR ──
+function avatarHTML(username, pfpUrl) {
+  const initial = (username?.[0] || '?').toUpperCase();
+  if (pfpUrl) {
+    return `<img src="${pfpUrl}" alt="${username}" />`;
+  }
+  return `<span>${initial}</span>`;
+}
+
+// ── LOAD PROFILES ──
+window.changeSearch = function() {
+  search = document.getElementById('search').value.trim();
+  page = 0;
+  loadProfiles();
+};
+
+window.nextPage = function() {
+  const total = profilesCache.length;
+  if ((page + 1) * limit < total) {
+    page++;
+    loadProfiles();
+  }
+};
+
+window.prevPage = function() {
+  if (page > 0) {
+    page--;
+    loadProfiles();
+  }
+};
+
+async function loadProfiles() {
+  const grid = document.getElementById('grid');
+  const countEl = document.getElementById('profile-count');
+
+  let query = supabase
+    .from('profiles')
+    .select('username, display_name, bio, pfp_url, role, created_at')
+    .order('created_at', { ascending: false });
+
+  if (search) {
+    query = query.ilike('username', `%${search}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    grid.innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center;font-family:Space Mono">Failed to load profiles 💀</div>';
+    return;
+  }
+
+  profilesCache = data || [];
+  countEl.textContent = `${profilesCache.length} members`;
+
+  const start = page * limit;
+  const end = start + limit;
+  const pageData = profilesCache.slice(start, end);
+
+  grid.innerHTML = '';
+
+  if (pageData.length === 0) {
+    grid.innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center;font-family:Space Mono">No profiles found</div>';
+    document.getElementById('pageInfo').textContent = `Page ${page + 1}`;
+    document.getElementById('prev-btn').disabled = page === 0;
+    document.getElementById('next-btn').disabled = true;
+    return;
+  }
+
+  pageData.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (i * 0.04) + 's';
+    card.onclick = () => openModal(p);
+
+    const displayName = p.display_name || p.username;
+    const initial = (p.username?.[0] || '?').toUpperCase();
+
+    card.innerHTML = `
+      <div class="avatar">${avatarHTML(p.username, p.pfp_url)}</div>
+      <div class="username">${displayName}</div>
+      <div class="bio">${p.bio?.length > 90 ? p.bio.slice(0, 90) + '...' : (p.bio || 'No bio')}</div>
+      ${p.role && p.role !== 'user' ? `<div class="card-role">${p.role}</div>` : ''}
+    `;
+
+    grid.appendChild(card);
+  });
+
+  document.getElementById('pageInfo').textContent = `Page ${page + 1}`;
+  document.getElementById('prev-btn').disabled = page === 0;
+  document.getElementById('next-btn').disabled = (page + 1) * limit >= profilesCache.length;
+}
+
+// ── MODAL ──
+window.openModal = function(p) {
+  document.getElementById('modal').classList.add('show');
+
+  const av = document.getElementById('mAvatar');
+  av.innerHTML = avatarHTML(p.username, p.pfp_url);
+
+  document.getElementById('mName').textContent = p.display_name || p.username;
+  document.getElementById('mUsername').textContent = '@' + p.username;
+  document.getElementById('mBio').textContent = p.bio || 'No bio yet';
+};
+
+window.closeModal = function(e) {
+  if (!e || e.target.id === 'modal' || e.target.className === 'modal-close') {
+    document.getElementById('modal').classList.remove('show');
+  }
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('modal').classList.remove('show');
+});
+
+// ── SIDEBAR TOGGLE ──
+window.toggleSidebar = function() {
+  document.getElementById('sidebar').classList.toggle('open');
+};
+
+// ── INIT ──
+async function init() {
+  const { data } = await supabase.auth.getSession();
+  session = data.session;
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  const { data: profile } = await supabase.from('profiles')
+    .select('username, display_name, pfp_url')
+    .eq('id', session.user.id)
+    .single();
+
+  currentUser = profile;
+  const displayName = profile?.display_name || profile?.username || 'you';
+  const rawName = profile?.username || 'you';
+
+  document.getElementById('chip-name').textContent = displayName;
+  document.getElementById('chip-initial').textContent = rawName[0].toUpperCase();
+  document.getElementById('dd-name').textContent = displayName;
+
+  if (profile?.pfp_url) {
+    const av = document.getElementById('chip-av');
+    const initial = av.querySelector('span');
+    const img = document.createElement('img');
+    img.src = profile.pfp_url;
+    img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+
+  // Update last_seen
+  await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', session.user.id);
+
+  await Promise.all([
+    loadProfiles(),
+    loadOnlineCount(),
+    loadNotifCount()
+  ]);
+
+  // Auto-refresh online count
+  setInterval(async () => {
+    if (!session) return;
+    await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', session.user.id);
+    await Promise.all([loadOnlineCount(), loadNotifCount()]);
+  }, 15000);
+}
+
+init();
+</script>
+</body>
+</html>

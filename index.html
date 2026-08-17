@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Hub — Feed</title>
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="shared.js"></script>
+
+<style>
+/* ── PAGE-SPECIFIC STYLES ── */
+.welcome-banner {
+  background:linear-gradient(135deg, rgba(74,158,255,0.07), rgba(108,92,231,0.07));
+  border:1px solid rgba(74,158,255,0.18);
+  border-radius:18px;
+  padding:24px 28px;
+  margin-bottom:24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  position:relative;
+  overflow:hidden;
+  animation:slide-down 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+[data-theme="light"] .welcome-banner {
+  background:linear-gradient(135deg, rgba(74,158,255,0.08), rgba(108,92,231,0.06));
+  border-color:rgba(74,158,255,0.2);
+}
+.welcome-banner::before {
+  content:'';
+  position:absolute;
+  top:-40%;
+  right:-5%;
+  width:250px;
+  height:250px;
+  background:radial-gradient(circle, rgba(74,158,255,0.08) 0%, transparent 70%);
+  animation:banner-glow 6s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+@keyframes banner-glow {
+  0%{transform:translateX(0) translateY(0);opacity:.5}
+  100%{transform:translateX(-30px) translateY(20px);opacity:1}
+}
+.welcome-banner h2 { font-size:1.35rem; font-weight:800; color:var(--text-bright); position:relative; }
+.welcome-banner p { color:var(--muted); font-size:0.83rem; margin-top:4px; position:relative; }
+.banner-btn {
+  padding:10px 22px; border-radius:10px; border:none; cursor:pointer;
+  font-family:'Syne',sans-serif; font-weight:700; font-size:0.86rem;
+  background:linear-gradient(135deg,var(--neon),var(--neon2)); color:#000;
+  white-space:nowrap; text-decoration:none; display:inline-block; flex-shrink:0;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); position:relative; overflow:hidden;
+}
+.banner-btn::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+  transform:translateX(-100%); transition:transform 0.5s;
+}
+.banner-btn:hover { transform:scale(1.05) translateY(-2px); box-shadow:0 0 30px rgba(74,158,255,0.4); }
+.banner-btn:hover::after { transform:translateX(100%); }
+
+.compose-box {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px; margin-bottom:20px; transition:all 0.3s;
+  animation:slide-down 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.12s both;
+  position:relative; z-index:100; overflow:visible !important;
+}
+.compose-box::before {
+  content:''; position:absolute; inset:0; border-radius:var(--radius);
+  background:linear-gradient(135deg,rgba(74,158,255,0.04),rgba(108,92,231,0.04));
+  opacity:0; transition:opacity 0.3s; pointer-events:none;
+}
+.compose-box:focus-within {
+  border-color:rgba(74,158,255,0.35);
+  box-shadow:0 0 0 1px rgba(74,158,255,0.1),0 8px 32px rgba(74,158,255,0.07);
+}
+.compose-box:focus-within::before { opacity:1; }
+.compose-top { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.compose-av {
+  width:36px; height:36px; border-radius:50%;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex; align-items:center; justify-content:center; font-size:0.85rem;
+  font-weight:800; color:#000; flex-shrink:0; overflow:hidden; position:relative;
+}
+.compose-av img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; border-radius:50%; }
+.compose-av img.loaded { display:block; }
+.compose-av span { position:relative; z-index:1; }
+.compose-name { font-weight:800; font-size:0.88rem; color:var(--text-bright); }
+.compose-ta {
+  width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; padding:12px 14px; color:var(--text-bright);
+  font-family:'Syne',sans-serif; font-size:0.92rem; resize:none; outline:none;
+  min-height:80px; line-height:1.65; transition:all 0.25s;
+}
+[data-theme="light"] .compose-ta { background:rgba(0,0,0,0.03); border-color:rgba(0,0,0,0.08); }
+.compose-ta:focus { border-color:rgba(74,158,255,0.3); background:rgba(255,255,255,0.05); }
+.compose-ta::placeholder { color:var(--muted); }
+
+.compose-toolbar {
+  display:flex; align-items:center; gap:6px; margin-top:10px;
+  flex-wrap:wrap; position:relative; z-index:10;
+}
+.tool-btn {
+  background:transparent; border:1px solid var(--border); border-radius:8px;
+  padding:6px 12px; cursor:pointer; color:var(--muted); transition:all 0.2s;
+  display:flex; align-items:center; gap:6px; font-family:'Syne',sans-serif;
+  font-weight:600; font-size:0.78rem;
+}
+.tool-btn:hover { border-color:rgba(74,158,255,0.3); color:var(--neon); background:rgba(74,158,255,0.05); transform:translateY(-1px); }
+.tool-btn.active { border-color:rgba(74,158,255,0.4); color:var(--neon); background:rgba(74,158,255,0.08); }
+.tool-btn i { font-size:1rem; }
+
+/* ── EMOJI PICKER ── */
+.emoji-picker {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  width: 100% !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  z-index: 99999 !important;
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  animation: emoji-pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.emoji-picker.open { display: block; }
+@keyframes emoji-pop {
+  from{opacity:0;transform:scale(0.95) translateY(10px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.emoji-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+  gap: 4px;
+  width: 100%;
+}
+.emoji-picker-grid span {
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  text-align: center;
+  transition: all 0.15s;
+  user-select: none;
+}
+.emoji-picker-grid span:hover {
+  background: rgba(74,158,255,0.2);
+  transform: scale(1.15);
+}
+[data-theme="light"] .emoji-picker {
+  background: #ffffff !important;
+  border-color: rgba(0,0,0,0.15);
+}
+.emoji-picker::-webkit-scrollbar { width: 4px; }
+.emoji-picker::-webkit-scrollbar-track { background: transparent; }
+.emoji-picker::-webkit-scrollbar-thumb { background: rgba(74,158,255,0.3); border-radius: 4px; }
+
+.compose-foot {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:12px; gap:10px; flex-wrap:wrap;
+}
+.compose-hint { font-size:0.72rem; font-family:'Space Mono',monospace; color:var(--muted); }
+.compose-hint.warn { color:var(--yellow); }
+.char-count { font-size:0.7rem; font-family:'Space Mono',monospace; color:var(--muted); }
+.char-count.near { color:var(--yellow); }
+.char-count.full { color:var(--danger); }
+.cooldown-bar-wrap {
+  height:3px; border-radius:2px; background:rgba(255,255,255,0.06);
+  margin-top:10px; overflow:hidden; display:none;
+}
+.cooldown-bar-wrap.show { display:block; }
+.cooldown-bar {
+  height:100%; border-radius:2px; background:linear-gradient(90deg,var(--neon),var(--neon2));
+  transition:width 1s linear;
+}
+.post-btn {
+  padding:9px 20px; border-radius:9px; border:none; cursor:pointer;
+  font-family:'Syne',sans-serif; font-weight:800; font-size:0.86rem;
+  background:linear-gradient(135deg,var(--neon),var(--neon2)); color:#000;
+  transition:all 0.3s; position:relative; overflow:hidden; flex-shrink:0;
+}
+.post-btn::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+  transform:translateX(-100%); transition:transform 0.4s;
+}
+.post-btn:hover { transform:scale(1.04) translateY(-2px); box-shadow:0 0 25px rgba(74,158,255,0.4); }
+.post-btn:hover::after { transform:translateX(100%); }
+.post-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+.image-preview-wrap {
+  position:relative; margin-top:10px; display:none; border-radius:10px;
+  overflow:hidden; border:1px solid var(--border);
+  animation:preview-pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.image-preview-wrap.show { display:block; }
+@keyframes preview-pop {
+  from{opacity:0;transform:scale(0.95)}
+  to{opacity:1;transform:scale(1)}
+}
+.image-preview-wrap img { width:100%; max-height:250px; object-fit:cover; display:block; }
+.image-preview-remove {
+  position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.7);
+  border:none; color:#fff; width:28px; height:28px; border-radius:50%;
+  cursor:pointer; font-size:0.9rem; transition:all 0.2s;
+  display:flex; align-items:center; justify-content:center;
+}
+.image-preview-remove:hover { background:var(--danger); transform:scale(1.1); }
+.image-preview-size {
+  position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.7);
+  color:#fff; padding:2px 8px; border-radius:4px; font-size:0.65rem;
+  font-family:'Space Mono',monospace;
+}
+
+/* ── FEED ── */
+.feed {
+  display:flex; flex-direction:column; gap:14px; position:relative; z-index:1;
+}
+.feed-loading {
+  text-align:center; padding:20px; color:var(--muted);
+  font-family:'Space Mono',monospace; font-size:0.8rem;
+}
+.feed-loading .spinner {
+  display:inline-block; animation:spin 0.8s linear infinite; margin-right:8px;
+}
+
+.post-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  overflow:hidden; transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  position:relative; animation:card-enter 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.post-card:hover {
+  border-color:rgba(74,158,255,0.18); transform:translateY(-3px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.25),0 0 0 1px rgba(74,158,255,0.06);
+}
+.post-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,var(--neon),var(--neon2)); opacity:0; transition:opacity 0.3s;
+}
+.post-card:hover::before { opacity:1; }
+@keyframes card-enter {
+  from{opacity:0;transform:translateY(20px) scale(0.97)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.post-card:nth-child(1){animation-delay:0s}
+.post-card:nth-child(2){animation-delay:.04s}
+.post-card:nth-child(3){animation-delay:.08s}
+.post-card:nth-child(4){animation-delay:.12s}
+.post-card:nth-child(5){animation-delay:.16s}
+.post-card:nth-child(n+6){animation-delay:.2s}
+.post-top { padding:16px 18px 10px; display:flex; align-items:flex-start; gap:11px; }
+.post-av {
+  width:40px; height:40px; border-radius:50%;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex; align-items:center; justify-content:center; font-size:0.95rem;
+  font-weight:800; color:#000; flex-shrink:0; overflow:hidden; position:relative;
+  transition:all 0.3s; box-shadow:0 0 0 2px transparent;
+}
+.post-card:hover .post-av { box-shadow:0 0 0 2px rgba(74,158,255,0.3); transform:scale(1.06); }
+.post-av img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; border-radius:50%; }
+.post-av img.loaded { display:block; }
+.post-av span { position:relative; z-index:1; }
+.post-meta { flex:1; min-width:0; }
+.post-username { font-size:0.92rem; font-weight:800; color:var(--text-bright); }
+.post-time { font-size:0.68rem; font-family:'Space Mono',monospace; color:var(--muted); margin-top:2px; }
+.post-opts-btn {
+  background:none; border:none; cursor:pointer; color:var(--muted); font-size:1.1rem;
+  padding:4px 8px; border-radius:6px; transition:all 0.2s; position:relative;
+}
+.post-opts-btn:hover { background:var(--surface2); color:var(--text-bright); }
+.post-body { padding:0 18px 12px; }
+.post-text { font-size:0.94rem; line-height:1.7; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+.post-img {
+  width:100%; max-height:360px; object-fit:cover; display:block; margin-top:10px;
+  border-radius:10px; border:1px solid var(--border); transition:transform 0.3s; cursor:pointer;
+}
+.post-img:hover { transform:scale(1.01); }
+.post-img-modal {
+  position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:999;
+  display:none; align-items:center; justify-content:center; cursor:pointer;
+  backdrop-filter:blur(20px); animation:fade-in 0.3s ease;
+}
+.post-img-modal.show { display:flex; }
+.post-img-modal img { max-width:90%; max-height:90%; object-fit:contain; border-radius:8px; animation:zoom-in 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes zoom-in { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
+.post-actions { padding:8px 18px 12px; display:flex; align-items:center; gap:6px; border-top:1px solid var(--border); }
+.action-pill {
+  display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:20px;
+  background:transparent; border:1px solid var(--border); color:var(--muted);
+  font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700; cursor:pointer;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); position:relative; overflow:hidden;
+}
+.action-pill::before {
+  content:''; position:absolute; inset:0; background:rgba(74,158,255,0.05); opacity:0; transition:opacity 0.2s;
+}
+.action-pill:hover { border-color:rgba(74,158,255,0.4); color:var(--neon); transform:translateY(-2px); }
+.action-pill:hover::before { opacity:1; }
+.action-pill:active { transform:scale(0.95); }
+.action-pill.liked { border-color:rgba(255,77,109,0.5); color:var(--danger); background:rgba(255,77,109,0.08); }
+.action-pill .icon { font-size:0.95rem; display:inline-block; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+.action-pill:hover .icon { transform:scale(1.3); }
+.action-pill.liked .icon { animation:heart-pop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes heart-pop {
+  0%{transform:scale(1)} 40%{transform:scale(1.5)} 70%{transform:scale(0.85)} 100%{transform:scale(1)}
+}
+
+.opts-menu {
+  position:absolute; top:calc(100% + 4px); right:0;
+  background:rgba(8,8,18,0.97); border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; z-index:50; min-width:120px; display:none; box-shadow:var(--shadow);
+  opacity:0; pointer-events:none; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.opts-menu.open { display:block; opacity:1; pointer-events:all; }
+[data-theme="light"] .opts-menu { background:rgba(240,240,250,0.99); }
+.opts-menu button { display:block; width:100%; padding:9px 14px; background:none; border:none; color:var(--text); font-family:'Syne',sans-serif; font-size:0.83rem; font-weight:600; cursor:pointer; text-align:left; transition:all 0.15s; }
+.opts-menu button:hover { background:var(--surface); padding-left:18px; }
+.opts-menu button.del { color:var(--danger); }
+.opts-menu button.del:hover { background:rgba(255,77,109,0.1); }
+
+.comments-section {
+  max-height:0; overflow:hidden; transition:max-height 0.4s cubic-bezier(0.4,0,0.2,1),padding 0.3s;
+  padding:0 18px; border-top:0px solid var(--border);
+}
+.comments-section.open { max-height:600px; padding:0 18px 14px; border-top:1px solid var(--border); }
+.comment-input-row { display:flex; gap:8px; align-items:flex-end; margin-bottom:14px; padding-top:12px; }
+.comment-av {
+  width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex; align-items:center; justify-content:center; font-size:0.7rem;
+  font-weight:800; color:#000; flex-shrink:0; overflow:hidden; position:relative;
+}
+.comment-av img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; border-radius:50%; }
+.comment-av img.loaded { display:block; }
+.comment-av span { position:relative; z-index:1; }
+.comment-input {
+  flex:1; background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:18px; padding:8px 14px; color:var(--text-bright);
+  font-family:'Syne',sans-serif; font-size:0.83rem; outline:none; resize:none;
+  max-height:80px; line-height:1.5; transition:all 0.25s;
+}
+[data-theme="light"] .comment-input { background:rgba(0,0,0,0.04); }
+.comment-input:focus { border-color:rgba(74,158,255,0.3); }
+.comment-input::placeholder { color:var(--muted); }
+.comment-send {
+  background:linear-gradient(135deg,var(--neon),var(--neon2)); color:#000;
+  border:none; cursor:pointer; width:32px; height:32px; border-radius:50%;
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:0.95rem; font-weight:800; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.comment-send:hover { transform:scale(1.15); box-shadow:0 0 20px rgba(74,158,255,0.4); }
+.comment-list { display:flex; flex-direction:column; gap:7px; }
+.comment-item { display:flex; gap:8px; align-items:flex-start; animation:comment-enter 0.3s ease both; }
+@keyframes comment-enter { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+.comment-body {
+  flex:1; background:rgba(255,255,255,0.025); border:1px solid var(--border);
+  border-radius:12px; padding:8px 12px; transition:background 0.3s, border-color 0.3s;
+}
+[data-theme="light"] .comment-body { background:rgba(0,0,0,0.025); }
+.comment-who { font-size:0.8rem; font-weight:800; color:var(--text-bright); margin-bottom:2px; }
+.comment-text { font-size:0.82rem; color:var(--text); line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+.comment-time { font-size:0.64rem; font-family:'Space Mono',monospace; color:var(--muted); margin-top:3px; }
+
+.empty-feed { text-align:center; padding:60px 20px; color:var(--muted); font-family:'Space Mono',monospace; font-size:0.82rem; }
+.empty-feed .big { font-size:2.5rem; margin-bottom:12px; animation:bounce 2s ease-in-out infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.skel { background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:6px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.skel-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; gap:10px; }
+
+@media(max-width:768px) {
+  .welcome-banner { flex-direction:column; align-items:flex-start; gap:12px; }
+  .welcome-banner h2 { font-size:1.15rem; }
+  .page-header h1 { font-size:1.5rem; }
+  .emoji-picker { max-height:180px; }
+}
+@media(max-width:480px) {
+  .compose-box { padding:14px; }
+  .post-top { padding:14px 14px 8px; }
+  .post-body { padding:0 14px 10px; }
+  .post-actions { padding:6px 14px 10px; }
+  .compose-toolbar .tool-btn span { display:none; }
+  .emoji-picker { max-height:150px; padding:6px; }
+  .emoji-picker-grid { grid-template-columns:repeat(auto-fill, minmax(30px, 1fr)); }
+}
+</style>
+</head>
+<body>
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="toast" id="toast"></div>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+    <span class="logo-text">CESC <span class="logo-dot">Hub</span></span>
+  </div>
+  <div class="nav-label">Main</div>
+  <a href="index.html" class="nav-item active"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> Feed</a>
+  <a href="chat.html" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> Chat Room</a>
+  <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> Profiles</a>
+  <div class="nav-label">You</div>
+  <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> Settings</a>
+  <a href="notifications.html" class="nav-item" id="notif-nav">
+    <span class="nav-icon"><i class="fas fa-bell"></i></span> Notifications
+    <span class="nav-badge-count" id="notif-nav-badge">0</span>
+  </a>
+  <div class="sidebar-bottom">
+    <span class="online-dot-sm"></span>
+    <span id="online-count">...</span>&nbsp;online now
+  </div>
+</aside>
+
+<!-- ── HEADER ── -->
+<header class="top-header">
+  <div>
+    <div class="header-title">Feed</div>
+    <div class="header-sub" id="header-sub">
+      <span class="header-online-status">
+        <span class="online-pulse-ring">
+          <span class="online-pulse-dot"></span>
+        </span>
+        <span class="online-count-number" id="online-count">...</span>
+        <span class="online-status-text">online now</span>
+      </span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    <a href="notifications.html" class="hdr-btn" title="Notifications">
+      <i class="fas fa-bell"></i>
+      <span class="notif-badge" id="notif-badge">0</span>
+    </a>
+    <div class="profile-chip" id="profile-chip" onclick="toggleDropdown()">
+      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
+      <span class="chip-name" id="chip-name">loading</span>
+      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="dd-header">
+          <div class="dd-name" id="dd-name">—</div>
+          <div class="dd-sub">CESC Hub member</div>
+        </div>
+        <a href="profiles.html" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
+        <a href="settings.html" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
+        <a href="notifications.html" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
+        <div class="dd-div"></div>
+        <button class="dd-item logout" onclick="logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── MAIN ── -->
+<main class="main">
+  <div class="welcome-banner">
+    <div>
+      <h2>Hey, <span id="welcome-name">fam</span> <i class="fas fa-hand-peace" style="color:var(--neon)"></i></h2>
+      <p>CESC Hub is live — what's on your mind?</p>
+    </div>
+    <a href="chat.html" class="banner-btn">Open Chat <i class="fas fa-arrow-right"></i></a>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <h1>Feed</h1>
+      <p id="feed-subtitle">Loading posts...</p>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshFeed()">
+      <span class="spin"><i class="fas fa-sync-alt"></i></span> Refresh
+    </button>
+  </div>
+
+  <div class="compose-box">
+    <div class="compose-top">
+      <div class="compose-av" id="compose-av"><span id="compose-initial">?</span></div>
+      <div class="compose-name" id="compose-name">loading...</div>
+    </div>
+    <textarea class="compose-ta" id="compose-input" placeholder="What's going on at CESC?" maxlength="500" oninput="onComposeInput()"></textarea>
+    
+    <div class="image-preview-wrap" id="image-preview-wrap">
+      <img id="image-preview" src="" alt="Image preview"/>
+      <button class="image-preview-remove" onclick="removeImage()"><i class="fas fa-times"></i></button>
+      <span class="image-preview-size" id="image-preview-size">0 KB</span>
+    </div>
+    
+    <div class="compose-toolbar">
+      <button class="tool-btn" onclick="toggleEmojiPicker()">
+        <i class="fas fa-smile"></i> <span>Emoji</span>
+      </button>
+      <button class="tool-btn" onclick="document.getElementById('image-upload').click()">
+        <i class="fas fa-image"></i> <span>Image</span>
+      </button>
+      <input type="file" id="image-upload" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleImageUpload(event)"/>
+      
+      <div class="emoji-picker" id="emoji-picker">
+        <div class="emoji-picker-grid" id="emoji-grid"></div>
+      </div>
+    </div>
+    
+    <div class="cooldown-bar-wrap" id="cooldown-wrap">
+      <div class="cooldown-bar" id="cooldown-bar" style="width:100%"></div>
+    </div>
+    <div class="compose-foot">
+      <span class="compose-hint" id="compose-hint">post every 3 min</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="char-count" id="char-count">0/500</span>
+        <button class="post-btn" id="post-btn" onclick="submitPost()"><i class="fas fa-paper-plane"></i> Post</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="feed" id="feed">
+    <div class="skel-card">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="skel" style="width:40px;height:40px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <div class="skel" style="height:11px;width:110px"></div>
+          <div class="skel" style="height:9px;width:65px"></div>
+        </div>
+      </div>
+      <div class="skel" style="height:10px;width:90%"></div>
+      <div class="skel" style="height:10px;width:70%"></div>
+    </div>
+    <div class="skel-card">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="skel" style="width:40px;height:40px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <div class="skel" style="height:11px;width:90px"></div>
+          <div class="skel" style="height:9px;width:55px"></div>
+        </div>
+      </div>
+      <div class="skel" style="height:10px;width:80%"></div>
+    </div>
+  </div>
+
+  <div id="feed-loading" class="feed-loading" style="display:none;">
+    <span class="spinner"><i class="fas fa-spinner"></i></span> Loading more posts...
+  </div>
+</main>
+
+<div class="post-img-modal" id="img-modal" onclick="closeImageModal()">
+  <img id="modal-img" src="" alt="Post image"/>
+  <button onclick="closeImageModal()" style="position:fixed;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1000;"><i class="fas fa-times"></i></button>
+</div>
+
+<script>
+// ── PAGE-SPECIFIC CODE ──
+const POST_COOLDOWN_MS = 3 * 60 * 1000;
+const STORAGE_KEY = 'cesc_last_post_time';
+const MAX_IMAGE_SIZE = 500 * 1024;
+const POSTS_PER_BATCH = 10;
+
+let cooldownInterval = null;
+let pendingImageFile = null;
+let isUploading = false;
+let emojiPickerInitialized = false;
+let allPosts = [];
+let currentBatch = 0;
+let isLoadingMore = false;
+let hasMorePosts = true;
+
+// ── EMOJI DATA ──
+const EMOJIS = [
+  '😀','😁','😂','🤣','😊','😍','🥰','😘','😜','😝','😛','🤑','🤪','😋','😇','🤗',
+  '🤩','🥳','😎','🤓','🧐','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩',
+  '🥺','😢','😭','😤','🔥','✨','⭐','🌟','💫','❤️','🧡','💛','💚','💙','💜','🖤',
+  '💔','💕','💞','💗','💖','💘','💝','🎉','🎊','🎈','🎁','💪','🫶','🤝','👏','🙌',
+  '🤘','🖐️','🌺','🌸','🌷','🌹','🌻','🌼','🌿','☘️','🍀','🌴','🌳','🌲','🍂','🍁',
+  '🍃','🌵','🌊','🌅','🌄','🌈','🍕','🍔','🌮','🌯','🥗','🍣','🍱','🍜','🍲','🍛',
+  '🍦','🍩','🍪','🎂','🧁','☕','🍵','🍺','🍻','🥂','⚽','🏀','🏈','⚾','🎾','🏐',
+  '🏉','🎱','🏓','🏸','🎮','🎯','🎳','🎤','🎧','🎼','🎹','🥁','🎺','🎸','📱','💻',
+  '⌨️','🖥️','📷','📸','📹','🎬','📺','🎵','📚','📖','✏️','📝','📌','📍','🔗','📎'
+];
+
+// ── INIT ──
+async function init() {
+  if (typeof window.initTheme !== 'function') {
+    console.log('⏳ Waiting for shared.js...');
+    setTimeout(init, 200);
+    return;
+  }
+  
+  console.log('✅ shared.js loaded');
+  window.initTheme();
+  
+  const sidebarOpen = localStorage.getItem('cesc_sidebar_open') === 'true';
+  if (sidebarOpen && window.innerWidth <= 768) {
+    document.getElementById('sidebar')?.classList.add('open');
+    document.getElementById('sidebar-overlay')?.classList.add('show');
+  }
+  
+  const sess = await window.initAuth();
+  if (!sess) return;
+  
+  const profile = await window.loadUserProfile();
+  if (profile) {
+    window.updateUserUI(profile);
+    await window.loadPfpCache();
+  }
+  
+  await window.updateLastSeen();
+  await window.updateStreak();
+  
+  updateCooldownUI();
+  
+  await Promise.all([
+    loadFeed(),
+    window.loadOnlineCount(),
+    window.loadNotifCount()
+  ]);
+  
+  setupInfiniteScroll();
+  
+  setInterval(async () => {
+    if (!window.session) return;
+    await window.updateLastSeen();
+    await Promise.all([window.loadOnlineCount(), window.loadNotifCount()]);
+  }, 15000);
+}
+
+// ── INFINITE SCROLL ──
+function setupInfiniteScroll() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && hasMorePosts && !isLoadingMore) {
+        loadMorePosts();
+      }
+    });
+  }, { rootMargin: '200px' });
+  
+  const loadingEl = document.getElementById('feed-loading');
+  if (loadingEl) observer.observe(loadingEl);
+}
+
+async function loadMorePosts() {
+  if (isLoadingMore || !hasMorePosts) return;
+  isLoadingMore = true;
+  
+  const loadingEl = document.getElementById('feed-loading');
+  loadingEl.style.display = 'block';
+  
+  currentBatch++;
+  const start = currentBatch * POSTS_PER_BATCH;
+  const end = start + POSTS_PER_BATCH;
+  const batchPosts = allPosts.slice(start, end);
+  
+  if (batchPosts.length === 0) {
+    hasMorePosts = false;
+    loadingEl.style.display = 'none';
+    loadingEl.textContent = '🎉 You\'ve seen all posts!';
+    isLoadingMore = false;
+    return;
+  }
+  
+  const feedEl = document.getElementById('feed');
+  batchPosts.forEach(post => {
+    feedEl.appendChild(buildPostCard(post));
+  });
+  
+  // Update comment counts for these posts
+  const postIds = batchPosts.map(p => p.id);
+  if (postIds.length > 0) {
+    const { data: comments } = await window.supabaseClient.from('comments').select('post_id').in('post_id', postIds);
+    if (comments) {
+      const counts = {};
+      comments.forEach(c => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
+      batchPosts.forEach(post => {
+        const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
+        if (card) {
+          const span = card.querySelector('.comment-count');
+          if (span) span.textContent = counts[post.id] || 0;
+        }
+      });
+    }
+  }
+  
+  loadingEl.style.display = 'none';
+  isLoadingMore = false;
+  
+  if (end >= allPosts.length) {
+    hasMorePosts = false;
+    loadingEl.textContent = '🎉 You\'ve seen all posts!';
+    loadingEl.style.display = 'block';
+  }
+}
+
+// ── EMOJI PICKER ──
+function initEmojiPicker() {
+  if (emojiPickerInitialized) return;
+  
+  const grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  
+  EMOJIS.forEach(emoji => {
+    const span = document.createElement('span');
+    span.textContent = emoji;
+    span.onclick = () => insertEmoji(emoji);
+    grid.appendChild(span);
+  });
+  
+  emojiPickerInitialized = true;
+  console.log('✅ Emoji picker initialized!');
+}
+
+function toggleEmojiPicker() {
+  const picker = document.getElementById('emoji-picker');
+  if (!picker) return;
+  
+  if (!picker.classList.contains('open')) {
+    if (!emojiPickerInitialized) {
+      initEmojiPicker();
+    }
+    picker.classList.add('open');
+  } else {
+    picker.classList.remove('open');
+  }
+}
+
+function insertEmoji(emoji) {
+  const input = document.getElementById('compose-input');
+  const pos = input.selectionStart;
+  input.value = input.value.slice(0, pos) + emoji + input.value.slice(pos);
+  input.selectionStart = input.selectionEnd = pos + emoji.length;
+  input.focus();
+  onComposeInput();
+}
+
+// Close emoji picker with Escape key only
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.getElementById('emoji-picker')?.classList.remove('open');
+  }
+});
+
+// ── IMAGE UPLOAD ──
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  if (file.size > MAX_IMAGE_SIZE) {
+    window.showToast(`Image too large (${(file.size/1024).toFixed(0)}KB). Max 500KB 💀`, 'error');
+    e.target.value = '';
+    return;
+  }
+  
+  pendingImageFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const preview = document.getElementById('image-preview');
+    const wrap = document.getElementById('image-preview-wrap');
+    const size = document.getElementById('image-preview-size');
+    preview.src = ev.target.result;
+    size.textContent = (file.size / 1024).toFixed(1) + ' KB';
+    wrap.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function removeImage() {
+  pendingImageFile = null;
+  document.getElementById('image-preview-wrap').classList.remove('show');
+  document.getElementById('image-preview').src = '';
+}
+
+// ── COMPOSE ──
+function onComposeInput() {
+  const v = document.getElementById('compose-input').value;
+  const el = document.getElementById('char-count');
+  el.textContent = v.length + '/500';
+  el.className = 'char-count' + (v.length > 450 ? (v.length >= 500 ? ' full' : ' near') : '');
+}
+
+function getLastPostTime() {
+  return parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+}
+
+function setLastPostTime() {
+  localStorage.setItem(STORAGE_KEY, Date.now() + '');
+}
+
+function getRemainingCooldown() {
+  return Math.max(0, POST_COOLDOWN_MS - (Date.now() - getLastPostTime()));
+}
+
+function updateCooldownUI() {
+  const r = getRemainingCooldown();
+  const btn = document.getElementById('post-btn');
+  const hint = document.getElementById('compose-hint');
+  const wrap = document.getElementById('cooldown-wrap');
+  const bar = document.getElementById('cooldown-bar');
+  
+  if (r > 0) {
+    btn.disabled = true;
+    const m = Math.floor(r / 60000);
+    const s = Math.floor((r % 60000) / 1000);
+    hint.textContent = `wait ${m}:${String(s).padStart(2, '0')} before next post`;
+    hint.className = 'compose-hint warn';
+    wrap.classList.add('show');
+    bar.style.width = ((r / POST_COOLDOWN_MS) * 100) + '%';
+    
+    if (!cooldownInterval) {
+      cooldownInterval = setInterval(() => {
+        const r2 = getRemainingCooldown();
+        if (r2 <= 0) {
+          clearInterval(cooldownInterval);
+          cooldownInterval = null;
+          btn.disabled = false;
+          hint.textContent = 'post every 3 min';
+          hint.className = 'compose-hint';
+          wrap.classList.remove('show');
+        } else {
+          const m2 = Math.floor(r2 / 60000);
+          const s2 = Math.floor((r2 % 60000) / 1000);
+          hint.textContent = `wait ${m2}:${String(s2).padStart(2, '0')} before next post`;
+          bar.style.width = ((r2 / POST_COOLDOWN_MS) * 100) + '%';
+        }
+      }, 1000);
+    }
+  } else {
+    btn.disabled = false;
+    hint.textContent = 'post every 3 min';
+    hint.className = 'compose-hint';
+    wrap.classList.remove('show');
+  }
+}
+
+async function uploadImage(file) {
+  if (!file) return null;
+  
+  const ext = file.name.split('.').pop();
+  const path = `${window.session.user.id}/${Date.now()}.${ext}`;
+  
+  const { error } = await window.supabaseClient.storage.from('post-images').upload(path, file, {
+    contentType: file.type
+  });
+  
+  if (error) {
+    window.showToast('Image upload failed: ' + error.message, 'error');
+    return null;
+  }
+  
+  const { data: urlData } = window.supabaseClient.storage.from('post-images').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+// ── SUBMIT POST WITH DISPLAY NAME ──
+async function submitPost() {
+  const text = document.getElementById('compose-input').value.trim();
+  if (!text && !pendingImageFile) {
+    window.showToast('write something or add an image 💀', 'error');
+    return;
+  }
+  if (getRemainingCooldown() > 0) {
+    window.showToast('cooldown active, chill ⏳', 'error');
+    return;
+  }
+  
+  if (!window.session || !window.session.user) {
+    window.showToast('You must be logged in', 'error');
+    return;
+  }
+  
+  if (isUploading) return;
+  
+  const btn = document.getElementById('post-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'Posting...';
+  isUploading = true;
+  
+  let image_url = null;
+  if (pendingImageFile) {
+    image_url = await uploadImage(pendingImageFile);
+    if (!image_url) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
+      isUploading = false;
+      return;
+    }
+  }
+  
+  // Use display_name if available, fallback to username
+  const displayName = window.currentUser.display_name || window.currentUser.username;
+  
+  const { error } = await window.supabaseClient.from('posts').insert({
+    user_id: window.session.user.id,
+    username: window.currentUser.username,
+    display_name: displayName,
+    content: text || '📷',
+    image_url: image_url
+  });
+  
+  if (error) {
+    window.showToast('post failed: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
+    isUploading = false;
+    return;
+  }
+  
+  setLastPostTime();
+  document.getElementById('compose-input').value = '';
+  document.getElementById('char-count').textContent = '0/500';
+  removeImage();
+  btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
+  isUploading = false;
+  updateCooldownUI();
+  window.showToast('posted! 🔥', 'success');
+  await refreshFeed();
+}
+
+// ── FEED ──
+async function refreshFeed() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  allPosts = [];
+  currentBatch = 0;
+  hasMorePosts = true;
+  document.getElementById('feed').innerHTML = '';
+  document.getElementById('feed-loading').style.display = 'none';
+  document.getElementById('feed-loading').textContent = 'Loading more posts...';
+  await loadFeed();
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+async function loadFeed() {
+  const feedEl = document.getElementById('feed');
+  
+  const { data: posts, error } = await window.supabaseClient
+    .from('posts')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    window.showToast('could not load feed: ' + error.message, 'error');
+    return;
+  }
+  
+  allPosts = posts || [];
+  
+  // Load PFP cache
+  const { data: profiles } = await window.supabaseClient.from('profiles').select('username, pfp_url');
+  if (profiles) {
+    profiles.forEach(p => { if (p.pfp_url) window.pfpCache[p.username] = p.pfp_url; });
+  }
+  
+  feedEl.innerHTML = '';
+  
+  if (allPosts.length === 0) {
+    feedEl.innerHTML = `<div class="empty-feed"><div class="big">📭</div><div>No posts yet. Be the first!</div></div>`;
+    document.getElementById('feed-subtitle').textContent = '0 posts';
+    hasMorePosts = false;
+    document.getElementById('feed-loading').style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('feed-subtitle').textContent = allPosts.length + ' posts total';
+  
+  // Load first batch
+  currentBatch = 0;
+  const firstBatch = allPosts.slice(0, POSTS_PER_BATCH);
+  firstBatch.forEach(post => {
+    feedEl.appendChild(buildPostCard(post));
+  });
+  
+  // Get comment counts for first batch
+  const postIds = firstBatch.map(p => p.id);
+  if (postIds.length > 0) {
+    const { data: comments } = await window.supabaseClient.from('comments').select('post_id').in('post_id', postIds);
+    if (comments) {
+      const counts = {};
+      comments.forEach(c => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
+      firstBatch.forEach(post => {
+        const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
+        if (card) {
+          const span = card.querySelector('.comment-count');
+          if (span) span.textContent = counts[post.id] || 0;
+        }
+      });
+    }
+  }
+  
+  // Check if more posts available
+  if (allPosts.length <= POSTS_PER_BATCH) {
+    hasMorePosts = false;
+    document.getElementById('feed-loading').style.display = 'none';
+  } else {
+    hasMorePosts = true;
+    document.getElementById('feed-loading').style.display = 'block';
+    document.getElementById('feed-loading').textContent = 'Scroll for more posts...';
+  }
+}
+
+// ── BUILD POST CARD WITH DISPLAY NAME ──
+function buildPostCard(post) {
+  const card = document.createElement('div');
+  card.className = 'post-card';
+  card.dataset.id = post.id;
+  
+  // Use display_name if available, fallback to username
+  const displayName = post.display_name || post.username;
+  
+  const top = document.createElement('div');
+  top.className = 'post-top';
+  top.appendChild(window.buildAvatar(post.username, post.pfp_url || window.pfpCache[post.username] || null));
+  
+  const meta = document.createElement('div');
+  meta.className = 'post-meta';
+  meta.innerHTML = `
+    <div class="post-username">${window.escapeHTML(displayName)}</div>
+    <div class="post-time">${window.timeAgo(post.created_at)}</div>
+  `;
+  top.appendChild(meta);
+  
+  if (window.currentUser && post.username === window.currentUser.username) {
+    const wrap = document.createElement('div');
+    wrap.style.position = 'relative';
+    const ob = document.createElement('button');
+    ob.className = 'post-opts-btn';
+    ob.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+    ob.onclick = e => { e.stopPropagation(); toggleOpts(wrap); };
+    const menu = document.createElement('div');
+    menu.className = 'opts-menu';
+    menu.innerHTML = `<button class="del" onclick="deletePost('${post.id}')"><i class="fas fa-trash"></i> Delete</button>`;
+    wrap.appendChild(ob);
+    wrap.appendChild(menu);
+    top.appendChild(wrap);
+  }
+  card.appendChild(top);
+  
+  const body = document.createElement('div');
+  body.className = 'post-body';
+  body.innerHTML = `<div class="post-text">${window.escapeHTML(post.content)}</div>`;
+  if (post.image_url) {
+    const img = document.createElement('img');
+    img.className = 'post-img';
+    img.src = post.image_url;
+    img.alt = 'Post image';
+    img.onclick = (e) => { e.stopPropagation(); openImageModal(post.image_url); };
+    body.appendChild(img);
+  }
+  card.appendChild(body);
+  
+  const actions = document.createElement('div');
+  actions.className = 'post-actions';
+  
+  const likeBtn = document.createElement('button');
+  likeBtn.className = 'action-pill';
+  likeBtn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${post.likes || 0}</span>`;
+  likeBtn.onclick = () => toggleLike(post.id, likeBtn);
+  
+  const commentBtn = document.createElement('button');
+  commentBtn.className = 'action-pill';
+  commentBtn.innerHTML = `<span class="icon"><i class="fas fa-comment"></i></span> <span class="comment-count">0</span>`;
+  commentBtn.onclick = () => toggleComments(post.id, card);
+  
+  actions.appendChild(likeBtn);
+  actions.appendChild(commentBtn);
+  card.appendChild(actions);
+  
+  const commentsSection = document.createElement('div');
+  commentsSection.className = 'comments-section';
+  commentsSection.id = 'comments-' + post.id;
+  commentsSection.innerHTML = `
+    <div class="comment-input-row">
+      <div class="comment-av"><span>${(window.currentUser?.username?.[0] || '?').toUpperCase()}</span></div>
+      <textarea class="comment-input" id="ci-${post.id}" placeholder="Add a comment..." rows="1"></textarea>
+      <button class="comment-send" onclick="submitComment('${post.id}')"><i class="fas fa-arrow-up"></i></button>
+    </div>
+    <div class="comment-list" id="cl-${post.id}">
+      <div style="color:var(--muted);font-size:0.75rem;font-family:Space Mono,monospace;padding:4px 0">no comments yet</div>
+    </div>
+  `;
+  card.appendChild(commentsSection);
+  
+  // Check if this post is liked by current user
+  if (window.session) {
+    window.supabaseClient.from('likes').select('id').eq('post_id', post.id).eq('user_id', window.session.user.id).single()
+      .then(({ data }) => {
+        if (data) {
+          likeBtn.classList.add('liked');
+          likeBtn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${post.likes || 0}</span>`;
+        }
+      });
+  }
+  
+  // Add PFP to comment avatar
+  setTimeout(() => {
+    const profile = window.currentUser;
+    if (profile?.pfp_url) {
+      const av = commentsSection.querySelector('.comment-av');
+      if (av) {
+        const span = av.querySelector('span');
+        const img = document.createElement('img');
+        img.src = profile.pfp_url;
+        img.onload = () => {
+          img.style.display = 'block';
+          if (span) span.style.display = 'none';
+          img.classList.add('loaded');
+        };
+        img.onerror = () => img.remove();
+        av.appendChild(img);
+      }
+    }
+  }, 100);
+  
+  return card;
+}
+
+function toggleOpts(wrap) {
+  const m = wrap.querySelector('.opts-menu');
+  const open = m.classList.contains('open');
+  document.querySelectorAll('.opts-menu.open').forEach(x => x.classList.remove('open'));
+  if (!open) m.classList.add('open');
+}
+
+async function deletePost(postId) {
+  if (!confirm('delete this post?')) return;
+  const { error } = await window.supabaseClient.from('posts').delete().eq('id', postId).eq('user_id', window.session.user.id);
+  if (error) {
+    window.showToast('delete failed: ' + error.message, 'error');
+    return;
+  }
+  const card = document.querySelector(`.post-card[data-id="${postId}"]`);
+  if (card) {
+    card.style.transition = 'all 0.3s';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.95)';
+    setTimeout(() => card.remove(), 300);
+  }
+  window.showToast('post deleted', 'success');
+}
+
+async function toggleLike(postId, btn) {
+  if (!window.session || !window.session.user) {
+    window.showToast('You must be logged in', 'error');
+    return;
+  }
+  
+  const liked = btn.classList.contains('liked');
+  const ce = btn.querySelector('.like-count');
+  
+  if (liked) {
+    await window.supabaseClient.from('likes').delete().eq('post_id', postId).eq('user_id', window.session.user.id);
+    const c = Math.max(0, parseInt(ce.textContent) - 1);
+    await window.supabaseClient.from('posts').update({ likes: c }).eq('id', postId);
+    btn.classList.remove('liked');
+    btn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${c}</span>`;
+  } else {
+    const { error } = await window.supabaseClient.from('likes').insert({ post_id: postId, user_id: window.session.user.id });
+    if (error && error.code === '23505') return;
+    const c = parseInt(ce.textContent) + 1;
+    await window.supabaseClient.from('posts').update({ likes: c }).eq('id', postId);
+    btn.classList.add('liked');
+    btn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${c}</span>`;
+  }
+}
+
+async function toggleComments(postId, card) {
+  const section = document.getElementById('comments-' + postId);
+  const open = section.classList.contains('open');
+  section.classList.toggle('open', !open);
+  if (!open) await loadComments(postId);
+}
+
+// ── LOAD COMMENTS WITH DISPLAY NAME ──
+async function loadComments(postId) {
+  const list = document.getElementById('cl-' + postId);
+  const { data: comments } = await window.supabaseClient
+    .from('comments')
+    .select('*')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+  
+  list.innerHTML = '';
+  if (!comments || comments.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;font-family:Space Mono,monospace;padding:4px 0">no comments yet</div>';
+    return;
+  }
+  
+  comments.forEach((c, i) => {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    item.style.animationDelay = (i * 0.05) + 's';
+    item.appendChild(window.buildAvatar(c.username, window.pfpCache[c.username] || null, 28, 'comment-av'));
+    const body = document.createElement('div');
+    body.className = 'comment-body';
+    
+    // Use display_name if available, fallback to username
+    const displayName = c.display_name || c.username;
+    
+    body.innerHTML = `
+      <div class="comment-who">${window.escapeHTML(displayName)}</div>
+      <div class="comment-text">${window.escapeHTML(c.content)}</div>
+      <div class="comment-time">${window.timeAgo(c.created_at)}</div>
+    `;
+    item.appendChild(body);
+    list.appendChild(item);
+  });
+}
+
+// ── SUBMIT COMMENT WITH DISPLAY NAME ──
+async function submitComment(postId) {
+  const input = document.getElementById('ci-' + postId);
+  const text = input.value.trim();
+  
+  if (!text) {
+    window.showToast('write a comment first 💀', 'error');
+    return;
+  }
+  
+  if (!window.session || !window.session.user) {
+    window.showToast('You must be logged in', 'error');
+    return;
+  }
+  
+  // Use display_name if available, fallback to username
+  const displayName = window.currentUser.display_name || window.currentUser.username;
+  
+  const { error } = await window.supabaseClient.from('comments').insert({
+    post_id: postId,
+    user_id: window.session.user.id,
+    username: window.currentUser.username,
+    display_name: displayName,
+    content: text
+  });
+  
+  if (error) {
+    window.showToast('comment failed', 'error');
+    return;
+  }
+  
+  input.value = '';
+  
+  const { data: postRow } = await window.supabaseClient.from('posts').select('user_id').eq('id', postId).single();
+  if (postRow && postRow.user_id !== window.session.user.id) {
+    await window.supabaseClient.from('notifications').insert({
+      recipient_id: postRow.user_id,
+      actor_username: window.currentUser.username,
+      actor_display_name: displayName,
+      actor_pfp_url: window.currentUser.pfp_url || null,
+      type: 'post_comment',
+      ref_id: postId,
+      preview: text.slice(0, 80)
+    });
+  }
+  
+  await loadComments(postId);
+  const section = document.getElementById('comments-' + postId);
+  const card = section.closest('.post-card');
+  if (card) {
+    const span = card.querySelector('.comment-count');
+    if (span) span.textContent = parseInt(span.textContent || '0') + 1;
+  }
+}
+
+// ── IMAGE MODAL ──
+function openImageModal(url) {
+  const modal = document.getElementById('img-modal');
+  const img = document.getElementById('modal-img');
+  img.src = url;
+  modal.classList.add('show');
+}
+
+function closeImageModal() {
+  document.getElementById('img-modal').classList.remove('show');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeImageModal();
+    document.getElementById('emoji-picker')?.classList.remove('open');
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    const input = document.getElementById('compose-input');
+    if (document.activeElement === input) {
+      e.preventDefault();
+      submitPost();
+    }
+  }
+});
+
+// ── EXPOSE FUNCTIONS ──
+window.toggleEmojiPicker = toggleEmojiPicker;
+window.handleImageUpload = handleImageUpload;
+window.removeImage = removeImage;
+window.onComposeInput = onComposeInput;
+window.submitPost = submitPost;
+window.refreshFeed = refreshFeed;
+window.deletePost = deletePost;
+window.toggleLike = toggleLike;
+window.toggleComments = toggleComments;
+window.submitComment = submitComment;
+window.openImageModal = openImageModal;
+window.closeImageModal = closeImageModal;
+
+// ── START ──
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+} else {
+  setTimeout(init, 100);
+}
+</script>
+</body>
+</html>
