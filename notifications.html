@@ -304,19 +304,12 @@ function notifLabel(type) {
   if(type === 'like') return 'liked your post';
   return 'interacted with you';
 }
-
 function notifIcon(type) {
-  if(type === 'post_comment') return '💬';
-  if(type === 'chat_reply') return '↩';
-  if(type === 'like') return '❤️';
-  return '🔔';
-}
-
-function notifLink(type, refId) {
-  if(type === 'post_comment') return 'index.html';
-  if(type === 'like') return 'index.html';
-  if(type === 'chat_reply') return 'chat.html';
-  return 'index.html';
+  if(type === 'post_comment') return '<i class="fas fa-comment" style="color:var(--neon);"></i>';
+  if(type === 'chat_reply') return '<i class="fas fa-reply" style="color:var(--neon2);"></i>';
+  if(type === 'like') return '<i class="fas fa-heart" style="color:#ff4d6d;"></i>';
+  if(type === 'follow') return '<i class="fas fa-user-plus" style="color:var(--yellow);"></i>';
+  return '<i class="fas fa-bell" style="color:var(--muted);"></i>';
 }
 
 async function loadNotifs() {
@@ -357,7 +350,7 @@ async function loadNotifs() {
     if (!notifs || notifs.length === 0) {
       list.innerHTML = `
         <div class="empty-notifs">
-          <div class="big">🔔</div>
+          <div class="big"><i class="fas fa-bell" style="color:var(--muted);"></i></div>
           <div>No notifications yet.<br>They'll show up here when someone comments on your posts or replies to your messages.</div>
         </div>`;
       return;
@@ -382,7 +375,6 @@ async function loadNotifs() {
       initial.textContent = (n.actor_username?.[0] || '?').toUpperCase();
       av.appendChild(initial);
       
-      // Use display name if available for avatar
       const displayName = n.actor_display_name || n.actor_username;
       
       if (n.actor_pfp_url || window.pfpCache?.[n.actor_username]) {
@@ -403,10 +395,10 @@ async function loadNotifs() {
         <div class="notif-time">${window.timeAgo(n.created_at)}</div>`;
       item.appendChild(body);
       
-      // Icon
+      // Icon - Font Awesome
       const iconEl = document.createElement('div');
       iconEl.className = 'notif-type-icon';
-      iconEl.textContent = notifIcon(n.type);
+      iconEl.innerHTML = notifIcon(n.type);
       item.appendChild(iconEl);
       
       // Click — mark read + navigate
@@ -424,7 +416,6 @@ async function loadNotifs() {
     console.error('Error loading notifications:', e);
   }
 }
-
 window.markAllRead = async function() {
   if (!window.session) return;
   
