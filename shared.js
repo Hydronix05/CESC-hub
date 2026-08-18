@@ -15,38 +15,6 @@ let session = null;
 let currentUser = null;
 const pfpCache = {};
 
-// ── THEME ──
-const THEME_KEY = 'cesc_theme_v2';
-const THEMES = { 
-  default: 'theme-default.css', 
-  white: 'theme-white.css', 
-  classic: 'theme-classic.css' 
-};
-
-function applyTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  const btn = document.getElementById('theme-btn');
-  if (btn) {
-    const icon = btn.querySelector('i');
-    if (icon) {
-      icon.className = t === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-    }
-  }
-  localStorage.setItem(THEME_KEY, t);
-  const link = document.getElementById('active-theme');
-  if (link) link.href = THEMES[t] || THEMES['default'];
-}
-
-function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY) || 'dark';
-  applyTheme(saved);
-}
-
-function toggleTheme() {
-  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-  applyTheme(cur === 'dark' ? 'white' : 'dark');
-}
-
 // ── TOAST ──
 function showToast(msg, type = 'error') {
   const t = document.getElementById('toast');
@@ -423,10 +391,6 @@ Object.defineProperty(window, 'currentUser', {
 
 window.supabaseClient = supabaseClient;
 window.pfpCache = pfpCache;
-window.THEMES = THEMES;
-window.applyTheme = applyTheme;
-window.initTheme = initTheme;
-window.toggleTheme = toggleTheme;
 window.showToast = showToast;
 window.timeAgo = timeAgo;
 window.formatTime = formatTime;

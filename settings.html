@@ -8,421 +8,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
+<link rel="stylesheet" href="/css/pages/settings.css"/>
 
 <!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Load theme system -->
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
 <!-- Load shared.js -->
 <script src="shared.js"></script>
-
-<style>
-/* ── PAGE-SPECIFIC STYLES ── */
-
-.settings-section {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:24px;
-  margin-bottom:20px;
-  transition:all 0.3s;
-}
-.settings-section:hover {
-  border-color:rgba(74,158,255,0.15);
-}
-.section-title {
-  font-size:0.78rem;
-  font-weight:700;
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:1.2px;
-  margin-bottom:20px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.section-title::after {
-  content:'';
-  flex:1;
-  height:1px;
-  background:var(--border);
-}
-
-.field { margin-bottom:18px; }
-.field:last-child { margin-bottom:0; }
-.field label {
-  display:block;
-  font-size:0.85rem;
-  font-weight:600;
-  color:var(--text);
-  margin-bottom:8px;
-}
-.field label span {
-  color:var(--muted);
-  font-weight:400;
-  font-size:0.8rem;
-  margin-left:4px;
-}
-.field input, .field textarea {
-  width:100%;
-  background:rgba(255,255,255,0.04);
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:12px 14px;
-  color:var(--text);
-  font-family:'Syne',sans-serif;
-  font-size:0.9rem;
-  outline:none;
-  transition:border-color 0.2s;
-  resize:none;
-}
-[data-theme="light"] .field input, [data-theme="light"] .field textarea {
-  background:rgba(0,0,0,0.03);
-}
-.field input:focus, .field textarea:focus {
-  border-color:rgba(74,158,255,0.4);
-  background:rgba(255,255,255,0.06);
-}
-.field input::placeholder, .field textarea::placeholder {
-  color:var(--muted);
-}
-.field textarea { height:90px; }
-.field input[readonly] {
-  color:var(--muted);
-  cursor:not-allowed;
-  background:rgba(255,255,255,0.02);
-}
-.locked-note {
-  font-size:0.72rem;
-  color:var(--muted);
-  font-family:'Space Mono',monospace;
-  margin-top:5px;
-}
-
-/* ── DISPLAY NAME ── */
-.display-name-row {
-  display:flex;
-  gap:12px;
-  align-items:flex-start;
-  flex-wrap:wrap;
-}
-.display-name-row .field {
-  flex:1;
-  min-width:180px;
-  margin-bottom:0;
-}
-.change-limit-badge {
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 12px;
-  border-radius:8px;
-  font-size:0.72rem;
-  font-family:'Space Mono',monospace;
-  background:rgba(245,196,0,0.08);
-  border:1px solid rgba(245,196,0,0.2);
-  color:var(--yellow);
-  margin-top:4px;
-}
-.change-limit-badge.used {
-  color:var(--danger);
-  border-color:rgba(255,77,109,0.2);
-  background:rgba(255,77,109,0.08);
-}
-.change-limit-badge .count { font-weight:800; font-size:0.85rem; }
-
-/* ── PFP ── */
-.pfp-row {
-  display:flex;
-  gap:24px;
-  flex-wrap:wrap;
-}
-.pfp-left {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-  flex-shrink:0;
-}
-.pfp-preview {
-  width:80px;
-  height:80px;
-  border-radius:50%;
-  background:linear-gradient(135deg,var(--neon),var(--neon2));
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:2rem;
-  font-weight:800;
-  color:#000;
-  border:3px solid var(--border);
-  overflow:hidden;
-  position:relative;
-  flex-shrink:0;
-  transition:border-color 0.3s;
-}
-.pfp-preview:hover {
-  border-color:rgba(74,158,255,0.4);
-}
-.pfp-preview img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:none;
-}
-.pfp-initial { font-size:1.8rem; font-weight:800; color:#000; }
-.pfp-label {
-  font-size:0.72rem;
-  color:var(--muted);
-  text-align:center;
-  font-family:'Space Mono',monospace;
-}
-.pfp-right { flex:1; min-width:200px; }
-
-.upload-zone {
-  border:2px dashed var(--border);
-  border-radius:12px;
-  padding:16px;
-  text-align:center;
-  cursor:pointer;
-  transition:all 0.2s;
-  position:relative;
-  margin-top:4px;
-}
-.upload-zone:hover, .upload-zone.dragover {
-  border-color:rgba(74,158,255,0.4);
-  background:rgba(74,158,255,0.03);
-}
-.upload-zone input[type=file] {
-  position:absolute;
-  inset:0;
-  opacity:0;
-  cursor:pointer;
-  width:100%;
-  height:100%;
-}
-.upload-icon { font-size:1.6rem; margin-bottom:4px; }
-.upload-text { font-size:0.82rem; color:var(--muted); }
-.upload-text strong {
-  color:var(--text);
-  display:block;
-  margin-bottom:2px;
-}
-.upload-hint {
-  font-size:0.68rem;
-  color:var(--muted);
-  margin-top:4px;
-  font-family:'Space Mono',monospace;
-}
-.upload-progress {
-  margin-top:10px;
-  display:none;
-}
-.progress-bar {
-  height:3px;
-  background:var(--border);
-  border-radius:2px;
-  overflow:hidden;
-}
-.progress-fill {
-  height:100%;
-  background:linear-gradient(90deg, var(--neon), var(--neon2));
-  width:0%;
-  transition:width 0.3s;
-  border-radius:2px;
-}
-.progress-text {
-  font-size:0.72rem;
-  color:var(--muted);
-  font-family:'Space Mono',monospace;
-  margin-top:4px;
-}
-
-/* ── BTNS ── */
-.btn-row {
-  display:flex;
-  gap:10px;
-  margin-top:4px;
-  flex-wrap:wrap;
-}
-.btn {
-  padding:11px 22px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-  font-family:'Syne',sans-serif;
-  font-weight:700;
-  font-size:0.9rem;
-  background:linear-gradient(135deg,var(--neon),var(--neon2));
-  color:#000;
-  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-}
-.btn:hover {
-  transform:scale(1.03) translateY(-2px);
-  box-shadow:0 0 20px rgba(74,158,255,0.4);
-}
-.btn:disabled {
-  opacity:0.5;
-  cursor:not-allowed;
-  transform:none;
-  box-shadow:none;
-}
-.btn.secondary {
-  background:var(--surface);
-  color:var(--text);
-  border:1px solid var(--border);
-}
-.btn.secondary:hover {
-  border-color:rgba(74,158,255,0.3);
-  box-shadow:none;
-  transform:translateY(-2px);
-}
-.btn.danger {
-  background:rgba(255,77,109,0.12);
-  color:var(--danger);
-  border:1px solid rgba(255,77,109,0.3);
-}
-.btn.danger:hover {
-  background:rgba(255,77,109,0.2);
-  box-shadow:none;
-  transform:translateY(-2px);
-}
-
-/* ── THEME GRID ── */
-.theme-grid {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-}
-.theme-card {
-  border:2px solid var(--border);
-  border-radius:14px;
-  padding:14px;
-  cursor:pointer;
-  transition:all 0.25s;
-  position:relative;
-}
-.theme-card:hover {
-  border-color:rgba(74,158,255,0.35);
-  transform:translateY(-2px);
-}
-.theme-card.active {
-  border-color:var(--neon);
-  box-shadow:0 0 0 1px var(--neon), 0 0 20px rgba(74,158,255,0.15);
-}
-.theme-card.active::after {
-  content:'✓';
-  position:absolute;
-  top:8px;
-  right:10px;
-  font-size:0.75rem;
-  font-weight:800;
-  color:var(--neon);
-}
-.theme-preview {
-  width:100%;
-  height:48px;
-  border-radius:8px;
-  margin-bottom:8px;
-  border:1px solid rgba(0,0,0,0.08);
-  overflow:hidden;
-  display:flex;
-  gap:6px;
-  padding:6px;
-}
-.theme-preview .p-sidebar {
-  width:28%;
-  border-radius:4px;
-  height:100%;
-}
-.theme-preview .p-content {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  gap:3px;
-}
-.theme-preview .p-bar { height:8px; border-radius:3px; }
-.theme-preview .p-bar2 { height:5px; border-radius:3px; width:70%; }
-
-.preview-default { background:#0a0a0f; }
-.preview-default .p-sidebar {
-  background:rgba(8,8,16,0.9);
-  border:1px solid rgba(255,255,255,0.08);
-}
-.preview-default .p-bar {
-  background:linear-gradient(90deg, #4a9eff, #6c5ce7);
-}
-.preview-default .p-bar2 { background:rgba(255,255,255,0.1); }
-
-.preview-white { background:#f4f4f8; }
-.preview-white .p-sidebar {
-  background:rgba(255,255,255,0.92);
-  border:1px solid rgba(0,0,0,0.10);
-}
-.preview-white .p-bar {
-  background:linear-gradient(90deg, #4a9eff, #6c5ce7);
-}
-.preview-white .p-bar2 { background:rgba(0,0,0,0.10); }
-
-.preview-classic { background:#111318; }
-.preview-classic .p-sidebar {
-  background:rgba(14,14,22,0.95);
-  border:1px solid rgba(255,255,255,0.08);
-}
-.preview-classic .p-bar {
-  background:linear-gradient(90deg, #7c6af7, #5ea8f5);
-}
-.preview-classic .p-bar2 { background:rgba(255,255,255,0.1); }
-
-.theme-name {
-  font-size:0.85rem;
-  font-weight:800;
-  color:var(--text-bright);
-}
-.theme-desc {
-  font-size:0.68rem;
-  font-family:'Space Mono',monospace;
-  color:var(--muted);
-  margin-top:2px;
-}
-
-/* ── PASSWORD ── */
-.input-wrapper {
-  position:relative;
-  display:flex;
-  align-items:center;
-}
-.input-wrapper input { padding-right:80px; }
-.input-actions {
-  position:absolute;
-  right:10px;
-  display:flex;
-  gap:6px;
-}
-.action-icon {
-  cursor:pointer;
-  font-size:0.95rem;
-  opacity:0.5;
-  transition:0.2s;
-  background:none;
-  border:none;
-  color:var(--text);
-  padding:4px;
-  border-radius:4px;
-}
-.action-icon:hover {
-  opacity:1;
-  color:var(--neon);
-  background:rgba(74,158,255,0.06);
-}
-
-@media(max-width:768px) {
-  .theme-grid { grid-template-columns:1fr 1fr; }
-  .display-name-row { flex-direction:column; }
-}
-@media(max-width:480px) {
-  .settings-section { padding:16px; }
-  .theme-grid { grid-template-columns:1fr; }
-}
-</style>
 </head>
 <body>
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div></div>
@@ -498,45 +92,159 @@
     <p>manage your profile &amp; preferences</p>
   </div>
 
-  <!-- ── THEME ── -->
+  <!-- ── THEME SECTION ── -->
   <div class="settings-section">
     <div class="section-title"><i class="fas fa-palette" style="color:var(--neon)"></i> Theme</div>
-    <div class="theme-grid" id="theme-grid">
-      <div class="theme-card" data-theme="default" onclick="setTheme('default')">
-        <div class="theme-preview preview-default">
-          <div class="p-sidebar"></div>
-          <div class="p-content">
-            <div class="p-bar"></div>
-            <div class="p-bar2"></div>
-            <div class="p-bar2" style="width:50%"></div>
+    
+    <!-- Preset Themes -->
+    <div class="theme-presets">
+      <div class="theme-grid" id="theme-grid">
+        <div class="theme-card" data-theme="default" onclick="selectPreset('default')">
+          <div class="theme-preview preview-default">
+            <div class="p-sidebar"></div>
+            <div class="p-content">
+              <div class="p-bar"></div>
+              <div class="p-bar2"></div>
+              <div class="p-bar2" style="width:50%"></div>
+            </div>
           </div>
+          <div class="theme-name">Default</div>
+          <div class="theme-desc">neon cyber · dark bg</div>
         </div>
-        <div class="theme-name">Default</div>
-        <div class="theme-desc">neon cyber · dark bg</div>
+        <div class="theme-card" data-theme="white" onclick="selectPreset('white')">
+          <div class="theme-preview preview-white">
+            <div class="p-sidebar"></div>
+            <div class="p-content">
+              <div class="p-bar"></div>
+              <div class="p-bar2"></div>
+              <div class="p-bar2" style="width:50%"></div>
+            </div>
+          </div>
+          <div class="theme-name">Original White</div>
+          <div class="theme-desc">clean · light bg</div>
+        </div>
+        <div class="theme-card" data-theme="classic" onclick="selectPreset('classic')">
+          <div class="theme-preview preview-classic">
+            <div class="p-sidebar"></div>
+            <div class="p-content">
+              <div class="p-bar"></div>
+              <div class="p-bar2"></div>
+              <div class="p-bar2" style="width:50%"></div>
+            </div>
+          </div>
+          <div class="theme-name">Classic Dark</div>
+          <div class="theme-desc">purple accent · muted</div>
+        </div>
       </div>
-      <div class="theme-card" data-theme="white" onclick="setTheme('white')">
-        <div class="theme-preview preview-white">
-          <div class="p-sidebar"></div>
-          <div class="p-content">
-            <div class="p-bar"></div>
-            <div class="p-bar2"></div>
-            <div class="p-bar2" style="width:50%"></div>
-          </div>
+    </div>
+
+    <!-- Custom Themes -->
+    <div class="custom-themes-section" style="margin-top:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="section-title" style="margin-bottom:0;font-size:0.7rem;">
+          <i class="fas fa-paint-brush" style="color:var(--neon)"></i> Custom Themes
+          <span style="color:var(--muted);font-weight:400;font-size:0.7rem;font-family:'Space Mono',monospace;">
+            (<span id="custom-count">0</span>/<span id="custom-max">3</span>)
+          </span>
         </div>
-        <div class="theme-name">Original White</div>
-        <div class="theme-desc">clean · light bg</div>
+        <button class="btn small" id="new-theme-btn" onclick="openThemeEditor()" style="padding:6px 14px;font-size:0.78rem;">
+          <i class="fas fa-plus"></i> New
+        </button>
       </div>
-      <div class="theme-card" data-theme="classic" onclick="setTheme('classic')">
-        <div class="theme-preview preview-classic">
-          <div class="p-sidebar"></div>
-          <div class="p-content">
-            <div class="p-bar"></div>
-            <div class="p-bar2"></div>
-            <div class="p-bar2" style="width:50%"></div>
+      <div id="custom-themes-list" class="custom-themes-list">
+        <!-- Custom themes will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Theme Editor Modal -->
+    <div class="modal-overlay" id="theme-editor-modal" onclick="closeThemeEditorOutside(event)">
+      <div class="modal-card theme-editor-card" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeThemeEditor()"><i class="fas fa-times"></i></button>
+        <h3 style="font-size:1.1rem;font-weight:800;color:var(--text-bright);margin-bottom:16px;" id="editor-title">Create Custom Theme</h3>
+        
+        <div class="editor-form">
+          <div class="field">
+            <label>Theme Name</label>
+            <input type="text" id="theme-name-input" placeholder="My Custom Theme..." maxlength="30"/>
+          </div>
+          
+          <div class="color-grid">
+            <div class="color-field">
+              <label>Background</label>
+              <input type="color" id="color-bg" value="#0a0a0f"/>
+            </div>
+            <div class="color-field">
+              <label>Background 2</label>
+              <input type="color" id="color-bg2" value="#0f0f1a"/>
+            </div>
+            <div class="color-field">
+              <label>Primary Accent</label>
+              <input type="color" id="color-neon" value="#4a9eff"/>
+            </div>
+            <div class="color-field">
+              <label>Secondary Accent</label>
+              <input type="color" id="color-neon2" value="#6c5ce7"/>
+            </div>
+            <div class="color-field">
+              <label>Text</label>
+              <input type="color" id="color-text" value="#e8e8f0"/>
+            </div>
+            <div class="color-field">
+              <label>Text Bright</label>
+              <input type="color" id="color-text-bright" value="#f0f0f8"/>
+            </div>
+            <div class="color-field">
+              <label>Muted</label>
+              <input type="color" id="color-muted" value="#6b6b80"/>
+            </div>
+            <div class="color-field">
+              <label>Surface</label>
+              <input type="color" id="color-surface" value="#1a1a2e"/>
+            </div>
+            <div class="color-field">
+              <label>Border</label>
+              <input type="color" id="color-border" value="#2a2a3e"/>
+            </div>
+            <div class="color-field">
+              <label>Sidebar BG</label>
+              <input type="color" id="color-sidebar" value="#0a0a14"/>
+            </div>
+            <div class="color-field">
+              <label>Header BG</label>
+              <input type="color" id="color-header" value="#0a0a14"/>
+            </div>
+            <div class="color-field">
+              <label>Overlay BG</label>
+              <input type="color" id="color-overlay" value="#0a0a14"/>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn" id="save-theme-btn" onclick="saveCustomTheme()"><i class="fas fa-save"></i> Save Theme</button>
+            <button class="btn secondary" onclick="closeThemeEditor()">Cancel</button>
           </div>
         </div>
-        <div class="theme-name">Classic Dark</div>
-        <div class="theme-desc">purple accent · muted</div>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="theme-preview-live" style="margin-top:16px;padding:16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#000;flex-shrink:0;">A</div>
+        <div>
+          <div style="font-weight:800;color:var(--text-bright);">Preview</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-family:'Space Mono',monospace;">colors update live</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span style="padding:4px 12px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.8rem;">Surface</span>
+        <span style="padding:4px 12px;border-radius:6px;background:var(--neon);color:#000;font-weight:700;font-size:0.8rem;">Primary</span>
+        <span style="padding:4px 12px;border-radius:6px;background:var(--neon2);color:#000;font-weight:700;font-size:0.8rem;">Secondary</span>
+        <span style="padding:4px 12px;border-radius:6px;background:var(--danger);color:#fff;font-weight:700;font-size:0.8rem;">Danger</span>
+        <span style="padding:4px 12px;border-radius:6px;background:var(--yellow);color:#000;font-weight:700;font-size:0.8rem;">Warning</span>
+      </div>
+      <div style="margin-top:8px;padding:8px 12px;border-radius:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.82rem;">
+        This is a preview of your current theme colors.
       </div>
     </div>
   </div>
@@ -649,6 +357,7 @@ const MAX_DISPLAY_NAME_CHANGES = 2;
 
 let currentProfile = null;
 let pendingFile = null;
+let editingThemeId = null;
 
 // ── DISPLAY NAME CHANGE LIMIT ──
 function getDisplayNameChanges() {
@@ -915,24 +624,385 @@ window.updatePassword = async function() {
 // ── CLEAR LOCAL DATA ──
 window.clearLocalData = function() {
   if (confirm('Clear local browser data? Your account and data in Supabase stay safe.')) {
-    const theme = localStorage.getItem('cesc_theme_v2');
+    const theme = localStorage.getItem('cesc_theme');
     localStorage.clear();
-    if (theme) localStorage.setItem('cesc_theme_v2', theme);
+    if (theme) localStorage.setItem('cesc_theme', theme);
     window.showToast('🗑️ local data cleared', 'success');
   }
 };
 
-// ── THEME ──
-window.setTheme = function(name) {
-  window.applyTheme(name);
-  document.querySelectorAll('.theme-card').forEach(c => c.classList.toggle('active', c.dataset.theme === name));
-  window.showToast('theme applied ✅', 'success');
+// ── THEME FUNCTIONS ──
+
+// Select preset theme
+window.selectPreset = function(themeId) {
+  const success = window.switchTheme(themeId);
+  if (success) {
+    document.querySelectorAll('.theme-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.theme === themeId);
+    });
+    document.querySelectorAll('.custom-theme-card').forEach(c => {
+      c.classList.remove('active');
+      c.style.borderColor = 'var(--border)';
+    });
+    window.showToast('Theme applied ✅', 'success');
+    renderCustomThemes();
+  }
 };
+
+// Open theme editor for new or edit
+window.openThemeEditor = function(themeId = null) {
+  const modal = document.getElementById('theme-editor-modal');
+  const title = document.getElementById('editor-title');
+  const saveBtn = document.getElementById('save-theme-btn');
+  
+  editingThemeId = themeId;
+  
+  if (themeId) {
+    title.textContent = 'Edit Custom Theme';
+    saveBtn.textContent = 'Update Theme';
+    
+    const customThemes = window.getCustomThemes();
+    const theme = customThemes.find(t => t.id === themeId);
+    if (theme) {
+      document.getElementById('theme-name-input').value = theme.name;
+      document.getElementById('color-bg').value = hexFromRgb(theme.variables['--bg']);
+      document.getElementById('color-bg2').value = hexFromRgb(theme.variables['--bg2']);
+      document.getElementById('color-neon').value = hexFromRgb(theme.variables['--neon']);
+      document.getElementById('color-neon2').value = hexFromRgb(theme.variables['--neon2']);
+      document.getElementById('color-text').value = hexFromRgb(theme.variables['--text']);
+      document.getElementById('color-text-bright').value = hexFromRgb(theme.variables['--text-bright']);
+      document.getElementById('color-muted').value = hexFromRgb(theme.variables['--muted']);
+      document.getElementById('color-surface').value = hexFromRgb(theme.variables['--surface']);
+      document.getElementById('color-border').value = hexFromRgb(theme.variables['--border']);
+      document.getElementById('color-sidebar').value = hexFromRgb(theme.variables['--sidebar-bg']);
+      document.getElementById('color-header').value = hexFromRgb(theme.variables['--header-bg']);
+      document.getElementById('color-overlay').value = hexFromRgb(theme.variables['--overlay-bg']);
+    }
+  } else {
+    title.textContent = 'Create Custom Theme';
+    saveBtn.textContent = 'Save Theme';
+    document.getElementById('theme-name-input').value = '';
+    const defaultTheme = window.THEME_PRESETS.find(t => t.id === 'default');
+    if (defaultTheme) {
+      document.getElementById('color-bg').value = hexFromRgb(defaultTheme.variables['--bg']);
+      document.getElementById('color-bg2').value = hexFromRgb(defaultTheme.variables['--bg2']);
+      document.getElementById('color-neon').value = hexFromRgb(defaultTheme.variables['--neon']);
+      document.getElementById('color-neon2').value = hexFromRgb(defaultTheme.variables['--neon2']);
+      document.getElementById('color-text').value = hexFromRgb(defaultTheme.variables['--text']);
+      document.getElementById('color-text-bright').value = hexFromRgb(defaultTheme.variables['--text-bright']);
+      document.getElementById('color-muted').value = hexFromRgb(defaultTheme.variables['--muted']);
+      document.getElementById('color-surface').value = hexFromRgb(defaultTheme.variables['--surface']);
+      document.getElementById('color-border').value = hexFromRgb(defaultTheme.variables['--border']);
+      document.getElementById('color-sidebar').value = hexFromRgb(defaultTheme.variables['--sidebar-bg']);
+      document.getElementById('color-header').value = hexFromRgb(defaultTheme.variables['--header-bg']);
+      document.getElementById('color-overlay').value = hexFromRgb(defaultTheme.variables['--overlay-bg']);
+    }
+  }
+  
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeThemeEditor = function() {
+  document.getElementById('theme-editor-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  editingThemeId = null;
+};
+
+window.closeThemeEditorOutside = function(event) {
+  if (event.target.id === 'theme-editor-modal') {
+    closeThemeEditor();
+  }
+};
+
+// Save custom theme
+window.saveCustomTheme = function() {
+  const name = document.getElementById('theme-name-input').value.trim();
+  if (!name) {
+    window.showToast('Please enter a theme name', 'error');
+    return;
+  }
+  
+  const variables = {
+    bg: document.getElementById('color-bg').value,
+    bg2: document.getElementById('color-bg2').value,
+    neon: document.getElementById('color-neon').value,
+    neon2: document.getElementById('color-neon2').value,
+    text: document.getElementById('color-text').value,
+    textBright: document.getElementById('color-text-bright').value,
+    muted: document.getElementById('color-muted').value,
+    surface: document.getElementById('color-surface').value,
+    border: document.getElementById('color-border').value,
+    sidebarBg: document.getElementById('color-sidebar').value,
+    headerBg: document.getElementById('color-header').value,
+    overlayBg: document.getElementById('color-overlay').value,
+    neonGlow: hexToRgba(document.getElementById('color-neon').value, 0.3),
+    neonGlow2: hexToRgba(document.getElementById('color-neon2').value, 0.3)
+  };
+  
+  let result;
+  if (editingThemeId) {
+    result = window.updateCustomTheme(editingThemeId, name, variables);
+    if (result) {
+      window.showToast('Theme updated ✅', 'success');
+    }
+  } else {
+    result = window.createCustomTheme(name, variables);
+    if (result) {
+      window.showToast('Theme created ✅', 'success');
+    }
+  }
+  
+  if (result) {
+    window.applyTheme(result);
+    closeThemeEditor();
+    renderCustomThemes();
+    updatePresetActiveState();
+  }
+};
+
+// ── CONFIRM AND DELETE (uses engine's deleteCustomTheme) ──
+window.confirmAndDeleteTheme = function(themeId) {
+  // Create confirm modal
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.zIndex = '1000';
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.background = 'rgba(0,0,0,0.7)';
+  overlay.style.backdropFilter = 'blur(12px)';
+  
+  const card = document.createElement('div');
+  card.className = 'modal-card';
+  card.style.maxWidth = '400px';
+  card.style.width = '92vw';
+  card.style.textAlign = 'center';
+  card.style.padding = '32px 28px 28px';
+  card.style.background = 'var(--bg2)';
+  card.style.border = '1px solid var(--border)';
+  card.style.borderRadius = '20px';
+  card.style.position = 'relative';
+  card.innerHTML = `
+    <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-bright);margin-bottom:8px;">Delete Theme?</h4>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:20px;line-height:1.5;">This action cannot be undone.</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn danger" id="confirm-delete-btn" style="padding:8px 24px;font-size:0.9rem;"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn secondary" id="cancel-delete-btn" style="padding:8px 24px;font-size:0.9rem;">Cancel</button>
+    </div>
+  `;
+  
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  
+  // Handle confirm - calls the ENGINE's deleteCustomTheme
+  document.getElementById('confirm-delete-btn').onclick = function() {
+    overlay.remove();
+    document.body.style.overflow = '';
+    
+    // ✅ Call the ENGINE version (not itself!)
+    const success = window.deleteCustomTheme(themeId);
+    if (success) {
+      renderCustomThemes();
+      updatePresetActiveState();
+      window.showToast('Theme deleted', 'success');
+    }
+  };
+  
+  // Handle cancel
+  document.getElementById('cancel-delete-btn').onclick = function() {
+    overlay.remove();
+    document.body.style.overflow = '';
+  };
+  
+  // Close on outside click
+  overlay.onclick = function(e) {
+    if (e.target === overlay) {
+      overlay.remove();
+      document.body.style.overflow = '';
+    }
+  };
+};
+
+// Render custom themes
+function renderCustomThemes() {
+  const container = document.getElementById('custom-themes-list');
+  const customThemes = window.getCustomThemes();
+  const current = window.getCurrentTheme();
+  
+  document.getElementById('custom-count').textContent = customThemes.length;
+  document.getElementById('custom-max').textContent = window.MAX_CUSTOM_THEMES;
+  document.getElementById('new-theme-btn').disabled = customThemes.length >= window.MAX_CUSTOM_THEMES;
+  
+  if (customThemes.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:0.8rem;font-family:'Space Mono',monospace;border:1px dashed var(--border);border-radius:10px;">
+        <i class="fas fa-paint-brush" style="font-size:1.2rem;display:block;margin-bottom:6px;"></i>
+        No custom themes yet.<br>Click "New" to create one.
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = '';
+  customThemes.forEach(theme => {
+    const card = document.createElement('div');
+    card.className = 'custom-theme-card';
+    if (current && current.id === theme.id) {
+      card.classList.add('active');
+      card.style.borderColor = 'var(--neon)';
+    } else {
+      card.style.borderColor = 'var(--border)';
+    }
+    
+    // Color preview
+    const previewColors = document.createElement('div');
+    previewColors.className = 'custom-theme-preview';
+    previewColors.style.display = 'flex';
+    previewColors.style.gap = '4px';
+    previewColors.style.marginBottom = '8px';
+    
+    const colors = [
+      theme.variables['--bg'],
+      theme.variables['--neon'],
+      theme.variables['--neon2'],
+      theme.variables['--surface'],
+      theme.variables['--text']
+    ];
+    
+    colors.forEach(c => {
+      const dot = document.createElement('span');
+      dot.style.width = '20px';
+      dot.style.height = '20px';
+      dot.style.borderRadius = '4px';
+      dot.style.background = c;
+      dot.style.border = '1px solid var(--border)';
+      previewColors.appendChild(dot);
+    });
+    card.appendChild(previewColors);
+    
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'custom-theme-name';
+    nameDiv.textContent = theme.name;
+    nameDiv.style.fontWeight = '700';
+    nameDiv.style.fontSize = '0.85rem';
+    nameDiv.style.color = 'var(--text-bright)';
+    card.appendChild(nameDiv);
+    
+    const actions = document.createElement('div');
+    actions.className = 'custom-theme-actions';
+    actions.style.display = 'flex';
+    actions.style.gap = '6px';
+    actions.style.marginTop = '8px';
+    actions.style.flexWrap = 'wrap';
+    
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'btn small';
+    applyBtn.textContent = 'Apply';
+    applyBtn.style.padding = '4px 12px';
+    applyBtn.style.fontSize = '0.72rem';
+    applyBtn.onclick = () => {
+      window.applyTheme(theme);
+      renderCustomThemes();
+      updatePresetActiveState();
+      window.showToast('Theme applied ✅', 'success');
+    };
+    actions.appendChild(applyBtn);
+    
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn small secondary';
+    editBtn.textContent = 'Edit';
+    editBtn.style.padding = '4px 12px';
+    editBtn.style.fontSize = '0.72rem';
+    editBtn.onclick = () => window.openThemeEditor(theme.id);
+    actions.appendChild(editBtn);
+    
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn small danger';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.style.padding = '4px 12px';
+    deleteBtn.style.fontSize = '0.72rem';
+    deleteBtn.onclick = () => window.confirmAndDeleteTheme(theme.id);
+    actions.appendChild(deleteBtn);
+    
+    card.appendChild(actions);
+    container.appendChild(card);
+  });
+}
+
+// Update preset active state
+function updatePresetActiveState() {
+  const current = window.getCurrentTheme();
+  if (!current) return;
+  
+  document.querySelectorAll('.theme-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.theme === current.id);
+  });
+}
+
+// Helper: Convert hex to rgba
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Helper: Extract hex from rgb/rgba string
+function hexFromRgb(value) {
+  if (!value) return '#000000';
+  if (value.startsWith('#')) return value;
+  
+  const matches = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (matches) {
+    const r = parseInt(matches[1]);
+    const g = parseInt(matches[2]);
+    const b = parseInt(matches[3]);
+    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+  return '#000000';
+}
+
+// Live preview on color change
+document.querySelectorAll('.color-grid input[type="color"]').forEach(input => {
+  input.addEventListener('input', () => {
+    const root = document.documentElement;
+    const map = {
+      'color-bg': '--bg',
+      'color-bg2': '--bg2',
+      'color-neon': '--neon',
+      'color-neon2': '--neon2',
+      'color-text': '--text',
+      'color-text-bright': '--text-bright',
+      'color-muted': '--muted',
+      'color-surface': '--surface',
+      'color-border': '--border',
+      'color-sidebar': '--sidebar-bg',
+      'color-header': '--header-bg',
+      'color-overlay': '--overlay-bg'
+    };
+    const cssVar = map[input.id];
+    if (cssVar) {
+      root.style.setProperty(cssVar, input.value);
+      if (input.id === 'color-neon') {
+        root.style.setProperty('--neon-glow', hexToRgba(input.value, 0.3));
+      }
+      if (input.id === 'color-neon2') {
+        root.style.setProperty('--neon-glow2', hexToRgba(input.value, 0.3));
+      }
+    }
+  });
+});
 
 // ── INIT ──
 async function init() {
-  // Init theme from shared.js
-  window.initTheme();
+  // Init theme engine
+  if (typeof window.initTheme === 'function') {
+    window.initTheme();
+  }
   
   // Restore sidebar state
   const sidebarOpen = localStorage.getItem('cesc_sidebar_open') === 'true';
@@ -969,11 +1039,34 @@ async function init() {
 
   if (profile.pfp_url) loadPfpImage(profile.pfp_url);
 
+  // Update header avatar with PFP
+  if (profile.pfp_url) {
+    const chipAv = document.getElementById('chip-av');
+    if (chipAv) {
+      const initial = chipAv.querySelector('span');
+      const existingImg = chipAv.querySelector('img');
+      if (existingImg) existingImg.remove();
+      
+      const img = document.createElement('img');
+      img.src = profile.pfp_url;
+      img.onload = () => {
+        img.style.display = 'block';
+        img.classList.add('loaded');
+        if (initial) initial.style.display = 'none';
+      };
+      img.onerror = () => img.remove();
+      chipAv.appendChild(img);
+    }
+  }
+
   updateChangeBadge();
 
   await window.updateLastSeen();
 
   await Promise.all([window.loadNotifCount(), window.loadOnlineCount()]);
+
+  renderCustomThemes();
+  updatePresetActiveState();
 
   setInterval(async () => {
     if (!window.session) return;
