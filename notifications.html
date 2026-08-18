@@ -1,372 +1,510 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8"/>
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CESC Chatbase — Notifications</title>
- <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<title>CESC Hub — Notifications</title>
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
-<script src="theme-loader.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<!-- Load Supabase CDN first -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Load shared.js -->
+<script src="shared.js"></script>
+
 <style>
-  :root {
-    --bg:#0a0a0f; --surface:rgba(255,255,255,0.04); --border:rgba(255,255,255,0.08);
-    --neon:#00f5a0; --neon2:#00c3ff; --text:#e8e8f0; --text-bright:#f0f0f8;
-    --muted:#6b6b80; --sidebar-w:250px; --header-h:62px;
-    --danger:#ff4d6d; --yellow:#f5c400;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden;}
-  .bg-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
-  .bg-canvas::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(0,245,160,0.07) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 80% 80%,rgba(0,195,255,0.07) 0%,transparent 60%);animation:breathe 8s ease-in-out infinite alternate;}
-  @keyframes breathe{0%{opacity:.6;transform:scale(1)}100%{opacity:1;transform:scale(1.04)}}
-  .orb{position:absolute;border-radius:50%;filter:blur(80px);animation:float linear infinite;pointer-events:none;}
-  .orb1{width:300px;height:300px;background:rgba(0,245,160,0.05);top:10%;left:5%;animation-duration:22s;}
-  .orb2{width:200px;height:200px;background:rgba(0,195,255,0.06);top:60%;right:8%;animation-duration:28s;animation-delay:-8s;}
-  @keyframes float{0%{transform:translateY(0) translateX(0)}50%{transform:translateY(-20px) translateX(20px)}100%{transform:translateY(0) translateX(0)}}
+/* ── NOTIFICATIONS PAGE STYLES ── */
 
-  /* SIDEBAR */
-  .sidebar{width:var(--sidebar-w);min-height:100vh;background:rgba(8,8,16,0.92);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:28px 16px;position:fixed;left:0;top:0;bottom:0;z-index:100;backdrop-filter:blur(24px);box-shadow:4px 0 40px rgba(0,0,0,0.4);}
-  .sidebar-logo{font-size:1.2rem;font-weight:800;margin-bottom:36px;padding-left:8px;display:flex;align-items:center;gap:8px;overflow:hidden;}
-  .logo-icon{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:800;color:#000;animation:logo-pulse 3s ease-in-out infinite;flex-shrink:0;}
-  @keyframes logo-pulse{0%,100%{box-shadow:0 0 8px rgba(0,245,160,0.4)}50%{box-shadow:0 0 20px rgba(0,245,160,0.7),0 0 40px rgba(0,195,255,0.3)}}
-  .logo-text{color:var(--text-bright);white-space:nowrap;} .logo-dot{color:var(--neon);}
-  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:0.9rem;font-weight:600;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);margin-bottom:4px;position:relative;overflow:hidden;}
-  .nav-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(0,245,160,0.08);transition:width 0.25s ease;border-radius:10px;}
-  .nav-item:hover{color:var(--text-bright);background:rgba(255,255,255,0.04);transform:translateX(3px);}
-  .nav-item:hover::before{width:100%;}
-  .nav-item.active{color:var(--neon);background:rgba(0,245,160,0.08);border:1px solid rgba(0,245,160,0.2);}
-  .nav-icon{font-size:1.1rem;width:20px;text-align:center;transition:transform 0.2s;}
-  .nav-item:hover .nav-icon{transform:scale(1.2);}
-  .sidebar-bottom{margin-top:auto;padding:10px 14px;font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:6px;}
-  .online-dot-sm{width:6px;height:6px;border-radius:50%;background:var(--neon);animation:pulse-dot 2s infinite;flex-shrink:0;}
-  @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+.notif-list {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.notif-item {
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  background:rgba(255,255,255,0.035);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px 18px;
+  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+  animation:card-enter 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes card-enter {
+  from{opacity:0;transform:translateY(12px) scale(0.98)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.notif-item:hover {
+  border-color:rgba(74,158,255,0.2);
+  transform:translateY(-2px);
+  box-shadow:0 8px 30px rgba(0,0,0,0.25);
+}
+.notif-item.unread {
+  border-color:rgba(74,158,255,0.2);
+  background:rgba(74,158,255,0.04);
+}
+.notif-item.unread::before {
+  content:'';
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:3px;
+  background:linear-gradient(180deg,var(--neon),var(--neon2));
+  border-radius:16px 0 0 16px;
+}
+.notif-av {
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.1rem;
+  font-weight:800;
+  color:#000;
+  flex-shrink:0;
+  overflow:hidden;
+  position:relative;
+}
+.notif-av img {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:none;
+  border-radius:50%;
+}
+.notif-av img.loaded { display:block; }
+.notif-av span { position:relative; z-index:1; }
+.notif-body { flex:1; min-width:0; }
+.notif-text {
+  font-size:0.9rem;
+  line-height:1.5;
+  color:var(--text-bright);
+}
+.notif-text strong { color:var(--neon); }
+.notif-preview {
+  font-size:0.8rem;
+  color:var(--muted);
+  margin-top:4px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.notif-time {
+  font-size:0.68rem;
+  font-family:'Space Mono',monospace;
+  color:var(--muted);
+  margin-top:5px;
+}
+.notif-type-icon {
+  font-size:0.85rem;
+  margin-left:auto;
+  flex-shrink:0;
+  padding-top:2px;
+}
+.unread-dot {
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--neon);
+  box-shadow:0 0 6px var(--neon);
+}
+.empty-notifs {
+  text-align:center;
+  padding:80px 20px;
+  color:var(--muted);
+  font-family:'Space Mono',monospace;
+  font-size:0.85rem;
+}
+.empty-notifs .big {
+  font-size:3rem;
+  margin-bottom:14px;
+  animation:bounce 2s ease-in-out infinite;
+}
+@keyframes bounce {
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
 
-  /* TOP HEADER */
-  .top-header{position:fixed;left:var(--sidebar-w);right:0;top:0;height:var(--header-h);background:rgba(8,8,16,0.88);border-bottom:1px solid var(--border);backdrop-filter:blur(24px);z-index:90;display:flex;align-items:center;justify-content:space-between;padding:0 32px 0 28px;box-shadow:0 4px 24px rgba(0,0,0,0.3);}
-  .header-page-title{font-size:1.05rem;font-weight:800;color:var(--text-bright);}
-  .header-right{display:flex;align-items:center;gap:10px;}
-  .profile-chip{display:flex;align-items:center;gap:9px;padding:5px 12px 5px 5px;border-radius:50px;background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:all 0.2s;position:relative;user-select:none;}
-  .profile-chip:hover{border-color:rgba(0,245,160,0.3);background:rgba(255,255,255,0.06);}
-  .chip-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#000;overflow:hidden;position:relative;flex-shrink:0;}
-  .chip-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:50%;}
-  .chip-av img.loaded{display:block;}
-  .chip-av span{position:relative;z-index:1;}
-  .chip-name{font-size:0.85rem;font-weight:700;color:var(--text-bright);}
-  .chip-arrow{font-size:0.7rem;color:var(--muted);transition:transform 0.25s;}
-  .profile-chip.open .chip-arrow{transform:rotate(180deg);}
-  .profile-dropdown{position:absolute;top:calc(100% + 10px);right:0;width:200px;background:rgba(10,10,22,0.98);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);opacity:0;transform:translateY(-8px) scale(0.97);pointer-events:none;transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);z-index:200;}
-  .profile-dropdown.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}
-  .dropdown-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);}
-  .dropdown-header .d-name{font-size:0.9rem;font-weight:800;color:var(--text-bright);}
-  .dropdown-header .d-sub{font-size:0.7rem;font-family:'Space Mono',monospace;color:var(--muted);margin-top:2px;}
-  .dropdown-item{display:flex;align-items:center;gap:10px;padding:11px 16px;color:var(--text);font-size:0.85rem;font-weight:600;text-decoration:none;cursor:pointer;transition:background 0.15s;background:none;border:none;width:100%;font-family:'Syne',sans-serif;text-align:left;}
-  .dropdown-item:hover{background:rgba(255,255,255,0.06);color:var(--text-bright);}
-  .dropdown-item .di-icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
-  .dropdown-item.logout{color:var(--danger);}
-  .dropdown-item.logout:hover{background:rgba(255,77,109,0.1);}
-  .dropdown-divider{height:1px;background:var(--border);margin:4px 0;}
+.skel-notif {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px 18px;
+  display:flex;
+  gap:14px;
+  align-items:center;
+}
+.skel-av {
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  flex-shrink:0;
+  background:linear-gradient(90deg,var(--surface) 25%,rgba(255,255,255,0.07) 50%,var(--surface) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.4s infinite;
+}
+.skel-line {
+  height:12px;
+  border-radius:6px;
+  background:linear-gradient(90deg,var(--surface) 25%,rgba(255,255,255,0.07) 50%,var(--surface) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.4s infinite;
+}
+.skel-line.short { width:60%; }
+.skel-line.long { width:80%; }
+@keyframes shimmer {
+  0%{background-position:200% 0}
+  100%{background-position:-200% 0}
+}
 
-  /* MAIN */
-  .main{margin-left:var(--sidebar-w);margin-top:var(--header-h);flex:1;padding:32px 40px;position:relative;z-index:1;max-width:720px;}
-  @keyframes slide-in-down{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.mark-all-btn {
+  padding:8px 16px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--muted);
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:0.82rem;
+  cursor:pointer;
+  transition:all 0.2s;
+  flex-shrink:0;
+}
+.mark-all-btn:hover {
+  border-color:rgba(74,158,255,0.4);
+  color:var(--neon);
+}
 
-  /* PAGE HEADER */
-  .page-header{margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:12px;animation:slide-in-down 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
-  .page-header h1{font-size:2rem;font-weight:800;background:linear-gradient(90deg,var(--neon),var(--neon2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-  .page-header p{color:var(--muted);margin-top:4px;font-size:0.82rem;font-family:'Space Mono',monospace;}
-  .mark-all-btn{padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
-  .mark-all-btn:hover{border-color:rgba(0,245,160,0.4);color:var(--neon);}
-
-  /* NOTIFICATION ITEMS */
-  .notif-list{display:flex;flex-direction:column;gap:10px;}
-  .notif-item{
-    display:flex;align-items:flex-start;gap:14px;
-    background:rgba(255,255,255,0.035);border:1px solid var(--border);
-    border-radius:16px;padding:16px 18px;
-    transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-    cursor:pointer;position:relative;overflow:hidden;
-    animation:card-enter 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
-  }
-  @keyframes card-enter{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-  .notif-item:hover{border-color:rgba(0,245,160,0.2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.25);}
-  .notif-item.unread{border-color:rgba(0,245,160,0.2);background:rgba(0,245,160,0.04);}
-  .notif-item.unread::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--neon),var(--neon2));border-radius:16px 0 0 16px;}
-  .notif-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#000;flex-shrink:0;overflow:hidden;position:relative;}
-  .notif-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:50%;}
-  .notif-av img.loaded{display:block;}
-  .notif-av span{position:relative;z-index:1;}
-  .notif-body{flex:1;min-width:0;}
-  .notif-text{font-size:0.9rem;line-height:1.5;color:var(--text-bright);}
-  .notif-text strong{color:var(--neon);}
-  .notif-preview{font-size:0.8rem;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .notif-time{font-size:0.68rem;font-family:'Space Mono',monospace;color:var(--muted);margin-top:5px;}
-  .notif-type-icon{font-size:0.85rem;margin-left:auto;flex-shrink:0;padding-top:2px;}
-  .unread-dot{position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 6px var(--neon);}
-
-  /* empty */
-  .empty-notifs{text-align:center;padding:80px 20px;color:var(--muted);font-family:'Space Mono',monospace;font-size:0.85rem;}
-  .empty-notifs .big{font-size:3rem;margin-bottom:14px;animation:bounce 2s ease-in-out infinite;}
-  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-
-  /* skeleton */
-  .skeleton{background:linear-gradient(90deg,var(--surface) 25%,rgba(255,255,255,0.07) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;}
-  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-  .skel-notif{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px;display:flex;gap:14px;align-items:center;}
-
-  /* toast */
-  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(60px);z-index:999;background:rgba(255,77,109,0.15);border:1px solid rgba(255,77,109,0.4);color:var(--danger);padding:11px 22px;border-radius:50px;font-size:0.85rem;font-weight:700;opacity:0;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;pointer-events:none;backdrop-filter:blur(12px);}
-  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-  .toast.success{background:rgba(0,245,160,0.12);border-color:rgba(0,245,160,0.4);color:var(--neon);}
-
-  /* mobile */
-  .mobile-menu{display:none;position:fixed;top:16px;left:16px;z-index:200;background:rgba(10,10,20,0.9);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:1.2rem;backdrop-filter:blur(12px);}
-  @media(max-width:768px){
-    .sidebar{transform:translateX(-100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);}
-    .sidebar.open{transform:translateX(0);}
-    .top-header{left:0;padding:0 16px;}
-    .main{margin-left:0;padding:20px;}
-    .mobile-menu{display:block;}
-  }
+@media(max-width:768px) {
+  .notif-item { padding:14px 14px; }
+  .notif-av { width:36px; height:36px; font-size:0.9rem; }
+}
+@media(max-width:480px) {
+  .notif-text { font-size:0.82rem; }
+  .notif-preview { font-size:0.72rem; }
+}
 </style>
 </head>
 <body>
-<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div></div>
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
-<div class="mobile-menu" onclick="toggleSidebar()">☰</div>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></div>
 
+<!-- ── SIDEBAR ── -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon">C</div>
-    <span class="logo-text">CESC<span class="logo-dot">.</span>HUB</span>
+    <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+    <span class="logo-text">CESC <span class="logo-dot">Hub</span></span>
   </div>
-  <a href="index.html" class="nav-item"><span class="nav-icon">📰</span> Feed</a>
-  <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span> Chat Room</a>
-  <a href="profiles.html" class="nav-item"><span class="nav-icon">👥</span> Profiles</a>
-  <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
-  <a href="notifications.html" class="nav-item active"><span class="nav-icon">🔔</span> Notifications</a>
+  <div class="nav-label">Main</div>
+  <a href="index.html" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> Feed</a>
+  <a href="chat.html" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> Chat Room</a>
+  <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> Profiles</a>
+  <div class="nav-label">You</div>
+  <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> Settings</a>
+  <a href="notifications.html" class="nav-item active" id="notif-nav">
+    <span class="nav-icon"><i class="fas fa-bell"></i></span> Notifications
+    <span class="nav-badge-count" id="notif-nav-badge">0</span>
+  </a>
   <div class="sidebar-bottom">
     <span class="online-dot-sm"></span>
-    <span id="online-count">...</span> online now
+    <span id="online-count">...</span>&nbsp;online now
   </div>
 </aside>
 
+<!-- ── HEADER ── -->
 <header class="top-header">
-  <div class="header-page-title">Notifications</div>
+  <div>
+    <div class="header-title">Notifications</div>
+    <div class="header-sub" id="header-sub">
+      <span class="header-online-status">
+        <span class="online-pulse-ring">
+          <span class="online-pulse-dot"></span>
+        </span>
+        <span class="online-count-number" id="online-count">...</span>
+        <span class="online-status-text">online now</span>
+      </span>
+    </div>
+  </div>
   <div class="header-right">
-    <div class="profile-chip" id="profile-chip" onclick="toggleDropdown()">
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    <a href="notifications.html" class="hdr-btn" title="Notifications">
+      <i class="fas fa-bell"></i>
+      <span class="notif-badge" id="notif-badge">0</span>
+    </a>
+    <div class="profile-chip" id="profile-chip" onclick="window.toggleDropdown()">
       <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
       <span class="chip-name" id="chip-name">loading</span>
-      <span class="chip-arrow">▾</span>
+      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
       <div class="profile-dropdown" id="profile-dropdown">
-        <div class="dropdown-header">
-          <div class="d-name" id="dd-name">—</div>
-          <div class="d-sub">CESC Chatbase member</div>
+        <div class="dd-header">
+          <div class="dd-name" id="dd-name">—</div>
+          <div class="dd-sub">CESC Hub member</div>
         </div>
-        <a href="profiles.html" class="dropdown-item"><span class="di-icon">👤</span> My Profile</a>
-        <a href="settings.html" class="dropdown-item"><span class="di-icon">⚙️</span> Settings</a>
-        <a href="notifications.html" class="dropdown-item"><span class="di-icon">🔔</span> Notifications</a>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item logout" onclick="logout()"><span class="di-icon">🚪</span> Logout</button>
+        <a href="profiles.html" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
+        <a href="settings.html" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
+        <a href="notifications.html" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
+        <div class="dd-div"></div>
+        <button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
       </div>
     </div>
   </div>
 </header>
 
+<!-- ── MAIN ── -->
 <main class="main">
   <div class="page-header">
     <div>
       <h1>Notifications</h1>
       <p id="notif-subtitle">Loading...</p>
     </div>
-    <button class="mark-all-btn" onclick="markAllRead()">Mark all read</button>
+    <button class="mark-all-btn" onclick="window.markAllRead()">Mark all read</button>
   </div>
+  
   <div class="notif-list" id="notif-list">
     <div class="skel-notif">
-      <div class="skeleton" style="width:44px;height:44px;border-radius:50%;flex-shrink:0"></div>
+      <div class="skel-av"></div>
       <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-        <div class="skeleton" style="height:12px;width:70%"></div>
-        <div class="skeleton" style="height:10px;width:50%"></div>
+        <div class="skel-line long"></div>
+        <div class="skel-line short"></div>
       </div>
     </div>
     <div class="skel-notif">
-      <div class="skeleton" style="width:44px;height:44px;border-radius:50%;flex-shrink:0"></div>
+      <div class="skel-av"></div>
       <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-        <div class="skeleton" style="height:12px;width:60%"></div>
-        <div class="skeleton" style="height:10px;width:40%"></div>
+        <div class="skel-line long"></div>
+        <div class="skel-line short"></div>
       </div>
     </div>
   </div>
 </main>
 
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-const SUPABASE_URL = 'https://wojbqixkarjlvbgublsg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvamJxaXhrYXJqbHZiZ3VibHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjkxNDYsImV4cCI6MjEwMTY0NTE0Nn0.A2VpByFPSIi9bS8EkAh7VPsgjuiYFfgAyuwIz-sCcas';
-const supabase=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true}});
-
-let session=null, currentUser=null;
-
-function timeAgo(ts) {
-  const d=Math.floor((Date.now()-new Date(ts))/1000);
-  if(d<60) return 'just now';
-  if(d<3600) return Math.floor(d/60)+'m ago';
-  if(d<86400) return Math.floor(d/3600)+'h ago';
-  return Math.floor(d/86400)+'d ago';
-}
-function showToast(msg,type='error') {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className=`toast ${type} show`;
-  setTimeout(()=>t.classList.remove('show'),2800);
-}
+<script>
+// ── NOTIFICATIONS PAGE ──
+// Use window.session, window.currentUser, window.supabaseClient from shared.js
 
 function notifLabel(type) {
-  if(type==='post_comment') return 'commented on your post';
-  if(type==='chat_reply')   return 'replied to your message';
+  if(type === 'post_comment') return 'commented on your post';
+  if(type === 'chat_reply') return 'replied to your message';
+  if(type === 'like') return 'liked your post';
   return 'interacted with you';
 }
+
 function notifIcon(type) {
-  if(type==='post_comment') return '💬';
-  if(type==='chat_reply')   return '↩';
+  if(type === 'post_comment') return '💬';
+  if(type === 'chat_reply') return '↩';
+  if(type === 'like') return '❤️';
   return '🔔';
 }
+
 function notifLink(type, refId) {
-  if(type==='post_comment') return 'index.html';
-  if(type==='chat_reply')   return 'chat.html';
+  if(type === 'post_comment') return 'index.html';
+  if(type === 'like') return 'index.html';
+  if(type === 'chat_reply') return 'chat.html';
   return 'index.html';
 }
 
 async function loadNotifs() {
-  const { data:notifs, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('recipient_id',session.user.id)
-    .order('created_at',{ascending:false})
-    .limit(50);
+  if (!window.session) return;
+  
+  try {
+    const { data: notifs, error } = await window.supabaseClient
+      .from('notifications')
+      .select('*')
+      .eq('recipient_id', window.session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-  const list=document.getElementById('notif-list');
-  const subtitle=document.getElementById('notif-subtitle');
+    const list = document.getElementById('notif-list');
+    const subtitle = document.getElementById('notif-subtitle');
 
-  if(error) { list.innerHTML='<div style="color:var(--muted);padding:20px;font-family:Space Mono">failed to load</div>'; return; }
-
-  const unread=(notifs||[]).filter(n=>!n.read).length;
-  subtitle.textContent=`${(notifs||[]).length} total · ${unread} unread`;
-
-  if(!notifs||notifs.length===0) {
-    list.innerHTML=`<div class="empty-notifs"><div class="big">🔔</div><div>No notifications yet.<br>They'll show up here when someone comments on your posts or replies to your messages.</div></div>`;
-    return;
-  }
-
-  list.innerHTML='';
-  notifs.forEach((n,i)=>{
-    const item=document.createElement('div');
-    item.className='notif-item'+(n.read?'':' unread');
-    item.style.animationDelay=(i*0.04)+'s';
-    if(!n.read) {
-      const dot=document.createElement('div');
-      dot.className='unread-dot';
-      item.appendChild(dot);
+    if (error) {
+      console.error('Error loading notifications:', error);
+      list.innerHTML = '<div style="color:var(--muted);padding:20px;font-family:Space Mono">failed to load</div>';
+      return;
     }
-    // avatar
-    const av=document.createElement('div');
-    av.className='notif-av';
-    const initial=document.createElement('span');
-    initial.textContent=(n.actor_username?.[0]||'?').toUpperCase();
-    av.appendChild(initial);
-    if(n.actor_pfp_url) {
-      const img=document.createElement('img');
-      img.src=n.actor_pfp_url;
-      img.onload=()=>{ img.classList.add('loaded'); initial.style.display='none'; };
-      img.onerror=()=>img.remove();
-      av.appendChild(img);
+
+    const unread = (notifs || []).filter(n => !n.read).length;
+    subtitle.textContent = `${(notifs || []).length} total · ${unread} unread`;
+
+    // Update badge
+    const badge = document.getElementById('notif-badge');
+    const navBadge = document.getElementById('notif-nav-badge');
+    if (unread > 0) {
+      const label = unread > 99 ? '99+' : unread;
+      if (badge) { badge.textContent = label; badge.classList.add('show'); }
+      if (navBadge) { navBadge.textContent = label; navBadge.classList.add('show'); }
+    } else {
+      if (badge) badge.classList.remove('show');
+      if (navBadge) navBadge.classList.remove('show');
     }
-    item.appendChild(av);
-    // body
-    const body=document.createElement('div');
-    body.className='notif-body';
-    body.innerHTML=`
-      <div class="notif-text"><strong>${n.actor_username}</strong> ${notifLabel(n.type)}</div>
-      ${n.preview?`<div class="notif-preview">"${n.preview}"</div>`:''}
-      <div class="notif-time">${timeAgo(n.created_at)}</div>`;
-    item.appendChild(body);
-    // icon
-    const iconEl=document.createElement('div');
-    iconEl.className='notif-type-icon';
-    iconEl.textContent=notifIcon(n.type);
-    item.appendChild(iconEl);
-    // click — mark read + navigate
-    item.onclick=async()=>{
-      if(!n.read) {
-        await supabase.from('notifications').update({read:true}).eq('id',n.id);
-        item.classList.remove('unread');
-        item.querySelector('.unread-dot')?.remove();
+
+    if (!notifs || notifs.length === 0) {
+      list.innerHTML = `
+        <div class="empty-notifs">
+          <div class="big">🔔</div>
+          <div>No notifications yet.<br>They'll show up here when someone comments on your posts or replies to your messages.</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = '';
+    notifs.forEach((n, i) => {
+      const item = document.createElement('div');
+      item.className = 'notif-item' + (n.read ? '' : ' unread');
+      item.style.animationDelay = (i * 0.04) + 's';
+      
+      if (!n.read) {
+        const dot = document.createElement('div');
+        dot.className = 'unread-dot';
+        item.appendChild(dot);
       }
-      window.location.href=notifLink(n.type,n.ref_id);
-    };
-    list.appendChild(item);
-  });
+      
+      // Avatar
+      const av = document.createElement('div');
+      av.className = 'notif-av';
+      const initial = document.createElement('span');
+      initial.textContent = (n.actor_username?.[0] || '?').toUpperCase();
+      av.appendChild(initial);
+      
+      // Use display name if available for avatar
+      const displayName = n.actor_display_name || n.actor_username;
+      
+      if (n.actor_pfp_url || window.pfpCache?.[n.actor_username]) {
+        const img = document.createElement('img');
+        img.src = n.actor_pfp_url || window.pfpCache?.[n.actor_username];
+        img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
+        img.onerror = () => img.remove();
+        av.appendChild(img);
+      }
+      item.appendChild(av);
+      
+      // Body
+      const body = document.createElement('div');
+      body.className = 'notif-body';
+      body.innerHTML = `
+        <div class="notif-text"><strong>${window.escapeHTML(displayName)}</strong> ${notifLabel(n.type)}</div>
+        ${n.preview ? `<div class="notif-preview">"${window.escapeHTML(n.preview)}"</div>` : ''}
+        <div class="notif-time">${window.timeAgo(n.created_at)}</div>`;
+      item.appendChild(body);
+      
+      // Icon
+      const iconEl = document.createElement('div');
+      iconEl.className = 'notif-type-icon';
+      iconEl.textContent = notifIcon(n.type);
+      item.appendChild(iconEl);
+      
+      // Click — mark read + navigate
+      item.onclick = async () => {
+        if (!n.read) {
+          await window.supabaseClient.from('notifications').update({ read: true }).eq('id', n.id);
+          item.classList.remove('unread');
+          item.querySelector('.unread-dot')?.remove();
+        }
+        window.location.href = notifLink(n.type, n.ref_id);
+      };
+      list.appendChild(item);
+    });
+  } catch (e) {
+    console.error('Error loading notifications:', e);
+  }
 }
 
 window.markAllRead = async function() {
-  await supabase.from('notifications').update({read:true}).eq('recipient_id',session.user.id).eq('read',false);
-  document.querySelectorAll('.notif-item.unread').forEach(el=>{
-    el.classList.remove('unread');
-    el.querySelector('.unread-dot')?.remove();
-  });
-  document.getElementById('notif-subtitle').textContent=document.querySelectorAll('.notif-item').length+' total · 0 unread';
-  showToast('all caught up ✅','success');
-};
-
-async function loadOnlineCount() {
-  const cutoff=new Date(Date.now()-2*60*1000).toISOString();
-  const { count } = await supabase.from('profiles').select('*',{count:'exact',head:true}).gte('last_seen',cutoff);
-  const el=document.getElementById('online-count');
-  if(el) el.textContent=count??'?';
-}
-
-window.toggleDropdown=function(){
-  const chip=document.getElementById('profile-chip');
-  const dd=document.getElementById('profile-dropdown');
-  const open=dd.classList.contains('open');
-  dd.classList.toggle('open',!open); chip.classList.toggle('open',!open);
-};
-document.addEventListener('click',e=>{
-  const chip=document.getElementById('profile-chip');
-  if(chip&&!chip.contains(e.target)){ chip.classList.remove('open'); document.getElementById('profile-dropdown')?.classList.remove('open'); }
-});
-window.logout=async function(){
-  await supabase.auth.signOut();
-  window.location.href='login.html';
-};
-
-async function init() {
-  const { data } = await supabase.auth.getSession();
-  session=data.session;
-  if(!session){window.location.href='login.html';return;}
-  const { data:profile } = await supabase.from('profiles').select('username,pfp_url').eq('id',session.user.id).single();
-  currentUser=profile;
-  const uname=profile?.username||'you';
-  document.getElementById('chip-name').textContent=uname;
-  document.getElementById('chip-initial').textContent=uname[0].toUpperCase();
-  document.getElementById('dd-name').textContent=uname;
-  if(profile?.pfp_url){
-    const av=document.getElementById('chip-av');
-    const init=av.querySelector('span');
-    const img=document.createElement('img');
-    img.src=profile.pfp_url;
-    img.onload=()=>{img.classList.add('loaded');init.style.display='none';};
-    img.onerror=()=>img.remove();
-    av.appendChild(img);
+  if (!window.session) return;
+  
+  try {
+    await window.supabaseClient
+      .from('notifications')
+      .update({ read: true })
+      .eq('recipient_id', window.session.user.id)
+      .eq('read', false);
+    
+    document.querySelectorAll('.notif-item.unread').forEach(el => {
+      el.classList.remove('unread');
+      el.querySelector('.unread-dot')?.remove();
+    });
+    
+    const total = document.querySelectorAll('.notif-item').length;
+    document.getElementById('notif-subtitle').textContent = total + ' total · 0 unread';
+    
+    // Update badges
+    const badge = document.getElementById('notif-badge');
+    const navBadge = document.getElementById('notif-nav-badge');
+    if (badge) badge.classList.remove('show');
+    if (navBadge) navBadge.classList.remove('show');
+    
+    window.showToast('all caught up ✅', 'success');
+  } catch (e) {
+    console.error('Error marking all read:', e);
+    window.showToast('Failed to mark all read', 'error');
   }
-  await supabase.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',session.user.id);
-  await Promise.all([loadNotifs(), loadOnlineCount()]);
-  setInterval(async()=>{
-    if(!session) return;
-    await supabase.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',session.user.id);
-    loadOnlineCount();
-  },15000);
+};
+
+// ── INIT ──
+async function init() {
+  if (typeof window.initTheme !== 'function') {
+    console.log('⏳ Waiting for shared.js...');
+    setTimeout(init, 200);
+    return;
+  }
+  
+  console.log('✅ shared.js loaded');
+  window.initTheme();
+  
+  const sidebarOpen = localStorage.getItem('cesc_sidebar_open') === 'true';
+  if (sidebarOpen && window.innerWidth <= 768) {
+    document.getElementById('sidebar')?.classList.add('open');
+    document.getElementById('sidebar-overlay')?.classList.add('show');
+  }
+  
+  const sess = await window.initAuth();
+  if (!sess) return;
+  
+  console.log('✅ Session loaded:', sess.user.email);
+  
+  const profile = await window.loadUserProfile();
+  if (profile) {
+    window.updateUserUI(profile);
+    await window.loadPfpCache();
+  }
+  
+  await window.updateLastSeen();
+  
+  await Promise.all([
+    loadNotifs(),
+    window.loadOnlineCount(),
+    window.loadNotifCount()
+  ]);
+  
+  setInterval(async () => {
+    if (!window.session) return;
+    await window.updateLastSeen();
+    await Promise.all([window.loadOnlineCount(), window.loadNotifCount()]);
+  }, 15000);
 }
-window.toggleSidebar=function(){document.getElementById('sidebar').classList.toggle('open');};
-init();
+
+// ── START ──
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+} else {
+  setTimeout(init, 100);
+}
 </script>
 </body>
 </html>
