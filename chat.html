@@ -15,7 +15,7 @@
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/chat.css"/>
 <script src="/js/theme-presets.js"></script>
-  <script src="/js/theme-engine.js"></script>
+<script src="/js/theme-engine.js"></script>
 </head>
 <body>
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
@@ -173,6 +173,11 @@ let pendingImageFile = null;
 let isUploading = false;
 let currentDisplayName = '';
 
+// ── NOTIFICATION SETUP ──
+let notificationPermission = false;
+let lastNotificationTime = 0;
+const NOTIFICATION_COOLDOWN = 3000; // 3 seconds between notifications
+
 // ── SIDEBAR TOGGLE ──
 window.toggleSidebar = function() {
   const sidebar = document.getElementById('sidebar');
@@ -202,6 +207,101 @@ window.toggleTheme = function() {
     }
   }
 };
+
+// ── NOTIFICATION FUNCTIONS ──
+function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    console.log('This browser does not support notifications');
+    return;
+  }
+  
+  if (Notification.permission === 'granted') {
+    notificationPermission = true;
+    console.log('🔔 Notification permission already granted');
+  } else if (Notification.permission === 'denied') {
+    console.log('🔔 Notification permission denied');
+  } else {
+    Notification.requestPermission().then(permission => {
+      notificationPermission = permission === 'granted';
+      if (notificationPermission) {
+        console.log('🔔 Notification permission granted!');
+        // Send a test notification
+        new Notification('🔔 CESC Hub', {
+          body: 'Chat notifications are now enabled!',
+          icon: 'https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png'
+        });
+      } else {
+        console.log('🔔 Notification permission denied');
+      }
+    });
+  }
+}
+
+function sendChatNotification(sender, content, imageUrl) {
+  // Don't send notification if user is currently viewing the chat (page is visible)
+  if (!document.hidden) {
+    console.log('📱 Page visible, skipping notification');
+    return;
+  }
+  
+  // Don't send notifications for own messages
+  if (sender === (window.currentUser?.username || username)) {
+    return;
+  }
+  
+  // Cooldown to prevent spam
+  const now = Date.now();
+  if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
+    return;
+  }
+  
+  if (!notificationPermission || Notification.permission !== 'granted') {
+    // Try to request permission if not granted
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    return;
+  }
+  
+  lastNotificationTime = now;
+  
+  // Truncate content for notification
+  let displayContent = content || '📷 Image';
+  if (content && content.length > 60) {
+    displayContent = content.slice(0, 60) + '...';
+  }
+  
+  if (imageUrl && !content) {
+    displayContent = '📷 Sent an image';
+  }
+  
+  try {
+    const notification = new Notification(`💬 ${sender}`, {
+      body: displayContent,
+      icon: 'https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png',
+      tag: 'chat-message',
+      requireInteraction: false,
+      silent: false
+    });
+    
+    // Click on notification focuses the chat
+    notification.onclick = function() {
+      window.focus();
+      notification.close();
+    };
+    
+    // Auto-close after 8 seconds
+    setTimeout(() => {
+      if (notification && !notification.closed) {
+        notification.close();
+      }
+    }, 8000);
+    
+    console.log(`🔔 Notification sent for message from ${sender}`);
+  } catch (e) {
+    console.error('Failed to send notification:', e);
+  }
+}
 
 // ── EMOJI PICKER ──
 function initEmojiPicker() {
@@ -254,7 +354,6 @@ window.handleImageUpload = function(e) {
     preview.src = ev.target.result;
     size.textContent = (file.size / 1024).toFixed(1) + ' KB';
     wrap.classList.add('show');
-    // Hide the edit label if showing
     document.getElementById('edit-image-label').style.display = 'none';
   };
   reader.readAsDataURL(file);
@@ -340,6 +439,9 @@ async function init() {
   
   console.log('✅ shared.js loaded');
   window.initTheme();
+  
+  // Request notification permission on init
+  requestNotificationPermission();
   
   const sidebarOpen = localStorage.getItem('cesc_sidebar_open') === 'true';
   if (sidebarOpen && window.innerWidth <= 768) {
@@ -557,11 +659,22 @@ async function loadMessages() {
 function setupRealtime() {
   window.supabaseClient.channel('cesc-messages')
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload => {
-      if (!window.pfpCache?.[payload.new.username]) {
-        window.supabaseClient.from('profiles').select('pfp_url').eq('username', payload.new.username).single()
-          .then(({ data }) => { if (data?.pfp_url) window.pfpCache[payload.new.username] = data.pfp_url; });
+      const newMsg = payload.new;
+      
+      // Send notification for new message (if not own and page hidden)
+      if (newMsg.username && newMsg.username !== username) {
+        sendChatNotification(
+          newMsg.display_name || newMsg.username,
+          newMsg.content || '',
+          newMsg.image_url || null
+        );
       }
-      appendMessage(payload.new);
+      
+      if (!window.pfpCache?.[newMsg.username]) {
+        window.supabaseClient.from('profiles').select('pfp_url').eq('username', newMsg.username).single()
+          .then(({ data }) => { if (data?.pfp_url) window.pfpCache[newMsg.username] = data.pfp_url; });
+      }
+      appendMessage(newMsg);
     })
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'messages' }, payload => {
       const msg = payload.new;
@@ -702,7 +815,6 @@ window.startEditMode = function(id) {
   
   document.getElementById('input-hint').textContent = 'edit message · esc to cancel';
   
-  // Show image in preview if exists
   if (editingImageUrl) {
     const preview = document.getElementById('image-preview');
     const wrap = document.getElementById('image-preview-wrap');
@@ -739,7 +851,6 @@ window.cancelEditMode = function() {
   
   document.getElementById('input-hint').textContent = 'enter to send · shift+enter for new line';
   
-  // Remove image preview
   window.removeImage();
 };
 
@@ -762,7 +873,6 @@ async function saveEdit() {
   
   let image_url = editingImageUrl;
   
-  // If user uploaded a new image, replace the old one
   if (pendingImageFile) {
     const ext = pendingImageFile.name.split('.').pop();
     const path = `${window.session.user.id}/${Date.now()}_chat.${ext}`;
@@ -784,12 +894,10 @@ async function saveEdit() {
     edited: true
   };
   
-  // Only update image_url if it changed
   if (image_url !== editingImageUrl || pendingImageFile) {
     updateData.image_url = image_url;
   }
   
-  // If user removed the image (by clicking X), set image_url to null
   if (!document.getElementById('image-preview-wrap').classList.contains('show') && !editingImageUrl) {
     updateData.image_url = null;
   }
