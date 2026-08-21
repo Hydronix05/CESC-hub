@@ -14,8 +14,8 @@
 <!-- Load shared.js -->
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/notifications.css"/>
- <script src="/js/theme-presets.js"></script>
-  <script src="/js/theme-engine.js"></script>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
 </head>
 <body>
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
@@ -116,12 +116,28 @@
 // ── NOTIFICATIONS PAGE ──
 // Use window.session, window.currentUser, window.supabaseClient from shared.js
 
+// ── NOTIF LINK HELPER ──
+function notifLink(type, refId) {
+  if (!refId) return '#';
+  if (type === 'post_comment' || type === 'like') {
+    return `index.html?post=${refId}`;
+  }
+  if (type === 'chat_reply') {
+    return `chat.html?msg=${refId}`;
+  }
+  return '#';
+}
+
+// ── NOTIF LABEL ──
 function notifLabel(type) {
   if(type === 'post_comment') return 'commented on your post';
   if(type === 'chat_reply') return 'replied to your message';
   if(type === 'like') return 'liked your post';
+  if(type === 'follow') return 'started following you';
   return 'interacted with you';
 }
+
+// ── NOTIF ICON ──
 function notifIcon(type) {
   if(type === 'post_comment') return '<i class="fas fa-comment" style="color:var(--neon);"></i>';
   if(type === 'chat_reply') return '<i class="fas fa-reply" style="color:var(--neon2);"></i>';
@@ -130,6 +146,7 @@ function notifIcon(type) {
   return '<i class="fas fa-bell" style="color:var(--muted);"></i>';
 }
 
+// ── LOAD NOTIFICATIONS ──
 async function loadNotifs() {
   if (!window.session) return;
   
@@ -234,6 +251,8 @@ async function loadNotifs() {
     console.error('Error loading notifications:', e);
   }
 }
+
+// ── MARK ALL READ ──
 window.markAllRead = async function() {
   if (!window.session) return;
   

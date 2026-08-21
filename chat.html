@@ -176,7 +176,12 @@ let currentDisplayName = '';
 // ── NOTIFICATION SETUP ──
 let notificationPermission = false;
 let lastNotificationTime = 0;
-const NOTIFICATION_COOLDOWN = 3000; // 3 seconds between notifications
+const NOTIFICATION_COOLDOWN = 3000;
+let pendingNotificationCount = 0;
+let pendingNotificationSender = null;
+let notificationTimeout = null;
+let unreadCount = 0;
+let isPageVisible = true;
 
 // ── SIDEBAR TOGGLE ──
 window.toggleSidebar = function() {
@@ -191,22 +196,56 @@ window.toggleSidebar = function() {
   localStorage.setItem('cesc_sidebar_open', isOpen ? 'true' : 'false');
 };
 
-// ── THEME TOGGLE ──
-window.toggleTheme = function() {
-  if (typeof window.toggleTheme === 'function' && window.toggleTheme !== arguments.callee) {
-    window.toggleTheme();
-  } else {
-    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('cesc_theme_v2', next);
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-      const icon = btn.querySelector('i');
-      if (icon) icon.className = next === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+// ── NOTIFICATION SOUND ──
+function playNotificationSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.frequency.value = 880;
+    oscillator.type = 'sine';
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.2);
+  } catch (e) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    } catch (err) {
+      console.log('🔇 Sound not available');
     }
   }
-};
+}
+
+// ── BROWSER TAB BADGE COUNTER ──
+function updateBadgeCounter() {
+  if (document.hidden) {
+    if (unreadCount > 0) {
+      const label = unreadCount > 99 ? '99+' : unreadCount;
+      document.title = `(${label}) CESC Hub — Chat`;
+      if ('setAppBadge' in navigator) {
+        navigator.setAppBadge(unreadCount).catch(() => {});
+      }
+    } else {
+      document.title = 'CESC Hub — Chat';
+      if ('clearAppBadge' in navigator) {
+        navigator.clearAppBadge().catch(() => {});
+      }
+    }
+  }
+}
 
 // ── NOTIFICATION FUNCTIONS ──
 function requestNotificationPermission() {
@@ -225,7 +264,6 @@ function requestNotificationPermission() {
       notificationPermission = permission === 'granted';
       if (notificationPermission) {
         console.log('🔔 Notification permission granted!');
-        // Send a test notification
         new Notification('🔔 CESC Hub', {
           body: 'Chat notifications are now enabled!',
           icon: 'https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png'
@@ -237,40 +275,129 @@ function requestNotificationPermission() {
   }
 }
 
+function sendGroupedNotification(sender, count) {
+  if (!notificationPermission || Notification.permission !== 'granted') return;
+  
+  try {
+    const message = count > 1 
+      ? `${count} new messages from ${sender} and others`
+      : `New message from ${sender}`;
+    
+    const notification = new Notification(`💬 ${count > 1 ? 'Multiple messages' : sender}`, {
+      body: message,
+      icon: 'https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png',
+      tag: 'chat-group',
+      requireInteraction: false,
+      silent: false
+    });
+    
+    notification.onclick = function() {
+      window.focus();
+      notification.close();
+    };
+    
+    setTimeout(() => {
+      if (notification && !notification.closed) {
+        notification.close();
+      }
+    }, 8000);
+    
+    console.log(`🔔 Group notification: ${count} messages from ${sender}`);
+  } catch (e) {
+    console.error('Failed to send grouped notification:', e);
+  }
+}
+
+function checkForMentions(content, sender) {
+  if (!content || !username) return false;
+  const mentionPattern = new RegExp(`@${username}\\b`, 'i');
+  const isMentioned = mentionPattern.test(content);
+  
+  if (isMentioned) {
+    console.log(`🔔 You were mentioned by ${sender}!`);
+    playNotificationSound();
+    if (notificationPermission && Notification.permission === 'granted') {
+      try {
+        const notification = new Notification(`🔔 ${sender} mentioned you!`, {
+          body: content.length > 50 ? content.slice(0, 50) + '...' : content,
+          icon: 'https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png',
+          tag: 'mention-' + Date.now(),
+          requireInteraction: true
+        });
+        notification.onclick = function() {
+          window.focus();
+          notification.close();
+        };
+      } catch (e) {
+        console.error('Mention notification failed:', e);
+      }
+    }
+  }
+  return isMentioned;
+}
+
 function sendChatNotification(sender, content, imageUrl) {
-  // Don't send notification if user is currently viewing the chat (page is visible)
   if (!document.hidden) {
     console.log('📱 Page visible, skipping notification');
     return;
   }
   
-  // Don't send notifications for own messages
   if (sender === (window.currentUser?.username || username)) {
     return;
   }
   
-  // Cooldown to prevent spam
-  const now = Date.now();
-  if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
+  if (checkForMentions(content, sender)) {
+    playNotificationSound();
+    unreadCount++;
+    updateBadgeCounter();
     return;
   }
   
+  const now = Date.now();
+  
+  if (now - lastNotificationTime > 10000 || (pendingNotificationSender && pendingNotificationSender !== sender)) {
+    if (pendingNotificationCount > 0 && pendingNotificationSender) {
+      sendGroupedNotification(pendingNotificationSender, pendingNotificationCount);
+      playNotificationSound();
+    }
+    pendingNotificationCount = 0;
+    pendingNotificationSender = null;
+  }
+  
+  if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
+    pendingNotificationCount++;
+    if (!pendingNotificationSender) {
+      pendingNotificationSender = sender;
+    }
+    if (notificationTimeout) {
+      clearTimeout(notificationTimeout);
+    }
+    notificationTimeout = setTimeout(() => {
+      if (pendingNotificationCount > 0 && pendingNotificationSender) {
+        sendGroupedNotification(pendingNotificationSender, pendingNotificationCount);
+        playNotificationSound();
+        pendingNotificationCount = 0;
+        pendingNotificationSender = null;
+      }
+    }, 3000);
+    unreadCount++;
+    updateBadgeCounter();
+    return;
+  }
+  
+  lastNotificationTime = now;
+  
   if (!notificationPermission || Notification.permission !== 'granted') {
-    // Try to request permission if not granted
     if (Notification.permission === 'default') {
       Notification.requestPermission();
     }
     return;
   }
   
-  lastNotificationTime = now;
-  
-  // Truncate content for notification
   let displayContent = content || '📷 Image';
   if (content && content.length > 60) {
     displayContent = content.slice(0, 60) + '...';
   }
-  
   if (imageUrl && !content) {
     displayContent = '📷 Sent an image';
   }
@@ -279,18 +406,16 @@ function sendChatNotification(sender, content, imageUrl) {
     const notification = new Notification(`💬 ${sender}`, {
       body: displayContent,
       icon: 'https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png',
-      tag: 'chat-message',
+      tag: 'chat-message-' + Date.now(),
       requireInteraction: false,
       silent: false
     });
     
-    // Click on notification focuses the chat
     notification.onclick = function() {
       window.focus();
       notification.close();
     };
     
-    // Auto-close after 8 seconds
     setTimeout(() => {
       if (notification && !notification.closed) {
         notification.close();
@@ -298,6 +423,8 @@ function sendChatNotification(sender, content, imageUrl) {
     }, 8000);
     
     console.log(`🔔 Notification sent for message from ${sender}`);
+    unreadCount++;
+    updateBadgeCounter();
   } catch (e) {
     console.error('Failed to send notification:', e);
   }
@@ -440,8 +567,18 @@ async function init() {
   console.log('✅ shared.js loaded');
   window.initTheme();
   
-  // Request notification permission on init
   requestNotificationPermission();
+  
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    if (isPageVisible) {
+      unreadCount = 0;
+      document.title = 'CESC Hub — Chat';
+      if ('clearAppBadge' in navigator) {
+        navigator.clearAppBadge().catch(() => {});
+      }
+    }
+  });
   
   const sidebarOpen = localStorage.getItem('cesc_sidebar_open') === 'true';
   if (sidebarOpen && window.innerWidth <= 768) {
@@ -460,8 +597,16 @@ async function init() {
     .eq('id', window.session.user.id)
     .single();
   
-  const displayName = profile?.display_name || profile?.username || 'user';
-  const rawUsername = profile?.username || 'user';
+  // ✅ FIX: Update window.currentUser with the profile data
+  window.currentUser = {
+    ...window.currentUser,
+    username: profile?.username,
+    display_name: profile?.display_name || profile?.username,
+    pfp_url: profile?.pfp_url
+  };
+  
+  const displayName = window.currentUser.display_name;
+  const rawUsername = window.currentUser.username;
   
   username = rawUsername;
   currentDisplayName = displayName;
@@ -514,6 +659,9 @@ function buildMessageGroup(msg, isContinued) {
   const isOwn = msg.username === (window.currentUser?.username || username);
   const canEdit = isOwn && canEditMessage(msg.created_at);
 
+  const isMentioned = msg.content && username && 
+    new RegExp(`@${username}\\b`, 'i').test(msg.content) && !isOwn;
+
   const actions = document.createElement('div');
   actions.className = 'msg-actions';
   actions.innerHTML = `
@@ -553,6 +701,7 @@ function buildMessageGroup(msg, isContinued) {
       ${replyHTML}
       <div class="msg-header">
         <span class="msg-username ${displayName.toLowerCase()}">${window.escapeHTML(displayName)}</span>
+        ${isMentioned ? '<span class="mention-badge">@you</span>' : ''}
         <span class="msg-time">${formatTime(msg.created_at)}</span>
         ${msg.edited ? '<span class="msg-edited">(edited)</span>' : ''}
       </div>
@@ -661,8 +810,10 @@ function setupRealtime() {
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload => {
       const newMsg = payload.new;
       
-      // Send notification for new message (if not own and page hidden)
       if (newMsg.username && newMsg.username !== username) {
+        if (!document.hidden) {
+          playNotificationSound();
+        }
         sendChatNotification(
           newMsg.display_name || newMsg.username,
           newMsg.content || '',
@@ -748,6 +899,7 @@ async function sendMessage(text, btn) {
     document.getElementById('image-preview-wrap').classList.remove('show');
   }
 
+  // ✅ Now this will get the correct display_name from window.currentUser
   const displayName = window.currentUser?.display_name || window.currentUser?.username || username;
 
   const payload = {

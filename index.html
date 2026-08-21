@@ -239,6 +239,19 @@ async function init() {
     window.loadOnlineCount(),
     window.loadNotifCount()
   ]);
+
+  // When page loads, check URL params
+const params = new URLSearchParams(window.location.search);
+const postId = params.get('post');
+if (postId) {
+  // Scroll to that post and highlight it
+  const postEl = document.querySelector(`[data-id="${postId}"]`);
+  if (postEl) {
+    postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    postEl.style.borderColor = 'var(--neon)';
+    setTimeout(() => postEl.style.borderColor = '', 3000);
+  }
+}
   
   setupInfiniteScroll();
   

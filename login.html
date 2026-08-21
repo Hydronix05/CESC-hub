@@ -8,14 +8,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
+<link rel="stylesheet" href="/css/pages/login.css"/>
 
 <!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <!-- Load shared.js -->
 <script src="shared.js"></script>
-<link rel="stylesheet" href="/css/pages/login.css"/>
- <script src="/js/theme-presets.js"></script>
-  <script src="/js/theme-engine.js"></script>
+<!-- Load theme engine BEFORE the module script -->
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
 </head>
 <body>
 
@@ -84,6 +85,25 @@
     </span>
   </div>
 </div>
+
+<script>
+// ── INIT THEME FIRST ──
+// This runs before the module script
+(function() {
+  if (typeof window.initTheme === 'function') {
+    window.initTheme();
+    console.log('✅ Theme initialized on login page');
+  } else {
+    console.log('⏳ Waiting for theme engine...');
+    setTimeout(() => {
+      if (typeof window.initTheme === 'function') {
+        window.initTheme();
+        console.log('✅ Theme initialized on login page (delayed)');
+      }
+    }, 200);
+  }
+})();
+</script>
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
