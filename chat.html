@@ -20,46 +20,29 @@
 <body>
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
+
+<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+
+<!-- ── MOBILE MENU HAMBURGER ── -->
 <div class="mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<!-- ── SIDEBAR ── -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
-    <span class="logo-text">CESC <span class="logo-dot">Hub</span></span>
-  </div>
-  <div class="nav-label">Main</div>
-  <a href="index.html" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> Feed</a>
-  <a href="chat.html" class="nav-item active"><span class="nav-icon"><i class="fas fa-comments"></i></span> Chat Room</a>
-  <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> Profiles</a>
-  <div class="nav-label">You</div>
-  <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> Settings</a>
-  <a href="notifications.html" class="nav-item" id="notif-nav">
-    <span class="nav-icon"><i class="fas fa-bell"></i></span> Notifications
-    <span class="nav-badge-count" id="notif-nav-badge">0</span>
-  </a>
-  <div class="sidebar-bottom">
-    <span class="online-dot-sm"></span>
-    <span id="online-count">...</span>&nbsp;online now
-  </div>
-</aside>
-
-<!-- ── HEADER ── -->
+<!-- ── HEADER (FULL WIDTH AT TOP) ── -->
 <header class="top-header">
-  <div>
-    <div class="header-title">Chat Room</div>
-    <div class="header-sub" id="header-sub">
-      <span class="header-online-status">
-        <span class="online-pulse-ring">
-          <span class="online-pulse-dot"></span>
-        </span>
-        <span class="online-count-number" id="online-count">...</span>
-        <span class="online-status-text">online now</span>
-      </span>
-    </div>
+  <div class="header-left">
+    <a href="index.html" class="header-logo">
+      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+    </a>
+    <span class="header-page-title">Chat Room</span>
   </div>
   <div class="header-right">
+    <span class="header-online-status">
+      <span class="online-pulse-ring">
+        <span class="online-pulse-dot"></span>
+      </span>
+      <span class="online-count-number" id="online-count">...</span>
+      <span class="online-status-text">online now</span>
+    </span>
     <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
     <a href="notifications.html" class="hdr-btn" title="Notifications">
       <i class="fas fa-bell"></i>
@@ -84,17 +67,30 @@
   </div>
 </header>
 
-<!-- ── CHAT ── -->
-<div class="chat-wrapper">
-  <div class="chat-header">
-    <div class="channel-name"><span class="channel-hash">#</span>general</div>
-    <div class="online-pill"><div class="online-dot"></div><span id="chat-online-count">5 online</span></div>
-  </div>
+<!-- ── SIDEBAR (DESKTOP - UNDER HEADER) ── -->
+<aside class="sidebar" id="sidebar">
+  <a href="index.html" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
+  <a href="chat.html" class="nav-item active"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
+  <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
+  <a href="notifications.html" class="nav-item" id="notif-nav">
+    <span class="nav-icon"><i class="fas fa-bell"></i></span>
+    <span class="nav-label-text">Notifications</span>
+    <span class="nav-badge-count" id="notif-nav-badge">0</span>
+  </a>
+</aside>
 
-  <div class="messages" id="messages">
-    <div class="loading-msgs"><div class="loading-spin"></div>loading messages...</div>
-  </div>
+<!-- ── MAIN (CHAT) - SAME AS OTHER PAGES ── -->
+<main class="main">
+  <div class="chat-wrapper">
+    
 
+    <div class="messages" id="messages">
+      <div class="loading-msgs"><div class="loading-spin"></div>loading messages...</div>
+    </div>
+  </div>
+  
+  <!-- Chat Input Area - Positioned Fixed at bottom -->
   <div class="chat-input-area">
     <!-- EMOJI PICKER - OUTSIDE input-box -->
     <div class="emoji-picker" id="emoji-picker">
@@ -143,11 +139,68 @@
       <div class="input-hint" id="input-hint">enter to send · shift+enter for new line</div>
     </div>
   </div>
-</div>
+</main>
 
 <div class="chat-img-modal" id="chat-img-modal" onclick="window.closeChatImageModal()">
   <img id="chat-modal-img" src="" alt="Image"/>
   <button class="close-btn" onclick="window.closeChatImageModal()"><i class="fas fa-times"></i></button>
+</div>
+
+<!-- ── DOWNBAR (MOBILE BOTTOM NAV - 5 EQUAL COLUMNS) ── -->
+<nav class="downbar" id="downbar">
+  <div class="downbar-inner">
+    <a href="index.html" class="downbar-item" id="downbar-home">
+      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
+    </a>
+    <a href="chat.html" class="downbar-item active" id="downbar-chat">
+      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
+    </a>
+    <a href="profiles.html" class="downbar-item" id="downbar-profiles">
+      <span class="downbar-icon"><i class="fas fa-users"></i></span>
+    </a>
+    <a href="settings.html" class="downbar-item" id="downbar-settings">
+      <span class="downbar-icon"><i class="fas fa-cog"></i></span>
+    </a>
+    <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
+      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── DOWNBAR MORE OVERLAY ── -->
+<div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
+
+<!-- ── DOWNBAR MORE DRAWER (GRID/TABLE LAYOUT - 5 COLUMNS) ── -->
+<div class="downbar-more" id="downbar-more">
+  <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
+  
+  <div class="downbar-more-grid">
+    <a href="index.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span>
+      <span class="downbar-more-label">Feed</span>
+    </a>
+    <a href="chat.html" class="downbar-more-item active">
+      <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
+      <span class="downbar-more-label">Chat</span>
+    </a>
+    <a href="profiles.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
+      <span class="downbar-more-label">Profiles</span>
+    </a>
+    <a href="settings.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
+      <span class="downbar-more-label">Settings</span>
+    </a>
+    <a href="notifications.html" class="downbar-more-item" id="downbar-more-notif">
+      <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
+      <span class="downbar-more-label">Notifications</span>
+      <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
+    </a>
+    <button class="downbar-more-item logout" onclick="window.logout()">
+      <span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>
+      <span class="downbar-more-label">Logout</span>
+    </button>
+  </div>
 </div>
 
 <script>
@@ -182,19 +235,6 @@ let pendingNotificationSender = null;
 let notificationTimeout = null;
 let unreadCount = 0;
 let isPageVisible = true;
-
-// ── SIDEBAR TOGGLE ──
-window.toggleSidebar = function() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  if (!sidebar) return;
-  
-  sidebar.classList.toggle('open');
-  if (overlay) overlay.classList.toggle('show');
-  
-  const isOpen = sidebar.classList.contains('open');
-  localStorage.setItem('cesc_sidebar_open', isOpen ? 'true' : 'false');
-};
 
 // ── NOTIFICATION SOUND ──
 function playNotificationSound() {
@@ -515,13 +555,9 @@ window.closeChatImageModal = function() {
 };
 
 // ── AVATAR ──
-const avatarStyles = { irfan:'', daiyan:'alt', sahil:'alt2', safwan:'alt3', yakeen:'alt4' };
-function getAvatarStyle(name) { return avatarStyles[name?.toLowerCase()] || ''; }
-
 function buildMsgAvatar(uname) {
-  const style = getAvatarStyle(uname);
   const div = document.createElement('div');
-  div.className = `msg-avatar ${style}`.trim();
+  div.className = 'msg-avatar';
   const initial = document.createElement('span');
   initial.textContent = (uname?.[0] || '?').toUpperCase();
   div.appendChild(initial);
@@ -580,12 +616,6 @@ async function init() {
     }
   });
   
-  const sidebarOpen = localStorage.getItem('cesc_sidebar_open') === 'true';
-  if (sidebarOpen && window.innerWidth <= 768) {
-    document.getElementById('sidebar')?.classList.add('open');
-    document.getElementById('sidebar-overlay')?.classList.add('show');
-  }
-  
   const sess = await window.initAuth();
   if (!sess) return;
   
@@ -597,7 +627,7 @@ async function init() {
     .eq('id', window.session.user.id)
     .single();
   
-  // ✅ FIX: Update window.currentUser with the profile data
+  // Update window.currentUser with the profile data
   window.currentUser = {
     ...window.currentUser,
     username: profile?.username,
@@ -681,12 +711,10 @@ function buildMessageGroup(msg, isContinued) {
 
     let replyHTML = '';
     if (msg.reply_to && msg.reply_username) {
-      const rStyle = getAvatarStyle(msg.reply_username);
       replyHTML = `
         <div class="reply-quote" onclick="window.scrollToMsg('${msg.reply_to}')">
-          <div class="reply-bar ${rStyle}"></div>
           <div class="reply-body">
-            <div class="reply-who ${rStyle}">${window.escapeHTML(msg.reply_username)}</div>
+            <div class="reply-who">${window.escapeHTML(msg.reply_username)}</div>
             <div class="reply-text">${window.escapeHTML(msg.reply_preview || '')}</div>
           </div>
         </div>`;
@@ -700,7 +728,7 @@ function buildMessageGroup(msg, isContinued) {
     content.innerHTML = `
       ${replyHTML}
       <div class="msg-header">
-        <span class="msg-username ${displayName.toLowerCase()}">${window.escapeHTML(displayName)}</span>
+        <span class="msg-username">${window.escapeHTML(displayName)}</span>
         ${isMentioned ? '<span class="mention-badge">@you</span>' : ''}
         <span class="msg-time">${formatTime(msg.created_at)}</span>
         ${msg.edited ? '<span class="msg-edited">(edited)</span>' : ''}
@@ -718,12 +746,10 @@ function buildMessageGroup(msg, isContinued) {
 
     let replyHTML = '';
     if (msg.reply_to && msg.reply_username) {
-      const rStyle = getAvatarStyle(msg.reply_username);
       replyHTML = `
         <div class="reply-quote" onclick="window.scrollToMsg('${msg.reply_to}')">
-          <div class="reply-bar ${rStyle}"></div>
           <div class="reply-body">
-            <div class="reply-who ${rStyle}">${window.escapeHTML(msg.reply_username)}</div>
+            <div class="reply-who">${window.escapeHTML(msg.reply_username)}</div>
             <div class="reply-text">${window.escapeHTML(msg.reply_preview || '')}</div>
           </div>
         </div>`;
@@ -899,7 +925,6 @@ async function sendMessage(text, btn) {
     document.getElementById('image-preview-wrap').classList.remove('show');
   }
 
-  // ✅ Now this will get the correct display_name from window.currentUser
   const displayName = window.currentUser?.display_name || window.currentUser?.username || username;
 
   const payload = {

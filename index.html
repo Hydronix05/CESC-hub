@@ -11,52 +11,35 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/index.css"/>
- <script src="/js/theme-presets.js"></script>
-  <script src="/js/theme-engine.js"></script>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
 </head>
 <body>
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
+
+<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- ── MOBILE MENU HAMBURGER (HIDDEN ON MOBILE) ── -->
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<!-- ── SIDEBAR ── -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
-    <span class="logo-text">CESC <span class="logo-dot">Hub</span></span>
-  </div>
-  <div class="nav-label">Main</div>
-  <a href="index.html" class="nav-item active"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> Feed</a>
-  <a href="chat.html" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> Chat Room</a>
-  <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> Profiles</a>
-  <div class="nav-label">You</div>
-  <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> Settings</a>
-  <a href="notifications.html" class="nav-item" id="notif-nav">
-    <span class="nav-icon"><i class="fas fa-bell"></i></span> Notifications
-    <span class="nav-badge-count" id="notif-nav-badge">0</span>
-  </a>
-  <div class="sidebar-bottom">
-    <span class="online-dot-sm"></span>
-    <span id="online-count">...</span>&nbsp;online now
-  </div>
-</aside>
-
-<!-- ── HEADER ── -->
+<!-- ── HEADER (FULL WIDTH AT TOP) ── -->
 <header class="top-header">
-  <div>
-    <div class="header-title">Feed</div>
-    <div class="header-sub" id="header-sub">
-      <span class="header-online-status">
-        <span class="online-pulse-ring">
-          <span class="online-pulse-dot"></span>
-        </span>
-        <span class="online-count-number" id="online-count">...</span>
-        <span class="online-status-text">online now</span>
-      </span>
-    </div>
+  <div class="header-left">
+    <a href="index.html" class="header-logo">
+      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+    </a>
+    <span class="header-page-title">Feed</span>
   </div>
   <div class="header-right">
+    <span class="header-online-status">
+      <span class="online-pulse-ring">
+        <span class="online-pulse-dot"></span>
+      </span>
+      <span class="online-count-number" id="online-count">...</span>
+      <span class="online-status-text">online now</span>
+    </span>
     <button class="hdr-btn theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
     <a href="notifications.html" class="hdr-btn" title="Notifications">
       <i class="fas fa-bell"></i>
@@ -80,6 +63,19 @@
     </div>
   </div>
 </header>
+
+<!-- ── SIDEBAR (DESKTOP - UNDER HEADER) ── -->
+<aside class="sidebar" id="sidebar">
+  <a href="index.html" class="nav-item active"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
+  <a href="chat.html" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
+  <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
+  <a href="notifications.html" class="nav-item" id="notif-nav">
+    <span class="nav-icon"><i class="fas fa-bell"></i></span>
+    <span class="nav-label-text">Notifications</span>
+    <span class="nav-badge-count" id="notif-nav-badge">0</span>
+  </a>
+</aside>
 
 <!-- ── MAIN ── -->
 <main class="main">
@@ -174,6 +170,63 @@
   <button onclick="closeImageModal()" style="position:fixed;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1000;"><i class="fas fa-times"></i></button>
 </div>
 
+<!-- ── DOWNBAR (MOBILE BOTTOM NAV - 5 EQUAL COLUMNS) ── -->
+<nav class="downbar" id="downbar">
+  <div class="downbar-inner">
+    <a href="index.html" class="downbar-item active" id="downbar-home">
+      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
+    </a>
+    <a href="chat.html" class="downbar-item" id="downbar-chat">
+      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
+    </a>
+    <a href="profiles.html" class="downbar-item" id="downbar-profiles">
+      <span class="downbar-icon"><i class="fas fa-users"></i></span>
+    </a>
+    <a href="settings.html" class="downbar-item" id="downbar-settings">
+      <span class="downbar-icon"><i class="fas fa-cog"></i></span>
+    </a>
+    <button class="downbar-item more-btn" onclick="toggleDownbarMore()" id="downbar-more-btn">
+      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── DOWNBAR MORE OVERLAY ── -->
+<div class="downbar-overlay" id="downbar-overlay" onclick="closeDownbarMore()"></div>
+
+<!-- ── DOWNBAR MORE DRAWER (GRID/TABLE LAYOUT - 5 COLUMNS) ── -->
+<div class="downbar-more" id="downbar-more">
+  <div class="downbar-more-handle" onclick="closeDownbarMore()"></div>
+  
+  <div class="downbar-more-grid">
+    <a href="index.html" class="downbar-more-item active">
+      <span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span>
+      <span class="downbar-more-label">Feed</span>
+    </a>
+    <a href="chat.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
+      <span class="downbar-more-label">Chat</span>
+    </a>
+    <a href="profiles.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
+      <span class="downbar-more-label">Profiles</span>
+    </a>
+    <a href="settings.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
+      <span class="downbar-more-label">Settings</span>
+    </a>
+    <a href="notifications.html" class="downbar-more-item" id="downbar-more-notif">
+      <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
+      <span class="downbar-more-label">Notifications</span>
+      <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
+    </a>
+    <button class="downbar-more-item logout" onclick="logout()">
+      <span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>
+      <span class="downbar-more-label">Logout</span>
+    </button>
+  </div>
+</div>
+
 <script>
 // ── PAGE-SPECIFIC CODE ──
 const POST_COOLDOWN_MS = 3 * 60 * 1000;
@@ -214,12 +267,6 @@ async function init() {
   console.log('✅ shared.js loaded');
   window.initTheme();
   
-  const sidebarOpen = localStorage.getItem('cesc_sidebar_open') === 'true';
-  if (sidebarOpen && window.innerWidth <= 768) {
-    document.getElementById('sidebar')?.classList.add('open');
-    document.getElementById('sidebar-overlay')?.classList.add('show');
-  }
-  
   const sess = await window.initAuth();
   if (!sess) return;
   
@@ -240,18 +287,16 @@ async function init() {
     window.loadNotifCount()
   ]);
 
-  // When page loads, check URL params
-const params = new URLSearchParams(window.location.search);
-const postId = params.get('post');
-if (postId) {
-  // Scroll to that post and highlight it
-  const postEl = document.querySelector(`[data-id="${postId}"]`);
-  if (postEl) {
-    postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    postEl.style.borderColor = 'var(--neon)';
-    setTimeout(() => postEl.style.borderColor = '', 3000);
+  const params = new URLSearchParams(window.location.search);
+  const postId = params.get('post');
+  if (postId) {
+    const postEl = document.querySelector(`[data-id="${postId}"]`);
+    if (postEl) {
+      postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      postEl.style.borderColor = 'var(--neon)';
+      setTimeout(() => postEl.style.borderColor = '', 3000);
+    }
   }
-}
   
   setupInfiniteScroll();
   
@@ -301,7 +346,6 @@ async function loadMorePosts() {
     feedEl.appendChild(buildPostCard(post));
   });
   
-  // Update comment counts for these posts
   const postIds = batchPosts.map(p => p.id);
   if (postIds.length > 0) {
     const { data: comments } = await window.supabaseClient.from('comments').select('post_id').in('post_id', postIds);
@@ -369,10 +413,10 @@ function insertEmoji(emoji) {
   onComposeInput();
 }
 
-// Close emoji picker with Escape key only
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.getElementById('emoji-picker')?.classList.remove('open');
+    if (typeof closeDownbarMore === 'function') closeDownbarMore();
   }
 });
 
@@ -488,7 +532,7 @@ async function uploadImage(file) {
   return urlData.publicUrl;
 }
 
-// ── SUBMIT POST WITH DISPLAY NAME ──
+// ── SUBMIT POST ──
 async function submitPost() {
   const text = document.getElementById('compose-input').value.trim();
   if (!text && !pendingImageFile) {
@@ -523,7 +567,6 @@ async function submitPost() {
     }
   }
   
-  // Use display_name if available, fallback to username
   const displayName = window.currentUser.display_name || window.currentUser.username;
   
   const { error } = await window.supabaseClient.from('posts').insert({
@@ -584,7 +627,6 @@ async function loadFeed() {
   
   allPosts = posts || [];
   
-  // Load PFP cache
   const { data: profiles } = await window.supabaseClient.from('profiles').select('username, pfp_url');
   if (profiles) {
     profiles.forEach(p => { if (p.pfp_url) window.pfpCache[p.username] = p.pfp_url; });
@@ -602,14 +644,12 @@ async function loadFeed() {
   
   document.getElementById('feed-subtitle').textContent = allPosts.length + ' posts total';
   
-  // Load first batch
   currentBatch = 0;
   const firstBatch = allPosts.slice(0, POSTS_PER_BATCH);
   firstBatch.forEach(post => {
     feedEl.appendChild(buildPostCard(post));
   });
   
-  // Get comment counts for first batch
   const postIds = firstBatch.map(p => p.id);
   if (postIds.length > 0) {
     const { data: comments } = await window.supabaseClient.from('comments').select('post_id').in('post_id', postIds);
@@ -626,7 +666,6 @@ async function loadFeed() {
     }
   }
   
-  // Check if more posts available
   if (allPosts.length <= POSTS_PER_BATCH) {
     hasMorePosts = false;
     document.getElementById('feed-loading').style.display = 'none';
@@ -637,13 +676,12 @@ async function loadFeed() {
   }
 }
 
-// ── BUILD POST CARD WITH DISPLAY NAME ──
+// ── BUILD POST CARD ──
 function buildPostCard(post) {
   const card = document.createElement('div');
   card.className = 'post-card';
   card.dataset.id = post.id;
   
-  // Use display_name if available, fallback to username
   const displayName = post.display_name || post.username;
   
   const top = document.createElement('div');
@@ -719,7 +757,6 @@ function buildPostCard(post) {
   `;
   card.appendChild(commentsSection);
   
-  // Check if this post is liked by current user
   if (window.session) {
     window.supabaseClient.from('likes').select('id').eq('post_id', post.id).eq('user_id', window.session.user.id).single()
       .then(({ data }) => {
@@ -730,7 +767,6 @@ function buildPostCard(post) {
       });
   }
   
-  // Add PFP to comment avatar
   setTimeout(() => {
     const profile = window.currentUser;
     if (profile?.pfp_url) {
@@ -809,7 +845,7 @@ async function toggleComments(postId, card) {
   if (!open) await loadComments(postId);
 }
 
-// ── LOAD COMMENTS WITH DISPLAY NAME ──
+// ── LOAD COMMENTS ──
 async function loadComments(postId) {
   const list = document.getElementById('cl-' + postId);
   const { data: comments } = await window.supabaseClient
@@ -832,7 +868,6 @@ async function loadComments(postId) {
     const body = document.createElement('div');
     body.className = 'comment-body';
     
-    // Use display_name if available, fallback to username
     const displayName = c.display_name || c.username;
     
     body.innerHTML = `
@@ -845,7 +880,7 @@ async function loadComments(postId) {
   });
 }
 
-// ── SUBMIT COMMENT WITH DISPLAY NAME ──
+// ── SUBMIT COMMENT ──
 async function submitComment(postId) {
   const input = document.getElementById('ci-' + postId);
   const text = input.value.trim();
@@ -860,7 +895,6 @@ async function submitComment(postId) {
     return;
   }
   
-  // Use display_name if available, fallback to username
   const displayName = window.currentUser.display_name || window.currentUser.username;
   
   const { error } = await window.supabaseClient.from('comments').insert({

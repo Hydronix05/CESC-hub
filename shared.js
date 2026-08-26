@@ -14,6 +14,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let session = null;
 let currentUser = null;
 const pfpCache = {};
+let isDownbarMoreOpen = false;
 
 // ── TOAST ──
 function showToast(msg, type = 'error') {
@@ -89,17 +90,63 @@ async function logout() {
   window.location.href = 'login.html';
 }
 
-// ── SIDEBAR TOGGLE ──
+// ── SIDEBAR TOGGLE (MOBILE ONLY) ──
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   if (!sidebar) return;
   
+  // Only works on mobile
+  if (window.innerWidth > 768) return;
+  
+  // On mobile, use the slide-in/out logic
   sidebar.classList.toggle('open');
   if (overlay) overlay.classList.toggle('show');
   
   const isOpen = sidebar.classList.contains('open');
   localStorage.setItem('cesc_sidebar_open', isOpen ? 'true' : 'false');
+}
+
+// ── DOWNBAR MORE TOGGLE (MOBILE) ──
+function toggleDownbarMore() {
+  const more = document.getElementById('downbar-more');
+  const overlay = document.getElementById('downbar-overlay');
+  
+  if (!more) return;
+  
+  isDownbarMoreOpen = !isDownbarMoreOpen;
+  
+  if (isDownbarMoreOpen) {
+    more.classList.add('open');
+    if (overlay) {
+      overlay.classList.add('show');
+      overlay.style.display = 'block';
+    }
+    document.body.style.overflow = 'hidden';
+  } else {
+    more.classList.remove('open');
+    if (overlay) {
+      overlay.classList.remove('show');
+      overlay.style.display = 'none';
+    }
+    document.body.style.overflow = '';
+  }
+}
+
+// ── CLOSE DOWNBAR MORE ──
+function closeDownbarMore() {
+  if (!isDownbarMoreOpen) return;
+  
+  const more = document.getElementById('downbar-more');
+  const overlay = document.getElementById('downbar-overlay');
+  
+  isDownbarMoreOpen = false;
+  more.classList.remove('open');
+  if (overlay) {
+    overlay.classList.remove('show');
+    overlay.style.display = 'none';
+  }
+  document.body.style.overflow = '';
 }
 
 // ── ONLINE COUNT ──
@@ -122,11 +169,9 @@ async function loadOnlineCount() {
       }
     }
     
-    const sub = document.getElementById('header-sub');
-    if (sub) {
-      const countEl = sub.querySelector('.online-count-number');
-      if (countEl) countEl.textContent = count ?? '?';
-    }
+    // Update header online count
+    const headerCount = document.querySelector('.online-count-number');
+    if (headerCount) headerCount.textContent = count ?? '?';
   } catch (e) {
     console.error('Error loading online count:', e);
   }
@@ -144,14 +189,17 @@ async function loadNotifCount() {
     
     const badge = document.getElementById('notif-badge');
     const navBadge = document.getElementById('notif-nav-badge');
+    const downbarMoreBadge = document.getElementById('downbar-more-notif-badge');
     
     if (count && count > 0) {
       const label = count > 99 ? '99+' : count;
       if (badge) { badge.textContent = label; badge.classList.add('show'); }
       if (navBadge) { navBadge.textContent = label; navBadge.classList.add('show'); }
+      if (downbarMoreBadge) { downbarMoreBadge.textContent = label; downbarMoreBadge.classList.add('show'); }
     } else {
       if (badge) badge.classList.remove('show');
       if (navBadge) navBadge.classList.remove('show');
+      if (downbarMoreBadge) downbarMoreBadge.classList.remove('show');
     }
   } catch (e) {
     console.error('Error loading notification count:', e);
@@ -375,6 +423,45 @@ document.addEventListener('click', e => {
       !mobileMenu?.contains(e.target)) {
     toggleSidebar();
   }
+  
+  // Close downbar more when clicking outside
+  if (isDownbarMoreOpen) {
+    const more = document.getElementById('downbar-more');
+    const overlay = document.getElementById('downbar-overlay');
+    const moreBtn = document.querySelector('.downbar-item.more-btn');
+    
+    if (overlay && overlay.contains(e.target) && !moreBtn?.contains(e.target)) {
+      closeDownbarMore();
+    }
+  }
+});
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown', e => {
+  // ESC key closes downbar more
+  if (e.key === 'Escape' && isDownbarMoreOpen) {
+    closeDownbarMore();
+  }
+});
+
+// ── WINDOW RESIZE HANDLER ──
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    // Close downbar more if open
+    if (isDownbarMoreOpen) {
+      closeDownbarMore();
+    }
+    
+    // Close mobile sidebar overlay if screen becomes desktop
+    if (window.innerWidth > 768) {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar) sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('show');
+    }
+  }, 250);
 });
 
 // ── EXPOSE EVERYTHING TO WINDOW ──
@@ -399,6 +486,8 @@ window.escapeHTML = escapeHTML;
 window.toggleDropdown = toggleDropdown;
 window.logout = logout;
 window.toggleSidebar = toggleSidebar;
+window.toggleDownbarMore = toggleDownbarMore;
+window.closeDownbarMore = closeDownbarMore;
 window.loadOnlineCount = loadOnlineCount;
 window.loadNotifCount = loadNotifCount;
 window.buildAvatar = buildAvatar;
