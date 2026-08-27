@@ -18,6 +18,46 @@
 <script src="/js/theme-engine.js"></script>
 </head>
 <body>
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+</div>
+
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -184,6 +224,20 @@ let page = 0;
 let search = '';
 const limit = 20;
 let searchTimeout = null;
+
+// ── LOADING STEPS ──
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'members', label: 'Loading members...', technical: 'Fetching all profiles' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'All members loaded' }
+  ]);
+}
 
 // ── LAST SEEN FORMATTER ──
 function formatLastSeen(lastSeen) {
@@ -461,48 +515,32 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('show');
 });
 
-// ── INIT ──
-async function init() {
-  if (typeof window.initTheme !== 'function') {
-    console.log('⏳ Waiting for shared.js...');
-    setTimeout(init, 200);
-    return;
-  }
-
-  console.log('✅ shared.js loaded');
-  window.initTheme();
-
-  const sess = await window.initAuth();
-  if (!sess) return;
-
-  console.log('✅ Session loaded:', sess.user.email);
-
-  const profile = await window.loadUserProfile();
-  if (profile) {
-    window.updateUserUI(profile);
-    await window.loadPfpCache();
-  }
-
-  await window.updateLastSeen();
-
-  await Promise.all([
-    loadProfiles(),
-    window.loadOnlineCount(),
-    window.loadNotifCount()
-  ]);
-
-  setInterval(async () => {
-    if (!window.session) return;
-    await window.updateLastSeen();
-    await Promise.all([window.loadOnlineCount(), window.loadNotifCount()]);
-  }, 15000);
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep(); // theme
+  
+  // auth is handled by initPage
+  // profile is handled by initPage
+  
+  nextLoadingStep(); // pfp (already loaded in initPage)
+  
+  nextLoadingStep(); // members
+  await loadProfiles();
+  
+  nextLoadingStep(); // online (handled by initPage)
+  // notifs (handled by initPage)
+  
+  nextLoadingStep(); // ready
 }
 
 // ── START ──
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
 } else {
-  setTimeout(init, 100);
+  initPage(pageInit);
 }
 </script>
 </body>

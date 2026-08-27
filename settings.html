@@ -19,6 +19,46 @@
 <script src="shared.js"></script>
 </head>
 <body>
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+</div>
+
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -413,6 +453,20 @@ const MAX_DISPLAY_NAME_CHANGES = 2;
 let currentProfile = null;
 let pendingFile = null;
 let editingThemeId = null;
+
+// ── LOADING STEPS ──
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'settings', label: 'Loading settings...', technical: 'Preparing settings data' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'Settings ready' }
+  ]);
+}
 
 // ── DISPLAY NAME CHANGE LIMIT ──
 function getDisplayNameChanges() {
@@ -1051,14 +1105,18 @@ document.querySelectorAll('.color-grid input[type="color"]').forEach(input => {
   });
 });
 
-// ── INIT ──
-async function init() {
-  // Init theme engine
-  if (typeof window.initTheme === 'function') {
-    window.initTheme();
-  }
-
-  const sess = await window.initAuth();
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep(); // theme
+  
+  // auth is handled by initPage
+  // profile is handled by initPage
+  
+  nextLoadingStep(); // pfp (already loaded in initPage)
+  
+  nextLoadingStep(); // settings
+  const sess = window.session;
   if (!sess) return;
 
   const { data: profile, error } = await window.supabaseClient
@@ -1108,25 +1166,22 @@ async function init() {
 
   updateChangeBadge();
 
-  await window.updateLastSeen();
-
-  await Promise.all([window.loadNotifCount(), window.loadOnlineCount()]);
-
   renderCustomThemes();
   updatePresetActiveState();
-
-  setInterval(async () => {
-    if (!window.session) return;
-    await window.updateLastSeen();
-    await Promise.all([window.loadNotifCount(), window.loadOnlineCount()]);
-  }, 15000);
+  
+  nextLoadingStep(); // online (handled by initPage)
+  // notifs (handled by initPage)
+  
+  nextLoadingStep(); // ready
 }
 
 // ── START ──
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
 } else {
-  setTimeout(init, 100);
+  initPage(pageInit);
 }
 </script>
 </body>

@@ -15,6 +15,157 @@ let session = null;
 let currentUser = null;
 const pfpCache = {};
 let isDownbarMoreOpen = false;
+let _loadingSteps = [];
+let _currentStepIndex = 0;
+let _loadingInProgress = false;
+let _loadingRetryCallback = null;
+let _loadingEscapeDisabled = false;
+
+// ── LOADING SCREEN ──
+
+// Show loading screen
+function showLoadingScreen() {
+  const screen = document.getElementById('loading-screen');
+  if (screen) {
+    screen.style.display = 'flex';
+    screen.style.opacity = '1';
+    screen.style.visibility = 'visible';
+  }
+  // Reset error state
+  hideLoadingError();
+  document.getElementById('loading-retry-btn')?.classList.remove('show');
+}
+
+// Hide loading screen - INSTANT (no animation for debugging)
+function hideLoadingScreen() {
+  const screen = document.getElementById('loading-screen');
+  if (screen) {
+    screen.style.display = 'none';
+    screen.style.opacity = '0';
+    screen.style.visibility = 'hidden';
+  }
+  _loadingInProgress = false;
+}
+
+// Update progress
+function updateLoadingProgress(percent, friendly, technical) {
+  const fill = document.getElementById('loading-progress-fill');
+  const text = document.getElementById('loading-progress-text');
+  const friendlyEl = document.getElementById('loading-status-friendly');
+  const technicalEl = document.getElementById('loading-status-technical');
+  
+  if (fill) {
+    const clamped = Math.min(100, Math.max(0, percent));
+    fill.style.width = clamped + '%';
+  }
+  
+  if (text) {
+    text.textContent = Math.min(100, Math.max(0, percent)) + '%';
+  }
+  
+  if (friendlyEl && friendly) {
+    friendlyEl.textContent = friendly;
+  }
+  
+  if (technicalEl && technical) {
+    technicalEl.textContent = technical;
+  }
+}
+
+// Define loading steps
+function defineLoadingSteps(steps) {
+  _loadingSteps = steps;
+  _currentStepIndex = 0;
+}
+
+// Advance to next loading step
+function nextLoadingStep() {
+  if (_currentStepIndex < _loadingSteps.length) {
+    const step = _loadingSteps[_currentStepIndex];
+    const percent = Math.round((_currentStepIndex / _loadingSteps.length) * 100);
+    updateLoadingProgress(percent, step.label, step.technical);
+    _currentStepIndex++;
+    return step;
+  }
+  return null;
+}
+
+// Complete loading (100%)
+function completeLoading() {
+  updateLoadingProgress(100, 'Done! ✨', 'All systems ready');
+  // Hide loading screen after a brief moment
+  setTimeout(hideLoadingScreen, 300);
+}
+
+// Show loading error
+function showLoadingError(friendly, technical) {
+  const errorEl = document.getElementById('loading-error');
+  const friendlyEl = document.getElementById('loading-error-friendly');
+  const technicalEl = document.getElementById('loading-error-technical');
+  const retryBtn = document.getElementById('loading-retry-btn');
+  
+  if (errorEl) {
+    errorEl.classList.add('show');
+  }
+  
+  if (friendlyEl) {
+    friendlyEl.textContent = friendly || 'Something went wrong';
+  }
+  
+  if (technicalEl) {
+    technicalEl.textContent = technical || 'Unknown error';
+  }
+  
+  if (retryBtn) {
+    retryBtn.classList.add('show');
+  }
+  
+  // Turn progress bar red
+  const fill = document.getElementById('loading-progress-fill');
+  if (fill) {
+    fill.style.background = 'var(--danger)';
+  }
+}
+
+// Hide loading error
+function hideLoadingError() {
+  const errorEl = document.getElementById('loading-error');
+  const retryBtn = document.getElementById('loading-retry-btn');
+  
+  if (errorEl) {
+    errorEl.classList.remove('show');
+  }
+  
+  if (retryBtn) {
+    retryBtn.classList.remove('show');
+  }
+  
+  // Restore progress bar color
+  const fill = document.getElementById('loading-progress-fill');
+  if (fill) {
+    fill.style.background = 'linear-gradient(90deg, var(--neon), var(--neon2))';
+  }
+}
+
+// Set retry callback
+function setLoadingRetry(callback) {
+  _loadingRetryCallback = callback;
+}
+
+// Retry loading
+function retryLoading() {
+  if (typeof _loadingRetryCallback === 'function') {
+    hideLoadingError();
+    _currentStepIndex = 0;
+    _loadingInProgress = true;
+    _loadingRetryCallback();
+  }
+}
+
+// Enable/disable escape key
+function setLoadingEscapeEnabled(enabled) {
+  _loadingEscapeDisabled = !enabled;
+}
 
 // ── TOAST ──
 function showToast(msg, type = 'error') {
@@ -242,6 +393,7 @@ function buildAvatar(username, pfpUrl, size = 40, cls = '') {
     img.style.objectFit = 'cover';
     img.style.display = 'none';
     img.style.borderRadius = '50%';
+    img.loading = 'lazy';
     img.onload = () => {
       img.style.display = 'block';
       span.style.display = 'none';
@@ -332,6 +484,7 @@ function updateUserUI(profile) {
       
       const img = document.createElement('img');
       img.src = profile.pfp_url;
+      img.loading = 'lazy';
       img.onload = () => {
         img.style.display = 'block';
         img.classList.add('loaded');
@@ -344,8 +497,13 @@ function updateUserUI(profile) {
 }
 
 // ── UPDATE LAST SEEN ──
+let _lastSeenUpdate = 0;
+
 async function updateLastSeen() {
   if (!session) return;
+  const now = Date.now();
+  if (now - _lastSeenUpdate < 30000) return; // Throttle to 30s
+  _lastSeenUpdate = now;
   try {
     await supabaseClient
       .from('profiles')
@@ -401,6 +559,111 @@ function throttle(fn, limit = 300) {
   };
 }
 
+// ── BACKGROUND TASKS ──
+let _backgroundInterval = null;
+
+function startBackgroundTasks() {
+  if (_backgroundInterval) return;
+  
+  // Run immediately
+  if (session) {
+    updateLastSeen();
+    loadOnlineCount();
+    loadNotifCount();
+  }
+  
+  // Run every 30s (reduced from 15s to save resources)
+  _backgroundInterval = setInterval(() => {
+    if (!session) return;
+    updateLastSeen();
+    loadOnlineCount();
+    loadNotifCount();
+  }, 30000);
+}
+
+function stopBackgroundTasks() {
+  if (_backgroundInterval) {
+    clearInterval(_backgroundInterval);
+    _backgroundInterval = null;
+  }
+}
+
+// ── PAGE INIT WRAPPER ──
+async function initPage(pageInitFn) {
+  if (_loadingInProgress) return;
+  _loadingInProgress = true;
+  
+  // Show loading screen
+  showLoadingScreen();
+  
+  // Set retry callback
+  setLoadingRetry(() => {
+    _loadingInProgress = true;
+    _currentStepIndex = 0;
+    initPage(pageInitFn);
+  });
+  
+  // Enable escape key for debugging
+  setLoadingEscapeEnabled(true);
+  
+  try {
+    // Step 1: Theme
+    nextLoadingStep();
+    if (typeof window.initTheme === 'function') {
+      window.initTheme();
+    }
+    
+    // Step 2: Auth
+    nextLoadingStep();
+    const sess = await initAuth();
+    if (!sess) {
+      _loadingInProgress = false;
+      return;
+    }
+    
+    // Step 3: User Profile
+    nextLoadingStep();
+    const profile = await loadUserProfile();
+    if (profile) {
+      updateUserUI(profile);
+    }
+    
+    // Step 4: PFP Cache
+    nextLoadingStep();
+    await loadPfpCache();
+    
+    // Step 5: Page-specific init
+    if (typeof pageInitFn === 'function') {
+      await pageInitFn();
+    }
+    
+    // Step 6: Background tasks
+    nextLoadingStep();
+    startBackgroundTasks();
+    
+    // Step 7: Online & Notifications
+    nextLoadingStep();
+    await Promise.all([
+      loadOnlineCount(),
+      loadNotifCount()
+    ]);
+    
+    // Complete
+    nextLoadingStep();
+    completeLoading();
+    _loadingInProgress = false;
+    
+  } catch (error) {
+    console.error('Loading error:', error);
+    _loadingInProgress = false;
+    
+    // Show error
+    const friendly = error.friendly || 'Something went wrong';
+    const technical = error.technical || error.message || 'Unknown error';
+    showLoadingError(friendly, technical);
+  }
+}
+
 // ── CLICK OUTSIDE HANDLER ──
 document.addEventListener('click', e => {
   // Close dropdown
@@ -441,6 +704,13 @@ document.addEventListener('keydown', e => {
   // ESC key closes downbar more
   if (e.key === 'Escape' && isDownbarMoreOpen) {
     closeDownbarMore();
+  }
+  
+  // ESC key FORCE HIDE loading screen (debug only)
+  if (e.key === 'Escape' && _loadingInProgress && !_loadingEscapeDisabled) {
+    console.log('🔑 ESC pressed - force hiding loading screen (debug)');
+    hideLoadingScreen();
+    _loadingInProgress = false;
   }
 });
 
@@ -499,6 +769,20 @@ window.updateLastSeen = updateLastSeen;
 window.updateStreak = updateStreak;
 window.debounce = debounce;
 window.throttle = throttle;
+window.startBackgroundTasks = startBackgroundTasks;
+window.stopBackgroundTasks = stopBackgroundTasks;
+window.initPage = initPage;
+window.showLoadingScreen = showLoadingScreen;
+window.hideLoadingScreen = hideLoadingScreen;
+window.updateLoadingProgress = updateLoadingProgress;
+window.defineLoadingSteps = defineLoadingSteps;
+window.nextLoadingStep = nextLoadingStep;
+window.completeLoading = completeLoading;
+window.showLoadingError = showLoadingError;
+window.hideLoadingError = hideLoadingError;
+window.setLoadingRetry = setLoadingRetry;
+window.retryLoading = retryLoading;
+window.setLoadingEscapeEnabled = setLoadingEscapeEnabled;
 
 console.log('✅ shared.js loaded successfully!');
 console.log('🔑 Session:', session ? 'Logged in' : 'Not logged in');

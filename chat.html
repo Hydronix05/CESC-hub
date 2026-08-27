@@ -18,6 +18,46 @@
 <script src="/js/theme-engine.js"></script>
 </head>
 <body>
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+</div>
+
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -235,6 +275,20 @@ let pendingNotificationSender = null;
 let notificationTimeout = null;
 let unreadCount = 0;
 let isPageVisible = true;
+
+// ── LOADING STEPS ──
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'messages', label: 'Loading chat messages...', technical: 'Fetching message history' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'Ready to chat' }
+  ]);
+}
 
 // ── NOTIFICATION SOUND ──
 function playNotificationSound() {
@@ -590,89 +644,6 @@ function canEditMessage(msgCreatedAt) {
   const msgTime = new Date(msgCreatedAt).getTime();
   const diffMinutes = (now - msgTime) / (1000 * 60);
   return diffMinutes <= EDIT_WINDOW_MINUTES;
-}
-
-// ── INIT ──
-async function init() {
-  if (typeof window.initTheme !== 'function') {
-    console.log('⏳ Waiting for shared.js...');
-    setTimeout(init, 200);
-    return;
-  }
-  
-  console.log('✅ shared.js loaded');
-  window.initTheme();
-  
-  requestNotificationPermission();
-  
-  document.addEventListener('visibilitychange', () => {
-    isPageVisible = !document.hidden;
-    if (isPageVisible) {
-      unreadCount = 0;
-      document.title = 'CESC Hub — Chat';
-      if ('clearAppBadge' in navigator) {
-        navigator.clearAppBadge().catch(() => {});
-      }
-    }
-  });
-  
-  const sess = await window.initAuth();
-  if (!sess) return;
-  
-  console.log('✅ Session loaded:', sess.user.email);
-  
-  const { data: profile } = await window.supabaseClient
-    .from('profiles')
-    .select('username, display_name, pfp_url')
-    .eq('id', window.session.user.id)
-    .single();
-  
-  // Update window.currentUser with the profile data
-  window.currentUser = {
-    ...window.currentUser,
-    username: profile?.username,
-    display_name: profile?.display_name || profile?.username,
-    pfp_url: profile?.pfp_url
-  };
-  
-  const displayName = window.currentUser.display_name;
-  const rawUsername = window.currentUser.username;
-  
-  username = rawUsername;
-  currentDisplayName = displayName;
-  
-  const chipName = document.getElementById('chip-name');
-  const ddName = document.getElementById('dd-name');
-  const chipInitial = document.getElementById('chip-initial');
-  
-  if (chipName) chipName.textContent = displayName;
-  if (ddName) ddName.textContent = displayName;
-  if (chipInitial) chipInitial.textContent = (displayName?.[0] || '?').toUpperCase();
-  
-  if (profile?.pfp_url) {
-    const av = document.getElementById('chip-av');
-    if (av) {
-      const initial = av.querySelector('span');
-      const img = document.createElement('img');
-      img.src = profile.pfp_url;
-      img.onload = () => { img.classList.add('loaded'); if (initial) initial.style.display = 'none'; };
-      img.onerror = () => img.remove();
-      av.appendChild(img);
-    }
-  }
-  
-  await window.loadPfpCache();
-  await window.loadNotifCount();
-  await window.loadOnlineCount();
-  
-  const onlineCount = document.getElementById('online-count');
-  if (onlineCount) {
-    const chatOnline = document.getElementById('chat-online-count');
-    if (chatOnline) chatOnline.textContent = onlineCount.textContent + ' online';
-  }
-  
-  await loadMessages();
-  setupRealtime();
 }
 
 // ── BUILD MESSAGE GROUP ──
@@ -1167,11 +1138,90 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep(); // theme
+  
+  // auth is handled by initPage
+  // profile is handled by initPage
+  
+  nextLoadingStep(); // pfp (already loaded in initPage)
+  
+  requestNotificationPermission();
+  
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    if (isPageVisible) {
+      unreadCount = 0;
+      document.title = 'CESC Hub — Chat';
+      if ('clearAppBadge' in navigator) {
+        navigator.clearAppBadge().catch(() => {});
+      }
+    }
+  });
+  
+  const sess = window.session;
+  if (!sess) return;
+  
+  const { data: profile } = await window.supabaseClient
+    .from('profiles')
+    .select('username, display_name, pfp_url')
+    .eq('id', window.session.user.id)
+    .single();
+  
+  // Update window.currentUser with the profile data
+  window.currentUser = {
+    ...window.currentUser,
+    username: profile?.username,
+    display_name: profile?.display_name || profile?.username,
+    pfp_url: profile?.pfp_url
+  };
+  
+  const displayName = window.currentUser.display_name;
+  const rawUsername = window.currentUser.username;
+  
+  username = rawUsername;
+  currentDisplayName = displayName;
+  
+  const chipName = document.getElementById('chip-name');
+  const ddName = document.getElementById('dd-name');
+  const chipInitial = document.getElementById('chip-initial');
+  
+  if (chipName) chipName.textContent = displayName;
+  if (ddName) ddName.textContent = displayName;
+  if (chipInitial) chipInitial.textContent = (displayName?.[0] || '?').toUpperCase();
+  
+  if (profile?.pfp_url) {
+    const av = document.getElementById('chip-av');
+    if (av) {
+      const initial = av.querySelector('span');
+      const img = document.createElement('img');
+      img.src = profile.pfp_url;
+      img.onload = () => { img.classList.add('loaded'); if (initial) initial.style.display = 'none'; };
+      img.onerror = () => img.remove();
+      av.appendChild(img);
+    }
+  }
+  
+  nextLoadingStep(); // messages
+  await loadMessages();
+  
+  nextLoadingStep(); // online (handled by initPage)
+  // notifs (handled by initPage)
+  
+  nextLoadingStep(); // ready
+  
+  setupRealtime();
+}
+
 // ── START ──
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
 } else {
-  setTimeout(init, 100);
+  initPage(pageInit);
 }
 </script>
 </body>

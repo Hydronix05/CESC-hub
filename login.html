@@ -14,11 +14,51 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <!-- Load shared.js -->
 <script src="shared.js"></script>
-<!-- Load theme engine BEFORE the module script -->
+<!-- Load theme engine -->
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
 </head>
 <body>
+
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="window.retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+</div>
 
 <div class="bg-canvas">
   <div class="orb orb1"></div>
@@ -48,20 +88,20 @@
   
   <div class="field">
     <label>Username or Email</label>
-    <input type="text" id="login-input" placeholder="username or email" autocomplete="username" onkeydown="onEnter(event)"/>
+    <input type="text" id="login-input" placeholder="username or email" autocomplete="username" onkeydown="window.onEnter(event)"/>
   </div>
   
   <div class="field">
     <label>Password</label>
     <div class="input-wrap">
-      <input type="password" id="password" class="padded" placeholder="••••••••" autocomplete="current-password" onkeydown="onEnter(event)"/>
-      <button class="eye-btn" onclick="togglePw()" type="button" id="eye-btn"><i class="fas fa-eye"></i></button>
+      <input type="password" id="password" class="padded" placeholder="••••••••" autocomplete="current-password" onkeydown="window.onEnter(event)"/>
+      <button class="eye-btn" onclick="window.togglePw()" type="button" id="eye-btn"><i class="fas fa-eye"></i></button>
     </div>
   </div>
   
   <div class="hint">press enter ↵ to continue</div>
   
-  <button class="btn" id="login-btn" onclick="login()">
+  <button class="btn" id="login-btn" onclick="window.login()">
     <span id="btn-text">Login</span>
     <div class="spinner" id="spinner"></div>
   </button>
@@ -87,37 +127,46 @@
 </div>
 
 <script>
-// ── INIT THEME FIRST ──
-// This runs before the module script
-(function() {
-  if (typeof window.initTheme === 'function') {
-    window.initTheme();
-    console.log('✅ Theme initialized on login page');
-  } else {
-    console.log('⏳ Waiting for theme engine...');
-    setTimeout(() => {
-      if (typeof window.initTheme === 'function') {
-        window.initTheme();
-        console.log('✅ Theme initialized on login page (delayed)');
-      }
-    }, 200);
+// ── LOGIN PAGE INIT ──
+// Simple loading screen - NO initPage() because this is the login page
+
+// Show loading screen
+window.showLoadingScreen();
+
+// Update progress
+window.updateLoadingProgress(10, 'Loading theme...', 'Applying saved theme preferences');
+
+// Init theme
+if (typeof window.initTheme === 'function') {
+  window.initTheme();
+}
+
+window.updateLoadingProgress(40, 'Checking session...', 'Verifying if already logged in');
+
+// Check if already logged in
+window.supabaseClient.auth.getSession().then(({ data }) => {
+  if (data.session) {
+    window.location.href = 'index.html';
+    return;
   }
-})();
+  
+  window.updateLoadingProgress(100, 'Ready!', 'Login page ready');
+  
+  // Hide loading screen after a moment
+  setTimeout(() => {
+    window.hideLoadingScreen();
+  }, 300);
+}).catch(() => {
+  // If error, still show the login page
+  window.updateLoadingProgress(100, 'Ready!', 'Login page ready');
+  setTimeout(() => {
+    window.hideLoadingScreen();
+  }, 300);
+});
 </script>
 
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const SUPABASE_URL = 'https://wojbqixkarjlvbgublsg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvamJxaXhrYXJqbHZiZ3VibHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjkxNDYsImV4cCI6MjEwMTY0NTE0Nn0.A2VpByFPSIi9bS8EkAh7VPsgjuiYFfgAyuwIz-sCcas';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Skip login if already logged in
-supabase.auth.getSession().then(({ data }) => {
-  if (data.session) window.location.href = 'index.html';
-});
-
+<script>
+// ── LOGIN LOGIC ──
 let pwVisible = false;
 
 // ─── DOMAIN LIST ────────────────────────────────
@@ -131,8 +180,7 @@ const EMAIL_DOMAINS = [
 
 // ─── FIND USER BY ANY DOMAIN ────────────────────
 async function findUserByUsername(username) {
-  // First try the stored email in profiles
-  const { data: profile, error: lookupErr } = await supabase
+  const { data: profile } = await window.supabaseClient
     .from('profiles')
     .select('email, username')
     .eq('username', username)
@@ -142,11 +190,9 @@ async function findUserByUsername(username) {
     return { email: profile.email, matched: true };
   }
 
-  // If not found, try all possible email domains
   for (const domain of EMAIL_DOMAINS) {
     const emailToTry = `${username}@${domain}`;
-    
-    const { data: user, error } = await supabase
+    const { data: user } = await window.supabaseClient
       .from('profiles')
       .select('email, username')
       .eq('email', emailToTry)
@@ -162,8 +208,10 @@ async function findUserByUsername(username) {
 
 window.togglePw = function () {
   pwVisible = !pwVisible;
-  document.getElementById('password').type = pwVisible ? 'text' : 'password';
-  document.getElementById('eye-btn').innerHTML = pwVisible ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+  const pwInput = document.getElementById('password');
+  const eyeBtn = document.getElementById('eye-btn');
+  pwInput.type = pwVisible ? 'text' : 'password';
+  eyeBtn.innerHTML = pwVisible ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
 };
 
 window.onEnter = function (e) { 
@@ -200,10 +248,8 @@ window.login = async function () {
 
   let emailToUse = raw;
 
-  // ─── IF USERNAME (no @ symbol) ──────────────────
   if (!raw.includes('@')) {
     setLoading(true, 'searching across domains...');
-
     const result = await findUserByUsername(raw);
 
     if (!result.matched) {
@@ -218,7 +264,7 @@ window.login = async function () {
 
   setLoading(true, 'signing in...');
 
-  const { error: signInErr } = await supabase.auth.signInWithPassword({
+  const { error: signInErr } = await window.supabaseClient.auth.signInWithPassword({
     email: emailToUse,
     password: password,
   });

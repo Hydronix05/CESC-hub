@@ -15,6 +15,46 @@
 <script src="/js/theme-engine.js"></script>
 </head>
 <body>
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+<div class="bg-canvas">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+</div>
+
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -256,55 +296,18 @@ const EMOJIS = [
   '⌨️','🖥️','📷','📸','📹','🎬','📺','🎵','📚','📖','✏️','📝','📌','📍','🔗','📎'
 ];
 
-// ── INIT ──
-async function init() {
-  if (typeof window.initTheme !== 'function') {
-    console.log('⏳ Waiting for shared.js...');
-    setTimeout(init, 200);
-    return;
-  }
-  
-  console.log('✅ shared.js loaded');
-  window.initTheme();
-  
-  const sess = await window.initAuth();
-  if (!sess) return;
-  
-  const profile = await window.loadUserProfile();
-  if (profile) {
-    window.updateUserUI(profile);
-    await window.loadPfpCache();
-  }
-  
-  await window.updateLastSeen();
-  await window.updateStreak();
-  
-  updateCooldownUI();
-  
-  await Promise.all([
-    loadFeed(),
-    window.loadOnlineCount(),
-    window.loadNotifCount()
+// ── LOADING STEPS ──
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'feed', label: 'Loading feed posts...', technical: 'Fetching latest posts' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'All systems ready' }
   ]);
-
-  const params = new URLSearchParams(window.location.search);
-  const postId = params.get('post');
-  if (postId) {
-    const postEl = document.querySelector(`[data-id="${postId}"]`);
-    if (postEl) {
-      postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      postEl.style.borderColor = 'var(--neon)';
-      setTimeout(() => postEl.style.borderColor = '', 3000);
-    }
-  }
-  
-  setupInfiniteScroll();
-  
-  setInterval(async () => {
-    if (!window.session) return;
-    await window.updateLastSeen();
-    await Promise.all([window.loadOnlineCount(), window.loadNotifCount()]);
-  }, 15000);
 }
 
 // ── INFINITE SCROLL ──
@@ -977,11 +980,47 @@ window.submitComment = submitComment;
 window.openImageModal = openImageModal;
 window.closeImageModal = closeImageModal;
 
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep(); // theme
+  
+  // auth is handled by initPage
+  // profile is handled by initPage
+  
+  nextLoadingStep(); // pfp (already loaded in initPage)
+  
+  nextLoadingStep(); // feed
+  await loadFeed();
+  
+  nextLoadingStep(); // online (handled by initPage)
+  // notifs (handled by initPage)
+  
+  nextLoadingStep(); // ready
+  
+  // Post-init setup
+  updateCooldownUI();
+  setupInfiniteScroll();
+  
+  const params = new URLSearchParams(window.location.search);
+  const postId = params.get('post');
+  if (postId) {
+    const postEl = document.querySelector(`[data-id="${postId}"]`);
+    if (postEl) {
+      postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      postEl.style.borderColor = 'var(--neon)';
+      setTimeout(() => postEl.style.borderColor = '', 3000);
+    }
+  }
+}
+
 // ── START ──
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
 } else {
-  setTimeout(init, 100);
+  initPage(pageInit);
 }
 </script>
 </body>
