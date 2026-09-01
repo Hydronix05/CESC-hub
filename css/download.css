@@ -1,0 +1,433 @@
+/* ── DOWNLOAD PAGE ── */
+
+/* Install Card */
+.install-card {
+  display: none;
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+  border: 2px solid var(--neon);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  align-items: center;
+  gap: 20px;
+  animation: slide-down 0.5s ease;
+}
+
+.install-card-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--neon-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--neon);
+  flex-shrink: 0;
+}
+
+.install-card-content h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.install-card-content p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+/* Update Banner */
+.update-banner {
+  background: var(--surface);
+  border: 1px solid var(--neon);
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  animation: slide-down 0.4s ease;
+}
+
+.update-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.update-icon {
+  font-size: 1.2rem;
+  color: var(--neon);
+}
+
+.update-banner-content strong {
+  color: var(--text-bright);
+}
+
+.update-banner-content .btn {
+  margin-left: auto;
+}
+
+/* Version Badge */
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: var(--neon-glow);
+  color: var(--neon);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid var(--neon);
+}
+
+/* Steps Grid */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.step-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 18px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.step-card:hover {
+  border-color: var(--neon-glow);
+  transform: translateY(-4px);
+}
+
+.step-number {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--neon);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+}
+
+.step-icon {
+  font-size: 1.8rem;
+  color: var(--neon);
+  margin-bottom: 8px;
+}
+
+.step-card h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.step-card p {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.step-device-info {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.device-tag {
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  background: var(--bg2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.device-tag i {
+  margin-right: 4px;
+}
+
+/* Video Container */
+.video-container {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  aspect-ratio: 16/9;
+  max-height: 400px;
+}
+
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg2), var(--surface));
+  cursor: pointer;
+  position: relative;
+}
+
+.video-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: 
+    linear-gradient(135deg, rgba(74, 158, 255, 0.1), rgba(108, 92, 231, 0.1)),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50" y="55" text-anchor="middle" font-family="Arial" font-size="12" fill="%234a9eff">🎬 Video Guide</text></svg>');
+  background-size: cover;
+  background-position: center;
+}
+
+.play-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--neon);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 40px var(--neon-glow);
+  cursor: pointer;
+  z-index: 2;
+}
+
+.play-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 60px var(--neon-glow);
+}
+
+.video-overlay-text {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: rgba(0,0,0,0.6);
+  padding: 6px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.video-player video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.video-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.video-close:hover {
+  background: rgba(255,77,109,0.3);
+  transform: scale(1.1);
+}
+
+/* Version List */
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.version-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  animation: slide-up 0.3s ease both;
+}
+
+.version-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.version-tag {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text-bright);
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+
+.version-tag.latest {
+  color: var(--neon);
+  border-color: var(--neon);
+  background: var(--neon-glow);
+}
+
+.version-date {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+}
+
+.version-changes {
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+/* Toggle Switch */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.toggle-row:last-child {
+  border-bottom: none;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--border);
+  border-radius: 24px;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--neon);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* Update Settings */
+.update-settings {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 16px 14px;
+}
+
+/* Responsive */
+@media(max-width:768px) {
+  .install-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .steps-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .step-card {
+    padding: 16px 12px;
+  }
+  
+  .play-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.4rem;
+  }
+  
+  .video-overlay-text {
+    font-size: 0.75rem;
+    bottom: 16px;
+    padding: 4px 12px;
+  }
+}
+
+@media(max-width:480px) {
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .update-banner-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .update-banner-content .btn {
+    margin: 0;
+  }
+  
+  .version-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

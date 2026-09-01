@@ -4,6 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CESC Hub — Settings</title>
+
+<!-- ── PWA META TAGS ── -->
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
 <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -17,6 +26,18 @@
 <script src="/js/theme-engine.js"></script>
 <!-- Load shared.js -->
 <script src="shared.js"></script>
+
+<!-- ── SERVICE WORKER REGISTRATION ── -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed:', err));
+  });
+}
+</script>
+
 </head>
 <body>
 <!-- ── LOADING SCREEN ── -->
@@ -84,7 +105,7 @@
       <span class="online-count-number" id="online-count">...</span>
       <span class="online-status-text">online now</span>
     </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
     <a href="notifications.html" class="hdr-btn" title="Notifications">
       <i class="fas fa-bell"></i>
       <span class="notif-badge" id="notif-badge">0</span>
@@ -114,6 +135,7 @@
   <a href="chat.html" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
   <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
   <a href="settings.html" class="nav-item active"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
+  <a href="download.html" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
   <a href="notifications.html" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
@@ -133,157 +155,20 @@
   <!-- ── THEME SECTION ── -->
   <div class="settings-section">
     <div class="section-title"><i class="fas fa-palette" style="color:var(--neon)"></i> Theme</div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Choose your vibe · Click any theme to apply</p>
     
-    <!-- Preset Themes -->
-    <div class="theme-presets">
-      <div class="theme-grid" id="theme-grid">
-        <div class="theme-card" data-theme="default" onclick="selectPreset('default')">
-          <div class="theme-preview preview-default">
-            <div class="p-sidebar"></div>
-            <div class="p-content">
-              <div class="p-bar"></div>
-              <div class="p-bar2"></div>
-              <div class="p-bar2" style="width:50%"></div>
-            </div>
-          </div>
-          <div class="theme-name">Default</div>
-          <div class="theme-desc">neon cyber · dark bg</div>
-        </div>
-        <div class="theme-card" data-theme="white" onclick="selectPreset('white')">
-          <div class="theme-preview preview-white">
-            <div class="p-sidebar"></div>
-            <div class="p-content">
-              <div class="p-bar"></div>
-              <div class="p-bar2"></div>
-              <div class="p-bar2" style="width:50%"></div>
-            </div>
-          </div>
-          <div class="theme-name">Original White</div>
-          <div class="theme-desc">clean · light bg</div>
-        </div>
-        <div class="theme-card" data-theme="classic" onclick="selectPreset('classic')">
-          <div class="theme-preview preview-classic">
-            <div class="p-sidebar"></div>
-            <div class="p-content">
-              <div class="p-bar"></div>
-              <div class="p-bar2"></div>
-              <div class="p-bar2" style="width:50%"></div>
-            </div>
-          </div>
-          <div class="theme-name">Classic Dark</div>
-          <div class="theme-desc">purple accent · muted</div>
-        </div>
-      </div>
+    <div class="theme-grid" id="theme-grid">
+      <!-- Themes will be rendered by JavaScript -->
     </div>
-
-    <!-- Custom Themes -->
-    <div class="custom-themes-section" style="margin-top:20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div class="section-title" style="margin-bottom:0;font-size:0.7rem;">
-          <i class="fas fa-paint-brush" style="color:var(--neon)"></i> Custom Themes
-          <span style="color:var(--muted);font-weight:400;font-size:0.7rem;font-family:'Space Mono',monospace;">
-            (<span id="custom-count">0</span>/<span id="custom-max">3</span>)
-          </span>
-        </div>
-        <button class="btn small" id="new-theme-btn" onclick="openThemeEditor()" style="padding:6px 14px;font-size:0.78rem;">
-          <i class="fas fa-plus"></i> New
-        </button>
-      </div>
-      <div id="custom-themes-list" class="custom-themes-list">
-        <!-- Custom themes will be rendered here -->
-      </div>
-    </div>
-
-    <!-- Theme Editor Modal -->
-    <div class="modal-overlay" id="theme-editor-modal" onclick="closeThemeEditorOutside(event)">
-      <div class="modal-card theme-editor-card" onclick="event.stopPropagation()">
-        <button class="modal-close" onclick="closeThemeEditor()"><i class="fas fa-times"></i></button>
-        <h3 style="font-size:1.1rem;font-weight:800;color:var(--text-bright);margin-bottom:16px;" id="editor-title">Create Custom Theme</h3>
-        
-        <div class="editor-form">
-          <div class="field">
-            <label>Theme Name</label>
-            <input type="text" id="theme-name-input" placeholder="My Custom Theme..." maxlength="30"/>
-          </div>
-          
-          <div class="color-grid">
-            <div class="color-field">
-              <label>Background</label>
-              <input type="color" id="color-bg" value="#0a0a0f"/>
-            </div>
-            <div class="color-field">
-              <label>Background 2</label>
-              <input type="color" id="color-bg2" value="#0f0f1a"/>
-            </div>
-            <div class="color-field">
-              <label>Primary Accent</label>
-              <input type="color" id="color-neon" value="#4a9eff"/>
-            </div>
-            <div class="color-field">
-              <label>Secondary Accent</label>
-              <input type="color" id="color-neon2" value="#6c5ce7"/>
-            </div>
-            <div class="color-field">
-              <label>Text</label>
-              <input type="color" id="color-text" value="#e8e8f0"/>
-            </div>
-            <div class="color-field">
-              <label>Text Bright</label>
-              <input type="color" id="color-text-bright" value="#f0f0f8"/>
-            </div>
-            <div class="color-field">
-              <label>Muted</label>
-              <input type="color" id="color-muted" value="#6b6b80"/>
-            </div>
-            <div class="color-field">
-              <label>Surface</label>
-              <input type="color" id="color-surface" value="#1a1a2e"/>
-            </div>
-            <div class="color-field">
-              <label>Border</label>
-              <input type="color" id="color-border" value="#2a2a3e"/>
-            </div>
-            <div class="color-field">
-              <label>Sidebar BG</label>
-              <input type="color" id="color-sidebar" value="#0a0a14"/>
-            </div>
-            <div class="color-field">
-              <label>Header BG</label>
-              <input type="color" id="color-header" value="#0a0a14"/>
-            </div>
-            <div class="color-field">
-              <label>Overlay BG</label>
-              <input type="color" id="color-overlay" value="#0a0a14"/>
-            </div>
-          </div>
-          
-          <div style="display:flex;gap:10px;margin-top:16px;">
-            <button class="btn" id="save-theme-btn" onclick="saveCustomTheme()"><i class="fas fa-save"></i> Save Theme</button>
-            <button class="btn secondary" onclick="closeThemeEditor()">Cancel</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Live Preview -->
-    <div class="theme-preview-live" style="margin-top:16px;padding:16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#000;flex-shrink:0;">A</div>
-        <div>
-          <div style="font-weight:800;color:var(--text-bright);">Preview</div>
-          <div style="font-size:0.7rem;color:var(--muted);font-family:'Space Mono',monospace;">colors update live</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <span style="padding:4px 12px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.8rem;">Surface</span>
-        <span style="padding:4px 12px;border-radius:6px;background:var(--neon);color:#000;font-weight:700;font-size:0.8rem;">Primary</span>
-        <span style="padding:4px 12px;border-radius:6px;background:var(--neon2);color:#000;font-weight:700;font-size:0.8rem;">Secondary</span>
-        <span style="padding:4px 12px;border-radius:6px;background:var(--danger);color:#fff;font-weight:700;font-size:0.8rem;">Danger</span>
-        <span style="padding:4px 12px;border-radius:6px;background:var(--yellow);color:#000;font-weight:700;font-size:0.8rem;">Warning</span>
-      </div>
-      <div style="margin-top:8px;padding:8px 12px;border-radius:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:0.82rem;">
-        This is a preview of your current theme colors.
-      </div>
+    
+    <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
+      <span style="font-size:0.75rem;color:var(--muted);font-family:'Space Mono',monospace;">
+        <i class="fas fa-arrows-alt-h" style="margin-right:6px;"></i>
+        Click the <strong style="color:var(--text-bright)">moon/sun</strong> icon in header to toggle dark/light
+      </span>
+      <span style="font-size:0.7rem;color:var(--muted);font-family:'Space Mono',monospace;background:var(--bg2);padding:2px 10px;border-radius:6px;border:1px solid var(--border);">
+        Current: <span id="current-theme-name" style="color:var(--neon);font-weight:700;">—</span>
+      </span>
     </div>
   </div>
 
@@ -433,6 +318,10 @@
       <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
       <span class="downbar-more-label">Settings</span>
     </a>
+    <a href="download.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-download"></i></span>
+      <span class="downbar-more-label">Downloads</span>
+    </a>
     <a href="notifications.html" class="downbar-more-item" id="downbar-more-notif">
       <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
       <span class="downbar-more-label">Notifications</span>
@@ -452,7 +341,6 @@ const MAX_DISPLAY_NAME_CHANGES = 2;
 
 let currentProfile = null;
 let pendingFile = null;
-let editingThemeId = null;
 
 // ── LOADING STEPS ──
 function definePageSteps() {
@@ -742,368 +630,161 @@ window.clearLocalData = function() {
 
 // ── THEME FUNCTIONS ──
 
-// Select preset theme
-window.selectPreset = function(themeId) {
-  const success = window.switchTheme(themeId);
-  if (success) {
-    document.querySelectorAll('.theme-card').forEach(c => {
-      c.classList.toggle('active', c.dataset.theme === themeId);
-    });
-    document.querySelectorAll('.custom-theme-card').forEach(c => {
-      c.classList.remove('active');
-      c.style.borderColor = 'var(--border)';
-    });
-    window.showToast('Theme applied ✅', 'success');
-    renderCustomThemes();
-  }
-};
-
-// Open theme editor for new or edit
-window.openThemeEditor = function(themeId = null) {
-  const modal = document.getElementById('theme-editor-modal');
-  const title = document.getElementById('editor-title');
-  const saveBtn = document.getElementById('save-theme-btn');
-  
-  editingThemeId = themeId;
-  
-  if (themeId) {
-    title.textContent = 'Edit Custom Theme';
-    saveBtn.textContent = 'Update Theme';
-    
-    const customThemes = window.getCustomThemes();
-    const theme = customThemes.find(t => t.id === themeId);
-    if (theme) {
-      document.getElementById('theme-name-input').value = theme.name;
-      document.getElementById('color-bg').value = hexFromRgb(theme.variables['--bg']);
-      document.getElementById('color-bg2').value = hexFromRgb(theme.variables['--bg2']);
-      document.getElementById('color-neon').value = hexFromRgb(theme.variables['--neon']);
-      document.getElementById('color-neon2').value = hexFromRgb(theme.variables['--neon2']);
-      document.getElementById('color-text').value = hexFromRgb(theme.variables['--text']);
-      document.getElementById('color-text-bright').value = hexFromRgb(theme.variables['--text-bright']);
-      document.getElementById('color-muted').value = hexFromRgb(theme.variables['--muted']);
-      document.getElementById('color-surface').value = hexFromRgb(theme.variables['--surface']);
-      document.getElementById('color-border').value = hexFromRgb(theme.variables['--border']);
-      document.getElementById('color-sidebar').value = hexFromRgb(theme.variables['--sidebar-bg']);
-      document.getElementById('color-header').value = hexFromRgb(theme.variables['--header-bg']);
-      document.getElementById('color-overlay').value = hexFromRgb(theme.variables['--overlay-bg']);
-    }
-  } else {
-    title.textContent = 'Create Custom Theme';
-    saveBtn.textContent = 'Save Theme';
-    document.getElementById('theme-name-input').value = '';
-    const defaultTheme = window.THEME_PRESETS.find(t => t.id === 'default');
-    if (defaultTheme) {
-      document.getElementById('color-bg').value = hexFromRgb(defaultTheme.variables['--bg']);
-      document.getElementById('color-bg2').value = hexFromRgb(defaultTheme.variables['--bg2']);
-      document.getElementById('color-neon').value = hexFromRgb(defaultTheme.variables['--neon']);
-      document.getElementById('color-neon2').value = hexFromRgb(defaultTheme.variables['--neon2']);
-      document.getElementById('color-text').value = hexFromRgb(defaultTheme.variables['--text']);
-      document.getElementById('color-text-bright').value = hexFromRgb(defaultTheme.variables['--text-bright']);
-      document.getElementById('color-muted').value = hexFromRgb(defaultTheme.variables['--muted']);
-      document.getElementById('color-surface').value = hexFromRgb(defaultTheme.variables['--surface']);
-      document.getElementById('color-border').value = hexFromRgb(defaultTheme.variables['--border']);
-      document.getElementById('color-sidebar').value = hexFromRgb(defaultTheme.variables['--sidebar-bg']);
-      document.getElementById('color-header').value = hexFromRgb(defaultTheme.variables['--header-bg']);
-      document.getElementById('color-overlay').value = hexFromRgb(defaultTheme.variables['--overlay-bg']);
-    }
-  }
-  
-  modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-};
-
-window.closeThemeEditor = function() {
-  document.getElementById('theme-editor-modal').classList.remove('show');
-  document.body.style.overflow = '';
-  editingThemeId = null;
-};
-
-window.closeThemeEditorOutside = function(event) {
-  if (event.target.id === 'theme-editor-modal') {
-    closeThemeEditor();
-  }
-};
-
-// Save custom theme
-window.saveCustomTheme = function() {
-  const name = document.getElementById('theme-name-input').value.trim();
-  if (!name) {
-    window.showToast('Please enter a theme name', 'error');
-    return;
-  }
-  
-  const variables = {
-    bg: document.getElementById('color-bg').value,
-    bg2: document.getElementById('color-bg2').value,
-    neon: document.getElementById('color-neon').value,
-    neon2: document.getElementById('color-neon2').value,
-    text: document.getElementById('color-text').value,
-    textBright: document.getElementById('color-text-bright').value,
-    muted: document.getElementById('color-muted').value,
-    surface: document.getElementById('color-surface').value,
-    border: document.getElementById('color-border').value,
-    sidebarBg: document.getElementById('color-sidebar').value,
-    headerBg: document.getElementById('color-header').value,
-    overlayBg: document.getElementById('color-overlay').value,
-    neonGlow: hexToRgba(document.getElementById('color-neon').value, 0.3),
-    neonGlow2: hexToRgba(document.getElementById('color-neon2').value, 0.3)
-  };
-  
-  let result;
-  if (editingThemeId) {
-    result = window.updateCustomTheme(editingThemeId, name, variables);
-    if (result) {
-      window.showToast('Theme updated ✅', 'success');
-    }
-  } else {
-    result = window.createCustomTheme(name, variables);
-    if (result) {
-      window.showToast('Theme created ✅', 'success');
-    }
-  }
-  
-  if (result) {
-    window.applyTheme(result);
-    closeThemeEditor();
-    renderCustomThemes();
-    updatePresetActiveState();
-  }
-};
-
-// ── CONFIRM AND DELETE (uses engine's deleteCustomTheme) ──
-window.confirmAndDeleteTheme = function(themeId) {
-  // Create confirm modal
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-  overlay.style.zIndex = '1000';
-  overlay.style.position = 'fixed';
-  overlay.style.inset = '0';
-  overlay.style.background = 'rgba(0,0,0,0.7)';
-  overlay.style.backdropFilter = 'blur(12px)';
-  
-  const card = document.createElement('div');
-  card.className = 'modal-card';
-  card.style.maxWidth = '400px';
-  card.style.width = '92vw';
-  card.style.textAlign = 'center';
-  card.style.padding = '32px 28px 28px';
-  card.style.background = 'var(--bg2)';
-  card.style.border = '1px solid var(--border)';
-  card.style.borderRadius = '20px';
-  card.style.position = 'relative';
-  card.innerHTML = `
-    <h4 style="font-size:1.1rem;font-weight:800;color:var(--text-bright);margin-bottom:8px;">Delete Theme?</h4>
-    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:20px;line-height:1.5;">This action cannot be undone.</p>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button class="btn danger" id="confirm-delete-btn" style="padding:8px 24px;font-size:0.9rem;"><i class="fas fa-trash"></i> Delete</button>
-      <button class="btn secondary" id="cancel-delete-btn" style="padding:8px 24px;font-size:0.9rem;">Cancel</button>
-    </div>
-  `;
-  
-  overlay.appendChild(card);
-  document.body.appendChild(overlay);
-  document.body.style.overflow = 'hidden';
-  
-  // Handle confirm - calls the ENGINE's deleteCustomTheme
-  document.getElementById('confirm-delete-btn').onclick = function() {
-    overlay.remove();
-    document.body.style.overflow = '';
-    
-    const success = window.deleteCustomTheme(themeId);
-    if (success) {
-      renderCustomThemes();
-      updatePresetActiveState();
-      window.showToast('Theme deleted', 'success');
-    }
-  };
-  
-  // Handle cancel
-  document.getElementById('cancel-delete-btn').onclick = function() {
-    overlay.remove();
-    document.body.style.overflow = '';
-  };
-  
-  // Close on outside click
-  overlay.onclick = function(e) {
-    if (e.target === overlay) {
-      overlay.remove();
-      document.body.style.overflow = '';
-    }
-  };
-};
-
-// Render custom themes
-function renderCustomThemes() {
-  const container = document.getElementById('custom-themes-list');
-  const customThemes = window.getCustomThemes();
+// Render theme cards
+function renderThemeCards() {
+  const grid = document.getElementById('theme-grid');
+  const themes = window.THEME_PRESETS || [];
   const current = window.getCurrentTheme();
   
-  document.getElementById('custom-count').textContent = customThemes.length;
-  document.getElementById('custom-max').textContent = window.MAX_CUSTOM_THEMES;
-  document.getElementById('new-theme-btn').disabled = customThemes.length >= window.MAX_CUSTOM_THEMES;
+  if (!grid || themes.length === 0) return;
   
-  if (customThemes.length === 0) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:20px;color:var(--muted);font-size:0.8rem;font-family:'Space Mono',monospace;border:1px dashed var(--border);border-radius:10px;">
-        <i class="fas fa-paint-brush" style="font-size:1.2rem;display:block;margin-bottom:6px;"></i>
-        No custom themes yet.<br>Click "New" to create one.
-      </div>
-    `;
-    return;
-  }
+  grid.innerHTML = '';
   
-  container.innerHTML = '';
-  customThemes.forEach(theme => {
+  // Group themes by category
+  const categories = {
+    general: 'General',
+    male: 'Bold',
+    female: 'Soft'
+  };
+  
+  // Sort: general first, then male, then female
+  const sortedThemes = [...themes].sort((a, b) => {
+    const order = { general: 0, male: 1, female: 2 };
+    return (order[a.category] || 0) - (order[b.category] || 0);
+  });
+  
+  sortedThemes.forEach(theme => {
     const card = document.createElement('div');
-    card.className = 'custom-theme-card';
+    card.className = 'theme-card';
+    card.dataset.theme = theme.id;
+    
+    // Check if active
     if (current && current.id === theme.id) {
       card.classList.add('active');
-      card.style.borderColor = 'var(--neon)';
-    } else {
-      card.style.borderColor = 'var(--border)';
     }
     
-    // Color preview
-    const previewColors = document.createElement('div');
-    previewColors.className = 'custom-theme-preview';
-    previewColors.style.display = 'flex';
-    previewColors.style.gap = '4px';
-    previewColors.style.marginBottom = '8px';
+    // Preview colors
+    const preview = document.createElement('div');
+    preview.className = 'theme-preview';
+    preview.style.background = theme.variables['--bg'] || '#0a0a0f';
+    preview.style.borderRadius = '10px';
+    preview.style.padding = '12px';
+    preview.style.marginBottom = '8px';
+    preview.style.position = 'relative';
+    preview.style.overflow = 'hidden';
+    preview.style.minHeight = '60px';
+    preview.style.display = 'flex';
+    preview.style.alignItems = 'center';
+    preview.style.justifyContent = 'center';
+    preview.style.gap = '8px';
     
-    const colors = [
-      theme.variables['--bg'],
-      theme.variables['--neon'],
-      theme.variables['--neon2'],
-      theme.variables['--surface'],
-      theme.variables['--text']
-    ];
+    // Preview elements
+    const accent1 = document.createElement('span');
+    accent1.style.width = '20px';
+    accent1.style.height = '20px';
+    accent1.style.borderRadius = '50%';
+    accent1.style.background = theme.variables['--neon'] || '#4a9eff';
+    accent1.style.boxShadow = `0 0 12px ${theme.variables['--neon-glow'] || 'rgba(74,158,255,0.3)'}`;
+    preview.appendChild(accent1);
     
-    colors.forEach(c => {
-      const dot = document.createElement('span');
-      dot.style.width = '20px';
-      dot.style.height = '20px';
-      dot.style.borderRadius = '4px';
-      dot.style.background = c;
-      dot.style.border = '1px solid var(--border)';
-      previewColors.appendChild(dot);
-    });
-    card.appendChild(previewColors);
+    const accent2 = document.createElement('span');
+    accent2.style.width = '20px';
+    accent2.style.height = '20px';
+    accent2.style.borderRadius = '50%';
+    accent2.style.background = theme.variables['--neon2'] || '#6c5ce7';
+    accent2.style.boxShadow = `0 0 12px ${theme.variables['--neon-glow2'] || 'rgba(108,92,231,0.3)'}`;
+    preview.appendChild(accent2);
     
-    const nameDiv = document.createElement('div');
-    nameDiv.className = 'custom-theme-name';
-    nameDiv.textContent = theme.name;
-    nameDiv.style.fontWeight = '700';
-    nameDiv.style.fontSize = '0.85rem';
-    nameDiv.style.color = 'var(--text-bright)';
-    card.appendChild(nameDiv);
+    const bar1 = document.createElement('span');
+    bar1.style.flex = '1';
+    bar1.style.height = '6px';
+    bar1.style.borderRadius = '4px';
+    bar1.style.background = theme.variables['--surface'] || 'rgba(255,255,255,0.1)';
+    preview.appendChild(bar1);
     
-    const actions = document.createElement('div');
-    actions.className = 'custom-theme-actions';
-    actions.style.display = 'flex';
-    actions.style.gap = '6px';
-    actions.style.marginTop = '8px';
-    actions.style.flexWrap = 'wrap';
+    const bar2 = document.createElement('span');
+    bar2.style.width = '20px';
+    bar2.style.height = '6px';
+    bar2.style.borderRadius = '4px';
+    bar2.style.background = theme.variables['--text'] || '#e8e8f0';
+    preview.appendChild(bar2);
     
-    const applyBtn = document.createElement('button');
-    applyBtn.className = 'btn small';
-    applyBtn.textContent = 'Apply';
-    applyBtn.style.padding = '4px 12px';
-    applyBtn.style.fontSize = '0.72rem';
-    applyBtn.onclick = () => {
-      window.applyTheme(theme);
-      renderCustomThemes();
-      updatePresetActiveState();
-      window.showToast('Theme applied ✅', 'success');
+    card.appendChild(preview);
+    
+    // Theme name
+    const name = document.createElement('div');
+    name.className = 'theme-name';
+    name.textContent = theme.name;
+    name.style.fontWeight = '700';
+    name.style.fontSize = '0.85rem';
+    name.style.color = 'var(--text-bright)';
+    card.appendChild(name);
+    
+    // Category tag
+    const categoryLabel = document.createElement('div');
+    categoryLabel.className = 'theme-category';
+    categoryLabel.textContent = categories[theme.category] || 'General';
+    categoryLabel.style.fontSize = '0.6rem';
+    categoryLabel.style.fontWeight = '600';
+    categoryLabel.style.fontFamily = "'Space Mono', monospace";
+    categoryLabel.style.color = 'var(--muted)';
+    categoryLabel.style.textTransform = 'uppercase';
+    categoryLabel.style.letterSpacing = '0.5px';
+    categoryLabel.style.marginTop = '2px';
+    card.appendChild(categoryLabel);
+    
+    // Description
+    const desc = document.createElement('div');
+    desc.className = 'theme-desc';
+    desc.textContent = theme.description || '';
+    desc.style.fontSize = '0.7rem';
+    desc.style.color = 'var(--muted)';
+    desc.style.marginTop = '2px';
+    card.appendChild(desc);
+    
+    // Active badge
+    if (current && current.id === theme.id) {
+      const badge = document.createElement('div');
+      badge.className = 'theme-active-badge';
+      badge.innerHTML = '<i class="fas fa-check-circle"></i> Active';
+      badge.style.position = 'absolute';
+      badge.style.top = '8px';
+      badge.style.right = '8px';
+      badge.style.fontSize = '0.6rem';
+      badge.style.fontWeight = '700';
+      badge.style.color = 'var(--neon)';
+      badge.style.background = 'var(--bg)';
+      badge.style.padding = '2px 8px';
+      badge.style.borderRadius = '12px';
+      badge.style.border = '1px solid var(--neon)';
+      card.style.position = 'relative';
+      card.appendChild(badge);
+    }
+    
+    // Click handler
+    card.onclick = () => {
+      const success = window.switchTheme(theme.id);
+      if (success) {
+        renderThemeCards();
+        updateCurrentThemeName();
+        window.showToast(`✅ ${theme.name} applied!`, 'success');
+      }
     };
-    actions.appendChild(applyBtn);
     
-    const editBtn = document.createElement('button');
-    editBtn.className = 'btn small secondary';
-    editBtn.textContent = 'Edit';
-    editBtn.style.padding = '4px 12px';
-    editBtn.style.fontSize = '0.72rem';
-    editBtn.onclick = () => window.openThemeEditor(theme.id);
-    actions.appendChild(editBtn);
-    
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn small danger';
-    deleteBtn.textContent = 'Delete';
-    deleteBtn.style.padding = '4px 12px';
-    deleteBtn.style.fontSize = '0.72rem';
-    deleteBtn.onclick = () => window.confirmAndDeleteTheme(theme.id);
-    actions.appendChild(deleteBtn);
-    
-    card.appendChild(actions);
-    container.appendChild(card);
+    grid.appendChild(card);
   });
 }
 
-// Update preset active state
-function updatePresetActiveState() {
+// Update current theme name display
+function updateCurrentThemeName() {
   const current = window.getCurrentTheme();
-  if (!current) return;
-  
-  document.querySelectorAll('.theme-card').forEach(c => {
-    c.classList.toggle('active', c.dataset.theme === current.id);
-  });
-}
-
-// Helper: Convert hex to rgba
-function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-// Helper: Extract hex from rgb/rgba string
-function hexFromRgb(value) {
-  if (!value) return '#000000';
-  if (value.startsWith('#')) return value;
-  
-  const matches = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (matches) {
-    const r = parseInt(matches[1]);
-    const g = parseInt(matches[2]);
-    const b = parseInt(matches[3]);
-    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+  const el = document.getElementById('current-theme-name');
+  if (el && current) {
+    el.textContent = current.name;
+  } else if (el) {
+    el.textContent = '—';
   }
-  return '#000000';
 }
-
-// Live preview on color change
-document.querySelectorAll('.color-grid input[type="color"]').forEach(input => {
-  input.addEventListener('input', () => {
-    const root = document.documentElement;
-    const map = {
-      'color-bg': '--bg',
-      'color-bg2': '--bg2',
-      'color-neon': '--neon',
-      'color-neon2': '--neon2',
-      'color-text': '--text',
-      'color-text-bright': '--text-bright',
-      'color-muted': '--muted',
-      'color-surface': '--surface',
-      'color-border': '--border',
-      'color-sidebar': '--sidebar-bg',
-      'color-header': '--header-bg',
-      'color-overlay': '--overlay-bg'
-    };
-    const cssVar = map[input.id];
-    if (cssVar) {
-      root.style.setProperty(cssVar, input.value);
-      if (input.id === 'color-neon') {
-        root.style.setProperty('--neon-glow', hexToRgba(input.value, 0.3));
-      }
-      if (input.id === 'color-neon2') {
-        root.style.setProperty('--neon-glow2', hexToRgba(input.value, 0.3));
-      }
-    }
-  });
-});
 
 // ── PAGE INIT ──
 async function pageInit() {
@@ -1165,9 +846,10 @@ async function pageInit() {
   }
 
   updateChangeBadge();
-
-  renderCustomThemes();
-  updatePresetActiveState();
+  
+  // Render theme cards
+  renderThemeCards();
+  updateCurrentThemeName();
   
   nextLoadingStep(); // online (handled by initPage)
   // notifs (handled by initPage)

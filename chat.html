@@ -4,6 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CESC Hub — Chat</title>
+
+<!-- ── PWA META TAGS ── -->
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
 <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -16,6 +25,18 @@
 <link rel="stylesheet" href="/css/pages/chat.css"/>
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
+
+<!-- ── SERVICE WORKER REGISTRATION ── -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed:', err));
+  });
+}
+</script>
+
 </head>
 <body>
 <!-- ── LOADING SCREEN ── -->
@@ -83,7 +104,7 @@
       <span class="online-count-number" id="online-count">...</span>
       <span class="online-status-text">online now</span>
     </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
     <a href="notifications.html" class="hdr-btn" title="Notifications">
       <i class="fas fa-bell"></i>
       <span class="notif-badge" id="notif-badge">0</span>
@@ -113,6 +134,7 @@
   <a href="chat.html" class="nav-item active"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
   <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
   <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
+  <a href="download.html" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
   <a href="notifications.html" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
@@ -230,6 +252,10 @@
     <a href="settings.html" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
       <span class="downbar-more-label">Settings</span>
+    </a>
+    <a href="download.html" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-download"></i></span>
+      <span class="downbar-more-label">Downloads</span>
     </a>
     <a href="notifications.html" class="downbar-more-item" id="downbar-more-notif">
       <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
