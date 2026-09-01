@@ -85,13 +85,13 @@ if ('serviceWorker' in navigator) {
 <!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
 
-<!-- ── MOBILE MENU HAMBURGER ── -->
-<div class="mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></div>
+<!-- ── MOBILE MENU HAMBURGER (HIDDEN ON MOBILE) ── -->
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
 <!-- ── HEADER (FULL WIDTH AT TOP) ── -->
 <header class="top-header">
   <div class="header-left">
-    <a href="index.html" class="header-logo">
+    <a href="/" class="header-logo">
       <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
     </a>
     <span class="header-page-title">Notifications</span>
@@ -104,8 +104,9 @@ if ('serviceWorker' in navigator) {
       <span class="online-count-number" id="online-count">...</span>
       <span class="online-status-text">online now</span>
     </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
-    <a href="notifications.html" class="hdr-btn" title="Notifications">
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    
+    <a href="/notifications" class="hdr-btn" title="Notifications">
       <i class="fas fa-bell"></i>
       <span class="notif-badge" id="notif-badge">0</span>
     </a>
@@ -118,9 +119,9 @@ if ('serviceWorker' in navigator) {
           <div class="dd-name" id="dd-name">—</div>
           <div class="dd-sub">CESC Hub member</div>
         </div>
-        <a href="profiles.html" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
-        <a href="settings.html" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
-        <a href="notifications.html" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
+        <a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
+        <a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
+        <a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
         <div class="dd-div"></div>
         <button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
       </div>
@@ -130,12 +131,12 @@ if ('serviceWorker' in navigator) {
 
 <!-- ── SIDEBAR (DESKTOP - UNDER HEADER) ── -->
 <aside class="sidebar" id="sidebar">
-  <a href="index.html" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
-  <a href="chat.html" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
-  <a href="profiles.html" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
-  <a href="settings.html" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
-  <a href="download.html" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-  <a href="notifications.html" class="nav-item active" id="notif-nav">
+  <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
+  <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
+  <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
+  <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
+  <a href="/notifications" class="nav-item active" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
@@ -173,16 +174,16 @@ if ('serviceWorker' in navigator) {
 <!-- ── DOWNBAR (MOBILE BOTTOM NAV - 5 EQUAL COLUMNS) ── -->
 <nav class="downbar" id="downbar">
   <div class="downbar-inner">
-    <a href="index.html" class="downbar-item" id="downbar-home">
+    <a href="/" class="downbar-item" id="downbar-home">
       <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
     </a>
-    <a href="chat.html" class="downbar-item" id="downbar-chat">
+    <a href="/chat" class="downbar-item" id="downbar-chat">
       <span class="downbar-icon"><i class="fas fa-comments"></i></span>
     </a>
-    <a href="profiles.html" class="downbar-item" id="downbar-profiles">
+    <a href="/profiles" class="downbar-item" id="downbar-profiles">
       <span class="downbar-icon"><i class="fas fa-users"></i></span>
     </a>
-    <a href="settings.html" class="downbar-item" id="downbar-settings">
+    <a href="/settings" class="downbar-item" id="downbar-settings">
       <span class="downbar-icon"><i class="fas fa-cog"></i></span>
     </a>
     <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
@@ -199,27 +200,27 @@ if ('serviceWorker' in navigator) {
   <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
   
   <div class="downbar-more-grid">
-    <a href="index.html" class="downbar-more-item">
+    <a href="/" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span>
       <span class="downbar-more-label">Feed</span>
     </a>
-    <a href="chat.html" class="downbar-more-item">
+    <a href="/chat" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
       <span class="downbar-more-label">Chat</span>
     </a>
-    <a href="profiles.html" class="downbar-more-item">
+    <a href="/profiles" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
       <span class="downbar-more-label">Profiles</span>
     </a>
-    <a href="settings.html" class="downbar-more-item">
+    <a href="/settings" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
       <span class="downbar-more-label">Settings</span>
     </a>
-    <a href="download.html" class="downbar-more-item">
+    <a href="/download" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-download"></i></span>
       <span class="downbar-more-label">Downloads</span>
     </a>
-    <a href="notifications.html" class="downbar-more-item active" id="downbar-more-notif">
+    <a href="/notifications" class="downbar-more-item active" id="downbar-more-notif">
       <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
       <span class="downbar-more-label">Notifications</span>
       <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
@@ -252,10 +253,10 @@ function definePageSteps() {
 function notifLink(type, refId) {
   if (!refId) return '#';
   if (type === 'post_comment' || type === 'like') {
-    return `index.html?post=${refId}`;
+    return `/?post=${refId}`;
   }
   if (type === 'chat_reply') {
-    return `chat.html?msg=${refId}`;
+    return `/chat?msg=${refId}`;
   }
   return '#';
 }
