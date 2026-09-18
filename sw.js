@@ -1,7 +1,7 @@
 // ── CESC HUB SERVICE WORKER ──
 // No terminal needed - just copy this file!
 
-const CACHE_NAME = 'cesc-hub-v1';
+const CACHE_NAME = 'cesc-hub-v2'; // Bumped version to force cache refresh
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -22,7 +22,9 @@ const STATIC_ASSETS = [
   '/css/pages/notifications.css',
   '/css/pages/login.css',
   '/css/pages/download.css',
-  '/manifest.json'
+  '/manifest.json',
+  '/icons/icon-512x512.png',
+  '/icons/icon-192x192.png'
 ];
 
 // ── INSTALL ──
@@ -98,7 +100,7 @@ self.addEventListener('message', event => {
 });
 
 // ── VERSION INFO ──
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 const UPDATE_DATE = new Date().toISOString();
 
 console.log(`✅ CESC Hub v${APP_VERSION} - ${UPDATE_DATE}`);
