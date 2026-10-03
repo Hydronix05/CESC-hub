@@ -10,6 +10,10 @@
       "destination": "/chat.html"
     },
     {
+      "source": "/chat/:slug",
+      "destination": "/chat.html?c=:slug"
+    },
+    {
       "source": "/profiles",
       "destination": "/profiles.html"
     },

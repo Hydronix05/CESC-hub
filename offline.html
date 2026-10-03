@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Hub — Offline</title>
+
+<meta name="theme-color" content="#4a9eff">
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<style>
+  /* ── OFFLINE PAGE ── */
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  .offline-card {
+    position: relative;
+    z-index: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 40px 40px;
+    width: 100%;
+    max-width: 440px;
+    text-align: center;
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    box-shadow: 0 40px 90px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: card-in 0.65s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .offline-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 18%;
+    right: 18%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(74,158,255,0.55), transparent);
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(36px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .offline-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .offline-logo img {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(74,158,255,0.4); }
+    50% { box-shadow: 0 0 22px rgba(74,158,255,0.75), 0 0 45px rgba(108,92,231,0.35); }
+  }
+  .offline-logo-name {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-bright);
+    letter-spacing: -0.01em;
+  }
+  .offline-logo-name em {
+    color: var(--neon);
+    font-style: normal;
+  }
+
+  .offline-icon {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 2rem;
+    color: var(--muted);
+    position: relative;
+    animation: offline-pulse 3s ease-in-out infinite;
+  }
+  .offline-icon i {
+    position: relative;
+    z-index: 2;
+  }
+  .offline-icon::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--neon);
+    opacity: 0.15;
+    animation: icon-ring 3s ease-in-out infinite;
+  }
+  @keyframes icon-ring {
+    0%, 100% { transform: scale(1); opacity: 0.15; }
+    50% { transform: scale(1.15); opacity: 0; }
+  }
+  @keyframes offline-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+
+  .offline-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-bright);
+    margin-bottom: 10px;
+  }
+  .offline-sub {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  .offline-sub strong {
+    color: var(--text-bright);
+  }
+
+  .offline-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: rgba(255,77,109,0.08);
+    border: 1px solid rgba(255,77,109,0.25);
+    color: var(--danger);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 22px;
+    transition: all 0.3s;
+  }
+  .offline-status.checking {
+    background: rgba(245,196,0,0.08);
+    border-color: rgba(245,196,0,0.25);
+    color: var(--yellow);
+  }
+  .offline-status.online {
+    background: rgba(34,197,94,0.08);
+    border-color: rgba(34,197,94,0.25);
+    color: #22c55e;
+  }
+  .offline-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: status-blink 1.4s ease-in-out infinite;
+  }
+  .offline-status.online .offline-status-dot {
+    animation: none;
+  }
+  @keyframes status-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .offline-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .offline-btn {
+    padding: 12px 26px;
+    border-radius: 11px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: linear-gradient(135deg, var(--neon), var(--neon2));
+    color: #000;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .offline-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 0 24px rgba(74,158,255,0.5);
+  }
+  .offline-btn:active {
+    transform: scale(0.97);
+  }
+  .offline-btn.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .offline-btn.secondary:hover {
+    border-color: rgba(74,158,255,0.3);
+    color: var(--neon);
+    box-shadow: none;
+  }
+  .offline-btn i {
+    font-size: 0.9rem;
+  }
+  .offline-btn .spin {
+    display: inline-block;
+  }
+  .offline-btn.spinning .spin {
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .offline-tip {
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    line-height: 1.6;
+  }
+  .offline-tip i {
+    color: var(--neon);
+    margin-right: 6px;
+  }
+
+  @media(max-width:480px) {
+    .offline-card { padding: 36px 24px 30px; }
+    .offline-title { font-size: 1.2rem; }
+    .offline-icon { width: 72px; height: 72px; font-size: 1.6rem; }
+    .offline-actions { flex-direction: column; }
+    .offline-btn { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-canvas">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="offline-card">
+  <div class="offline-logo">
+    <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+    <span class="offline-logo-name">CESC <em>Hub</em></span>
+  </div>
+
+  <div class="offline-icon">
+    <i class="fas fa-wifi"></i>
+  </div>
+
+  <div class="offline-title">You're offline</div>
+  <div class="offline-sub">
+    CESC Hub needs an internet connection to load fresh content, chat, and keep you in sync with everyone.
+  </div>
+
+  <div class="offline-status" id="status">
+    <span class="offline-status-dot"></span>
+    <span id="status-text">Waiting for connection...</span>
+  </div>
+
+  <div class="offline-actions">
+    <button class="offline-btn" id="retry-btn" onclick="retryNow()">
+      <span class="spin"><i class="fas fa-sync-alt"></i></span> Try again
+    </button>
+    <button class="offline-btn secondary" onclick="goBack()">
+      <i class="fas fa-arrow-left"></i> Go back
+    </button>
+  </div>
+
+  <div class="offline-tip">
+    <i class="fas fa-lightbulb"></i>
+    Tip: Once you're back online, this page will reload automatically.
+  </div>
+</div>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const statusText = document.getElementById('status-text');
+  const retryBtn = document.getElementById('retry-btn');
+
+  function updateOnlineStatus() {
+    if (navigator.onLine) {
+      statusEl.classList.remove('checking');
+      statusEl.classList.add('online');
+      statusText.textContent = 'Back online! Reloading...';
+      // Brief pause so user sees the change
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } else {
+      statusEl.classList.remove('online', 'checking');
+      statusText.textContent = 'Waiting for connection...';
+    }
+  }
+
+  function retryNow() {
+    retryBtn.classList.add('spinning');
+    statusEl.classList.add('checking');
+    statusText.textContent = 'Checking connection...';
+
+    // Small delay to make it feel real
+    setTimeout(() => {
+      retryBtn.classList.remove('spinning');
+      if (navigator.onLine) {
+        window.location.reload();
+      } else {
+        statusEl.classList.remove('checking');
+        statusText.textContent = 'Still offline. Check your connection.';
+      }
+    }, 800);
+  }
+
+  function goBack() {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/';
+    }
+  }
+
+  // Auto-detect online
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+
+  // Initial check
+  updateOnlineStatus();
+
+  // Fallback: poll every 3s
+  setInterval(() => {
+    if (navigator.onLine) updateOnlineStatus();
+  }, 3000);
+</script>
+
+</body>
+</html>

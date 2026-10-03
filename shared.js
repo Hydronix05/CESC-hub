@@ -258,6 +258,37 @@ function toggleSidebar() {
   localStorage.setItem('cesc_sidebar_open', isOpen ? 'true' : 'false');
 }
 
+// ── SIDEBAR EXPAND TOGGLE (DESKTOP) ──
+// Toggles the .expanded class on the sidebar. Persists choice in localStorage.
+// Does NOT interfere with the mobile off-canvas sidebar.
+function toggleSidebarExpand() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  
+  const isExpanded = sidebar.classList.toggle('expanded');
+  localStorage.setItem('cesc_sidebar_expanded', isExpanded ? 'true' : 'false');
+}
+
+// Restore the sidebar expanded state on desktop page load.
+// Should be called on DOM ready (auto-called at bottom of this file).
+function initSidebarExpand() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  
+  // Only apply on desktop — mobile uses the off-canvas drawer
+  if (window.innerWidth <= 768) {
+    sidebar.classList.remove('expanded');
+    return;
+  }
+  
+  const saved = localStorage.getItem('cesc_sidebar_expanded');
+  if (saved === 'true') {
+    sidebar.classList.add('expanded');
+  } else {
+    sidebar.classList.remove('expanded');
+  }
+}
+
 // ── DOWNBAR MORE TOGGLE (MOBILE) ──
 function toggleDownbarMore() {
   const more = document.getElementById('downbar-more');
@@ -502,7 +533,7 @@ let _lastSeenUpdate = 0;
 async function updateLastSeen() {
   if (!session) return;
   const now = Date.now();
-  if (now - _lastSeenUpdate < 30000) return; // Throttle to 30s
+  if (now - _lastSeenUpdate < 10000) return; // Throttle to 30s
   _lastSeenUpdate = now;
   try {
     await supabaseClient
@@ -578,7 +609,7 @@ function startBackgroundTasks() {
     updateLastSeen();
     loadOnlineCount();
     loadNotifCount();
-  }, 30000);
+  }, 10000);
 }
 
 function stopBackgroundTasks() {
@@ -731,6 +762,9 @@ window.addEventListener('resize', () => {
       if (sidebar) sidebar.classList.remove('open');
       if (overlay) overlay.classList.remove('show');
     }
+    
+    // Re-apply desktop sidebar expansion state on breakpoint changes
+    initSidebarExpand();
   }, 250);
 });
 
@@ -756,6 +790,8 @@ window.escapeHTML = escapeHTML;
 window.toggleDropdown = toggleDropdown;
 window.logout = logout;
 window.toggleSidebar = toggleSidebar;
+window.toggleSidebarExpand = toggleSidebarExpand;
+window.initSidebarExpand = initSidebarExpand;
 window.toggleDownbarMore = toggleDownbarMore;
 window.closeDownbarMore = closeDownbarMore;
 window.loadOnlineCount = loadOnlineCount;
@@ -783,6 +819,17 @@ window.hideLoadingError = hideLoadingError;
 window.setLoadingRetry = setLoadingRetry;
 window.retryLoading = retryLoading;
 window.setLoadingEscapeEnabled = setLoadingEscapeEnabled;
+
+// ── AUTO-INIT SIDEBAR EXPANSION ──
+// Runs on every page load since shared.js is loaded everywhere.
+// Restores the desktop sidebar expanded/collapsed preference.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof initSidebarExpand === 'function') initSidebarExpand();
+  });
+} else {
+  if (typeof initSidebarExpand === 'function') initSidebarExpand();
+}
 
 console.log('✅ shared.js loaded successfully!');
 console.log('🔑 Session:', session ? 'Logged in' : 'Not logged in');

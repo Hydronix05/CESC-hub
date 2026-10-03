@@ -136,11 +136,16 @@ if ('serviceWorker' in navigator) {
   <a href="/profiles" class="nav-item active"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
   <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-  <a href="/notifications" class="nav-item" id="notif-nav">
+    <a href="/notifications" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
   </a>
+
+  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
+    <i class="fas fa-chevron-right"></i>
+    <span class="toggle-label">Collapse</span>
+  </button>
 </aside>
 
 <!-- ── MAIN ── -->

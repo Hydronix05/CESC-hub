@@ -529,3 +529,107 @@
   .color-grid { grid-template-columns:1fr; }
   .custom-themes-list { grid-template-columns:1fr; }
 }
+
+/* ── CHAT LAYOUT OPTIONS ── */
+.chat-layout-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media(max-width:640px) {
+  .chat-layout-options { grid-template-columns: 1fr; }
+}
+
+.layout-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+}
+.layout-option:hover {
+  border-color: rgba(74,158,255,0.3);
+  transform: translateY(-2px);
+}
+.layout-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.layout-option:has(input:checked) {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon), 0 0 20px rgba(74,158,255,0.15);
+  background: rgba(74,158,255,0.05);
+}
+
+.layout-preview {
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 90px;
+  border: 1px solid var(--border);
+}
+
+.lp-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lp-row.lp-right { justify-content: flex-end; }
+
+.lp-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  flex-shrink: 0;
+}
+.lp-avatar.own { background: linear-gradient(135deg, var(--neon2), var(--neon)); }
+
+.lp-bubble {
+  height: 16px;
+  border-radius: 8px;
+  background: var(--surface2);
+  flex: 0 0 auto;
+  width: 60%;
+}
+.lp-bubble.own {
+  background: linear-gradient(135deg, rgba(74,158,255,0.3), rgba(108,92,231,0.3));
+  width: 65%;
+}
+
+.lp-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.lp-line {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface2);
+}
+.lp-line.short { width: 40%; }
+
+.layout-label {
+  padding: 0 2px;
+}
+.layout-name {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--text-bright);
+  margin-bottom: 2px;
+}
+.layout-desc {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+}

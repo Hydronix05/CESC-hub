@@ -136,11 +136,16 @@ if ('serviceWorker' in navigator) {
   <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
   <a href="/settings" class="nav-item active"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-  <a href="/notifications" class="nav-item" id="notif-nav">
+    <a href="/notifications" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
   </a>
+
+  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
+    <i class="fas fa-chevron-right"></i>
+    <span class="toggle-label">Collapse</span>
+  </button>
 </aside>
 
 <!-- ── MAIN ── -->
@@ -169,6 +174,56 @@ if ('serviceWorker' in navigator) {
       <span style="font-size:0.7rem;color:var(--muted);font-family:'Space Mono',monospace;background:var(--bg2);padding:2px 10px;border-radius:6px;border:1px solid var(--border);">
         Current: <span id="current-theme-name" style="color:var(--neon);font-weight:700;">—</span>
       </span>
+    </div>
+  </div>
+
+  <!-- ── CHAT LAYOUT ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-comments" style="color:var(--neon)"></i> Chat Layout</div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Choose how chat messages look</p>
+    
+    <div class="chat-layout-options">
+      <label class="layout-option" data-value="meta">
+        <input type="radio" name="chat-layout" value="meta" onchange="window.setChatLayout('meta')"/>
+        <div class="layout-preview meta-preview">
+          <div class="lp-row lp-left">
+            <div class="lp-avatar"></div>
+            <div class="lp-bubble"></div>
+          </div>
+          <div class="lp-row lp-right">
+            <div class="lp-bubble own"></div>
+            <div class="lp-avatar own"></div>
+          </div>
+        </div>
+        <div class="layout-label">
+          <div class="layout-name">Meta</div>
+          <div class="layout-desc">WhatsApp / Instagram style · your messages on the right</div>
+        </div>
+      </label>
+      
+      <label class="layout-option" data-value="discord">
+        <input type="radio" name="chat-layout" value="discord" onchange="window.setChatLayout('discord')"/>
+        <div class="layout-preview discord-preview">
+          <div class="lp-row">
+            <div class="lp-avatar"></div>
+            <div class="lp-lines">
+              <div class="lp-line short"></div>
+              <div class="lp-line"></div>
+            </div>
+          </div>
+          <div class="lp-row">
+            <div class="lp-avatar"></div>
+            <div class="lp-lines">
+              <div class="lp-line short"></div>
+              <div class="lp-line"></div>
+            </div>
+          </div>
+        </div>
+        <div class="layout-label">
+          <div class="layout-name">Discord</div>
+          <div class="layout-desc">Classic style · all messages left-aligned with avatars</div>
+        </div>
+      </label>
     </div>
   </div>
 
@@ -297,7 +352,7 @@ if ('serviceWorker' in navigator) {
 <!-- ── DOWNBAR MORE OVERLAY ── -->
 <div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
 
-<!-- ── DOWNBAR MORE DRAWER (GRID/TABLE LAYOUT - 5 COLUMNS) ── -->
+<!-- ── DOWNBAR MORE DRAWER ── -->
 <div class="downbar-more" id="downbar-more">
   <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
   
@@ -338,6 +393,7 @@ if ('serviceWorker' in navigator) {
 // ── PAGE-SPECIFIC CODE ──
 const DISPLAY_NAME_STORAGE_KEY = 'cesc_display_name_changes';
 const MAX_DISPLAY_NAME_CHANGES = 2;
+const CHAT_LAYOUT_KEY = 'cesc_chat_layout';
 
 let currentProfile = null;
 let pendingFile = null;
@@ -355,6 +411,25 @@ function definePageSteps() {
     { id: 'ready', label: 'Done! ✨', technical: 'Settings ready' }
   ]);
 }
+
+// ═══════════════════════════════════════════════════════════
+// ── CHAT LAYOUT SETTING ──
+// ═══════════════════════════════════════════════════════════
+function loadChatLayoutSetting() {
+  let saved = localStorage.getItem(CHAT_LAYOUT_KEY);
+  if (saved !== 'discord' && saved !== 'meta') {
+    saved = 'meta';
+    localStorage.setItem(CHAT_LAYOUT_KEY, 'meta');
+  }
+  const radio = document.querySelector(`input[name="chat-layout"][value="${saved}"]`);
+  if (radio) radio.checked = true;
+}
+
+window.setChatLayout = function(layout) {
+  if (layout !== 'discord' && layout !== 'meta') return;
+  localStorage.setItem(CHAT_LAYOUT_KEY, layout);
+  window.showToast(`✅ ${layout === 'meta' ? 'Meta' : 'Discord'} layout saved`, 'success');
+};
 
 // ── DISPLAY NAME CHANGE LIMIT ──
 function getDisplayNameChanges() {
@@ -622,15 +697,15 @@ window.updatePassword = async function() {
 window.clearLocalData = function() {
   if (confirm('Clear local browser data? Your account and data in Supabase stay safe.')) {
     const theme = localStorage.getItem('cesc_theme');
+    const layout = localStorage.getItem(CHAT_LAYOUT_KEY);
     localStorage.clear();
     if (theme) localStorage.setItem('cesc_theme', theme);
+    if (layout) localStorage.setItem(CHAT_LAYOUT_KEY, layout);
     window.showToast('🗑️ local data cleared', 'success');
   }
 };
 
 // ── THEME FUNCTIONS ──
-
-// Render theme cards
 function renderThemeCards() {
   const grid = document.getElementById('theme-grid');
   const themes = window.THEME_PRESETS || [];
@@ -640,14 +715,12 @@ function renderThemeCards() {
   
   grid.innerHTML = '';
   
-  // Group themes by category
   const categories = {
     general: 'General',
     male: 'Bold',
     female: 'Soft'
   };
   
-  // Sort: general first, then male, then female
   const sortedThemes = [...themes].sort((a, b) => {
     const order = { general: 0, male: 1, female: 2 };
     return (order[a.category] || 0) - (order[b.category] || 0);
@@ -658,12 +731,10 @@ function renderThemeCards() {
     card.className = 'theme-card';
     card.dataset.theme = theme.id;
     
-    // Check if active
     if (current && current.id === theme.id) {
       card.classList.add('active');
     }
     
-    // Preview colors
     const preview = document.createElement('div');
     preview.className = 'theme-preview';
     preview.style.background = theme.variables['--bg'] || '#0a0a0f';
@@ -678,7 +749,6 @@ function renderThemeCards() {
     preview.style.justifyContent = 'center';
     preview.style.gap = '8px';
     
-    // Preview elements
     const accent1 = document.createElement('span');
     accent1.style.width = '20px';
     accent1.style.height = '20px';
@@ -711,7 +781,6 @@ function renderThemeCards() {
     
     card.appendChild(preview);
     
-    // Theme name
     const name = document.createElement('div');
     name.className = 'theme-name';
     name.textContent = theme.name;
@@ -720,7 +789,6 @@ function renderThemeCards() {
     name.style.color = 'var(--text-bright)';
     card.appendChild(name);
     
-    // Category tag
     const categoryLabel = document.createElement('div');
     categoryLabel.className = 'theme-category';
     categoryLabel.textContent = categories[theme.category] || 'General';
@@ -733,7 +801,6 @@ function renderThemeCards() {
     categoryLabel.style.marginTop = '2px';
     card.appendChild(categoryLabel);
     
-    // Description
     const desc = document.createElement('div');
     desc.className = 'theme-desc';
     desc.textContent = theme.description || '';
@@ -742,7 +809,6 @@ function renderThemeCards() {
     desc.style.marginTop = '2px';
     card.appendChild(desc);
     
-    // Active badge
     if (current && current.id === theme.id) {
       const badge = document.createElement('div');
       badge.className = 'theme-active-badge';
@@ -761,7 +827,6 @@ function renderThemeCards() {
       card.appendChild(badge);
     }
     
-    // Click handler
     card.onclick = () => {
       const success = window.switchTheme(theme.id);
       if (success) {
@@ -775,7 +840,6 @@ function renderThemeCards() {
   });
 }
 
-// Update current theme name display
 function updateCurrentThemeName() {
   const current = window.getCurrentTheme();
   const el = document.getElementById('current-theme-name');
@@ -791,8 +855,7 @@ async function pageInit() {
   definePageSteps();
   nextLoadingStep(); // theme
   
-  // auth is handled by initPage
-  // profile is handled by initPage
+  loadChatLayoutSetting();
   
   nextLoadingStep(); // pfp (already loaded in initPage)
   
@@ -825,7 +888,6 @@ async function pageInit() {
 
   if (profile.pfp_url) loadPfpImage(profile.pfp_url);
 
-  // Update header avatar with PFP
   if (profile.pfp_url) {
     const chipAv = document.getElementById('chip-av');
     if (chipAv) {
@@ -847,7 +909,6 @@ async function pageInit() {
 
   updateChangeBadge();
   
-  // Render theme cards
   renderThemeCards();
   updateCurrentThemeName();
   

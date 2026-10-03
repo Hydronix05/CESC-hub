@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CESC Hub — Feed</title>
 
-<!-- ── PWA META TAGS ── -->
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -23,7 +22,6 @@
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
 
-<!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -33,36 +31,15 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// PWA Install Prompt
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
   console.log('📱 App install prompt available');
-  
-  const installBtn = document.getElementById('install-btn');
-  if (installBtn) {
-    installBtn.style.display = 'flex';
-    installBtn.addEventListener('click', () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(choice => {
-          if (choice.outcome === 'accepted') {
-            console.log('✅ User installed the app');
-          } else {
-            console.log('❌ User dismissed install');
-          }
-          deferredPrompt = null;
-        });
-      }
-    });
-  }
 });
 
 window.addEventListener('appinstalled', () => {
   console.log('✅ App installed successfully');
-  const installBtn = document.getElementById('install-btn');
-  if (installBtn) installBtn.style.display = 'none';
 });
 </script>
 
@@ -111,13 +88,10 @@ window.addEventListener('appinstalled', () => {
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
-<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-<!-- ── MOBILE MENU HAMBURGER (HIDDEN ON MOBILE) ── -->
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<!-- ── HEADER (FULL WIDTH AT TOP) ── -->
+<!-- ── HEADER ── -->
 <header class="top-header">
   <div class="header-left">
     <a href="/" class="header-logo">
@@ -158,18 +132,23 @@ window.addEventListener('appinstalled', () => {
   </div>
 </header>
 
-<!-- ── SIDEBAR (DESKTOP - UNDER HEADER) ── -->
+<!-- ── SIDEBAR ── -->
 <aside class="sidebar" id="sidebar">
   <a href="/" class="nav-item active"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
   <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
   <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
   <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-  <a href="/notifications" class="nav-item" id="notif-nav">
+    <a href="/notifications" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
   </a>
+
+  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
+    <i class="fas fa-chevron-right"></i>
+    <span class="toggle-label">Collapse</span>
+  </button>
 </aside>
 
 <!-- ── MAIN ── -->
@@ -206,17 +185,13 @@ window.addEventListener('appinstalled', () => {
     </div>
     
     <div class="compose-toolbar">
-      <button class="tool-btn" onclick="toggleEmojiPicker()">
+      <button class="tool-btn" onclick="toggleEmojiPicker(event)">
         <i class="fas fa-smile"></i> <span>Emoji</span>
       </button>
       <button class="tool-btn" onclick="document.getElementById('image-upload').click()">
         <i class="fas fa-image"></i> <span>Image</span>
       </button>
       <input type="file" id="image-upload" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleImageUpload(event)"/>
-      
-      <div class="emoji-picker" id="emoji-picker">
-        <div class="emoji-picker-grid" id="emoji-grid"></div>
-      </div>
     </div>
     
     <div class="cooldown-bar-wrap" id="cooldown-wrap">
@@ -229,6 +204,10 @@ window.addEventListener('appinstalled', () => {
         <button class="post-btn" id="post-btn" onclick="submitPost()"><i class="fas fa-paper-plane"></i> Post</button>
       </div>
     </div>
+  </div>
+
+  <div class="emoji-picker" id="emoji-picker">
+    <div class="emoji-picker-grid" id="emoji-grid"></div>
   </div>
 
   <div class="feed" id="feed">
@@ -255,6 +234,8 @@ window.addEventListener('appinstalled', () => {
     </div>
   </div>
 
+  <div id="feed-sentinel" style="height:1px;width:100%"></div>
+
   <div id="feed-loading" class="feed-loading" style="display:none;">
     <span class="spinner"><i class="fas fa-spinner"></i></span> Loading more posts...
   </div>
@@ -265,7 +246,7 @@ window.addEventListener('appinstalled', () => {
   <button onclick="closeImageModal()" style="position:fixed;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1000;"><i class="fas fa-times"></i></button>
 </div>
 
-<!-- ── DOWNBAR (MOBILE BOTTOM NAV - 5 EQUAL COLUMNS) ── -->
+<!-- ── DOWNBAR ── -->
 <nav class="downbar" id="downbar">
   <div class="downbar-inner">
     <a href="/" class="downbar-item active" id="downbar-home">
@@ -286,10 +267,8 @@ window.addEventListener('appinstalled', () => {
   </div>
 </nav>
 
-<!-- ── DOWNBAR MORE OVERLAY ── -->
 <div class="downbar-overlay" id="downbar-overlay" onclick="closeDownbarMore()"></div>
 
-<!-- ── DOWNBAR MORE DRAWER (GRID/TABLE LAYOUT - 5 COLUMNS) ── -->
 <div class="downbar-more" id="downbar-more">
   <div class="downbar-more-handle" onclick="closeDownbarMore()"></div>
   
@@ -341,6 +320,7 @@ let allPosts = [];
 let currentBatch = 0;
 let isLoadingMore = false;
 let hasMorePosts = true;
+let sentinelObserver = null;
 
 // ── EMOJI DATA ──
 const EMOJIS = [
@@ -371,16 +351,75 @@ function definePageSteps() {
 
 // ── INFINITE SCROLL ──
 function setupInfiniteScroll() {
-  const observer = new IntersectionObserver((entries) => {
+  if (sentinelObserver) sentinelObserver.disconnect();
+  const sentinel = document.getElementById('feed-sentinel');
+  if (!sentinel) return;
+  sentinelObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting && hasMorePosts && !isLoadingMore) {
         loadMorePosts();
       }
     });
-  }, { rootMargin: '200px' });
+  }, { rootMargin: '300px' });
+  sentinelObserver.observe(sentinel);
+}
+
+// ── BATCH COMMENT COUNTS ──
+async function attachCommentCounts(posts) {
+  if (!posts || posts.length === 0) return;
+  const ids = posts.map(p => p.id);
+  const { data: comments } = await window.supabaseClient
+    .from('comments')
+    .select('post_id')
+    .in('post_id', ids);
+  if (!comments) return;
+  const counts = {};
+  comments.forEach(c => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
+  posts.forEach(post => {
+    const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
+    if (!card) return;
+    const span = card.querySelector('.comment-count');
+    if (span) span.textContent = counts[post.id] || 0;
+  });
+}
+
+// ── BATCH LIKE DATA (counts + liked-state from likes table) ──
+async function attachLikeData(posts) {
+  if (!posts || posts.length === 0) return;
+  const ids = posts.map(p => p.id);
   
-  const loadingEl = document.getElementById('feed-loading');
-  if (loadingEl) observer.observe(loadingEl);
+  const { data: likes, error } = await window.supabaseClient
+    .from('likes')
+    .select('post_id, user_id')
+    .in('post_id', ids);
+  
+  if (error) {
+    console.error('Failed to load likes:', error);
+    return;
+  }
+  
+  const counts = {};
+  const likedByMe = new Set();
+  const myId = window.session?.user?.id;
+  
+  (likes || []).forEach(l => {
+    counts[l.post_id] = (counts[l.post_id] || 0) + 1;
+    if (myId && l.user_id === myId) likedByMe.add(l.post_id);
+  });
+  
+  posts.forEach(post => {
+    const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
+    if (!card) return;
+    const likeBtn = card.querySelector('.action-pill');
+    if (!likeBtn) return;
+    const countEl = likeBtn.querySelector('.like-count');
+    if (countEl) countEl.textContent = counts[post.id] || 0;
+    if (likedByMe.has(post.id)) {
+      likeBtn.classList.add('liked');
+    } else {
+      likeBtn.classList.remove('liked');
+    }
+  });
 }
 
 async function loadMorePosts() {
@@ -397,88 +436,114 @@ async function loadMorePosts() {
   
   if (batchPosts.length === 0) {
     hasMorePosts = false;
-    loadingEl.style.display = 'none';
     loadingEl.textContent = '🎉 You\'ve seen all posts!';
     isLoadingMore = false;
     return;
   }
   
   const feedEl = document.getElementById('feed');
-  batchPosts.forEach(post => {
-    feedEl.appendChild(buildPostCard(post));
-  });
+  const frag = document.createDocumentFragment();
+  batchPosts.forEach(post => frag.appendChild(buildPostCard(post)));
+  feedEl.appendChild(frag);
   
-  const postIds = batchPosts.map(p => p.id);
-  if (postIds.length > 0) {
-    const { data: comments } = await window.supabaseClient.from('comments').select('post_id').in('post_id', postIds);
-    if (comments) {
-      const counts = {};
-      comments.forEach(c => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
-      batchPosts.forEach(post => {
-        const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
-        if (card) {
-          const span = card.querySelector('.comment-count');
-          if (span) span.textContent = counts[post.id] || 0;
-        }
-      });
-    }
-  }
+  await Promise.all([attachCommentCounts(batchPosts), attachLikeData(batchPosts)]);
   
-  loadingEl.style.display = 'none';
   isLoadingMore = false;
   
   if (end >= allPosts.length) {
     hasMorePosts = false;
     loadingEl.textContent = '🎉 You\'ve seen all posts!';
-    loadingEl.style.display = 'block';
+  } else {
+    loadingEl.style.display = 'none';
   }
 }
 
 // ── EMOJI PICKER ──
 function initEmojiPicker() {
   if (emojiPickerInitialized) return;
-  
   const grid = document.getElementById('emoji-grid');
   if (!grid) return;
-  
+  const frag = document.createDocumentFragment();
   EMOJIS.forEach(emoji => {
     const span = document.createElement('span');
     span.textContent = emoji;
     span.onclick = () => insertEmoji(emoji);
-    grid.appendChild(span);
+    frag.appendChild(span);
   });
-  
+  grid.appendChild(frag);
   emojiPickerInitialized = true;
-  console.log('✅ Emoji picker initialized!');
 }
 
-function toggleEmojiPicker() {
+function positionEmojiPicker() {
+  const picker = document.getElementById('emoji-picker');
+  const composeBox = document.querySelector('.compose-box');
+  if (!picker || !composeBox) return;
+  const rect = composeBox.getBoundingClientRect();
+  picker.style.top = (rect.bottom + 8) + 'px';
+  picker.style.left = rect.left + 'px';
+  picker.style.width = rect.width + 'px';
+}
+
+function toggleEmojiPicker(e) {
+  if (e) e.stopPropagation();
   const picker = document.getElementById('emoji-picker');
   if (!picker) return;
-  
-  if (!picker.classList.contains('open')) {
-    if (!emojiPickerInitialized) {
-      initEmojiPicker();
-    }
-    picker.classList.add('open');
-  } else {
+  if (!emojiPickerInitialized) initEmojiPicker();
+  const isOpen = picker.classList.contains('open');
+  if (isOpen) {
     picker.classList.remove('open');
+  } else {
+    positionEmojiPicker();
+    picker.classList.add('open');
   }
 }
 
 function insertEmoji(emoji) {
   const input = document.getElementById('compose-input');
-  const pos = input.selectionStart;
+  const pos = input.selectionStart ?? input.value.length;
   input.value = input.value.slice(0, pos) + emoji + input.value.slice(pos);
   input.selectionStart = input.selectionEnd = pos + emoji.length;
   input.focus();
   onComposeInput();
 }
 
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('emoji-picker');
+  if (!picker || !picker.classList.contains('open')) return;
+  if (picker.contains(e.target)) return;
+  if (e.target.closest('.tool-btn')) return;
+  picker.classList.remove('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.opts-menu') || e.target.closest('.post-opts-btn')) return;
+  document.querySelectorAll('.opts-menu.open').forEach(m => m.classList.remove('open'));
+});
+
+window.addEventListener('scroll', () => {
+  const picker = document.getElementById('emoji-picker');
+  if (picker && picker.classList.contains('open')) positionEmojiPicker();
+}, { passive: true });
+window.addEventListener('resize', () => {
+  const picker = document.getElementById('emoji-picker');
+  if (picker && picker.classList.contains('open')) positionEmojiPicker();
+});
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.getElementById('emoji-picker')?.classList.remove('open');
-    if (typeof closeDownbarMore === 'function') closeDownbarMore();
+    document.querySelectorAll('.opts-menu.open').forEach(m => m.classList.remove('open'));
+    closeImageModal();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    const input = document.getElementById('compose-input');
+    if (document.activeElement === input) {
+      e.preventDefault();
+      submitPost();
+    }
   }
 });
 
@@ -486,13 +551,11 @@ document.addEventListener('keydown', (e) => {
 function handleImageUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
-  
   if (file.size > MAX_IMAGE_SIZE) {
     window.showToast(`Image too large (${(file.size/1024).toFixed(0)}KB). Max 500KB 💀`, 'error');
     e.target.value = '';
     return;
   }
-  
   pendingImageFile = file;
   const reader = new FileReader();
   reader.onload = ev => {
@@ -518,17 +581,17 @@ function onComposeInput() {
   const v = document.getElementById('compose-input').value;
   const el = document.getElementById('char-count');
   el.textContent = v.length + '/500';
-  el.className = 'char-count' + (v.length > 450 ? (v.length >= 500 ? ' full' : ' near') : '');
+  if (v.length >= 500) el.className = 'char-count full';
+  else if (v.length > 450) el.className = 'char-count near';
+  else el.className = 'char-count';
 }
 
 function getLastPostTime() {
   return parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
 }
-
 function setLastPostTime() {
   localStorage.setItem(STORAGE_KEY, Date.now() + '');
 }
-
 function getRemainingCooldown() {
   return Math.max(0, POST_COOLDOWN_MS - (Date.now() - getLastPostTime()));
 }
@@ -575,21 +638,21 @@ function updateCooldownUI() {
   }
 }
 
+window.addEventListener('beforeunload', () => {
+  if (cooldownInterval) clearInterval(cooldownInterval);
+});
+
 async function uploadImage(file) {
   if (!file) return null;
-  
   const ext = file.name.split('.').pop();
   const path = `${window.session.user.id}/${Date.now()}.${ext}`;
-  
   const { error } = await window.supabaseClient.storage.from('post-images').upload(path, file, {
     contentType: file.type
   });
-  
   if (error) {
     window.showToast('Image upload failed: ' + error.message, 'error');
     return null;
   }
-  
   const { data: urlData } = window.supabaseClient.storage.from('post-images').getPublicUrl(path);
   return urlData.publicUrl;
 }
@@ -605,17 +668,15 @@ async function submitPost() {
     window.showToast('cooldown active, chill ⏳', 'error');
     return;
   }
-  
   if (!window.session || !window.session.user) {
     window.showToast('You must be logged in', 'error');
     return;
   }
-  
   if (isUploading) return;
   
   const btn = document.getElementById('post-btn');
   btn.disabled = true;
-  btn.innerHTML = 'Posting...';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting';
   isUploading = true;
   
   let image_url = null;
@@ -650,6 +711,7 @@ async function submitPost() {
   setLastPostTime();
   document.getElementById('compose-input').value = '';
   document.getElementById('char-count').textContent = '0/500';
+  document.getElementById('char-count').className = 'char-count';
   removeImage();
   btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
   isUploading = false;
@@ -708,25 +770,11 @@ async function loadFeed() {
   
   currentBatch = 0;
   const firstBatch = allPosts.slice(0, POSTS_PER_BATCH);
-  firstBatch.forEach(post => {
-    feedEl.appendChild(buildPostCard(post));
-  });
+  const frag = document.createDocumentFragment();
+  firstBatch.forEach(post => frag.appendChild(buildPostCard(post)));
+  feedEl.appendChild(frag);
   
-  const postIds = firstBatch.map(p => p.id);
-  if (postIds.length > 0) {
-    const { data: comments } = await window.supabaseClient.from('comments').select('post_id').in('post_id', postIds);
-    if (comments) {
-      const counts = {};
-      comments.forEach(c => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
-      firstBatch.forEach(post => {
-        const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
-        if (card) {
-          const span = card.querySelector('.comment-count');
-          if (span) span.textContent = counts[post.id] || 0;
-        }
-      });
-    }
-  }
+  await Promise.all([attachCommentCounts(firstBatch), attachLikeData(firstBatch)]);
   
   if (allPosts.length <= POSTS_PER_BATCH) {
     hasMorePosts = false;
@@ -778,12 +826,17 @@ function buildPostCard(post) {
   body.className = 'post-body';
   body.innerHTML = `<div class="post-text">${window.escapeHTML(post.content)}</div>`;
   if (post.image_url) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'post-img-wrap';
     const img = document.createElement('img');
     img.className = 'post-img';
     img.src = post.image_url;
     img.alt = 'Post image';
+    img.loading = 'lazy';
     img.onclick = (e) => { e.stopPropagation(); openImageModal(post.image_url); };
-    body.appendChild(img);
+    img.onerror = () => { imgWrap.remove(); };
+    imgWrap.appendChild(img);
+    body.appendChild(imgWrap);
   }
   card.appendChild(body);
   
@@ -792,7 +845,7 @@ function buildPostCard(post) {
   
   const likeBtn = document.createElement('button');
   likeBtn.className = 'action-pill';
-  likeBtn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${post.likes || 0}</span>`;
+  likeBtn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">0</span>`;
   likeBtn.onclick = () => toggleLike(post.id, likeBtn);
   
   const commentBtn = document.createElement('button');
@@ -819,34 +872,20 @@ function buildPostCard(post) {
   `;
   card.appendChild(commentsSection);
   
-  if (window.session) {
-    window.supabaseClient.from('likes').select('id').eq('post_id', post.id).eq('user_id', window.session.user.id).single()
-      .then(({ data }) => {
-        if (data) {
-          likeBtn.classList.add('liked');
-          likeBtn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${post.likes || 0}</span>`;
-        }
-      });
-  }
-  
-  setTimeout(() => {
-    const profile = window.currentUser;
-    if (profile?.pfp_url) {
-      const av = commentsSection.querySelector('.comment-av');
-      if (av) {
-        const span = av.querySelector('span');
-        const img = document.createElement('img');
-        img.src = profile.pfp_url;
-        img.onload = () => {
-          img.style.display = 'block';
-          if (span) span.style.display = 'none';
-          img.classList.add('loaded');
-        };
-        img.onerror = () => img.remove();
-        av.appendChild(img);
-      }
+  if (window.currentUser?.pfp_url) {
+    const av = commentsSection.querySelector('.comment-av');
+    if (av) {
+      const span = av.querySelector('span');
+      const img = document.createElement('img');
+      img.src = window.currentUser.pfp_url;
+      img.onload = () => {
+        img.classList.add('loaded');
+        if (span) span.style.display = 'none';
+      };
+      img.onerror = () => img.remove();
+      av.appendChild(img);
     }
-  }, 100);
+  }
   
   return card;
 }
@@ -875,6 +914,7 @@ async function deletePost(postId) {
   window.showToast('post deleted', 'success');
 }
 
+// ── TOGGLE LIKE (uses likes table only, no posts.likes update) ──
 async function toggleLike(postId, btn) {
   if (!window.session || !window.session.user) {
     window.showToast('You must be logged in', 'error');
@@ -882,21 +922,43 @@ async function toggleLike(postId, btn) {
   }
   
   const liked = btn.classList.contains('liked');
-  const ce = btn.querySelector('.like-count');
+  const countEl = btn.querySelector('.like-count');
+  const currentCount = parseInt(countEl.textContent) || 0;
   
+  // Optimistic UI
   if (liked) {
-    await window.supabaseClient.from('likes').delete().eq('post_id', postId).eq('user_id', window.session.user.id);
-    const c = Math.max(0, parseInt(ce.textContent) - 1);
-    await window.supabaseClient.from('posts').update({ likes: c }).eq('id', postId);
     btn.classList.remove('liked');
-    btn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${c}</span>`;
+    countEl.textContent = Math.max(0, currentCount - 1);
   } else {
-    const { error } = await window.supabaseClient.from('likes').insert({ post_id: postId, user_id: window.session.user.id });
-    if (error && error.code === '23505') return;
-    const c = parseInt(ce.textContent) + 1;
-    await window.supabaseClient.from('posts').update({ likes: c }).eq('id', postId);
     btn.classList.add('liked');
-    btn.innerHTML = `<span class="icon"><i class="fas fa-heart"></i></span> <span class="like-count">${c}</span>`;
+    countEl.textContent = currentCount + 1;
+  }
+  
+  let error;
+  if (liked) {
+    ({ error } = await window.supabaseClient
+      .from('likes')
+      .delete()
+      .eq('post_id', postId)
+      .eq('user_id', window.session.user.id));
+  } else {
+    ({ error } = await window.supabaseClient
+      .from('likes')
+      .insert({ post_id: postId, user_id: window.session.user.id }));
+    // duplicate — already liked, keep UI as liked
+    if (error && error.code === '23505') return;
+  }
+  
+  if (error) {
+    // Revert UI on failure
+    if (liked) {
+      btn.classList.add('liked');
+      countEl.textContent = currentCount;
+    } else {
+      btn.classList.remove('liked');
+      countEl.textContent = currentCount;
+    }
+    window.showToast('like failed: ' + error.message, 'error');
   }
 }
 
@@ -922,24 +984,23 @@ async function loadComments(postId) {
     return;
   }
   
-  comments.forEach((c, i) => {
+  const frag = document.createDocumentFragment();
+  comments.forEach((c) => {
     const item = document.createElement('div');
     item.className = 'comment-item';
-    item.style.animationDelay = (i * 0.05) + 's';
     item.appendChild(window.buildAvatar(c.username, window.pfpCache[c.username] || null, 28, 'comment-av'));
     const body = document.createElement('div');
     body.className = 'comment-body';
-    
     const displayName = c.display_name || c.username;
-    
     body.innerHTML = `
       <div class="comment-who">${window.escapeHTML(displayName)}</div>
       <div class="comment-text">${window.escapeHTML(c.content)}</div>
       <div class="comment-time">${window.timeAgo(c.created_at)}</div>
     `;
     item.appendChild(body);
-    list.appendChild(item);
+    frag.appendChild(item);
   });
+  list.appendChild(frag);
 }
 
 // ── SUBMIT COMMENT ──
@@ -951,7 +1012,6 @@ async function submitComment(postId) {
     window.showToast('write a comment first 💀', 'error');
     return;
   }
-  
   if (!window.session || !window.session.user) {
     window.showToast('You must be logged in', 'error');
     return;
@@ -1003,27 +1063,9 @@ function openImageModal(url) {
   img.src = url;
   modal.classList.add('show');
 }
-
 function closeImageModal() {
   document.getElementById('img-modal').classList.remove('show');
 }
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    closeImageModal();
-    document.getElementById('emoji-picker')?.classList.remove('open');
-  }
-});
-
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    const input = document.getElementById('compose-input');
-    if (document.activeElement === input) {
-      e.preventDefault();
-      submitPost();
-    }
-  }
-});
 
 // ── EXPOSE FUNCTIONS ──
 window.toggleEmojiPicker = toggleEmojiPicker;
@@ -1042,22 +1084,17 @@ window.closeImageModal = closeImageModal;
 // ── PAGE INIT ──
 async function pageInit() {
   definePageSteps();
-  nextLoadingStep(); // theme
+  nextLoadingStep();
   
-  // auth is handled by initPage
-  // profile is handled by initPage
+  nextLoadingStep();
   
-  nextLoadingStep(); // pfp (already loaded in initPage)
-  
-  nextLoadingStep(); // feed
+  nextLoadingStep();
   await loadFeed();
   
-  nextLoadingStep(); // online (handled by initPage)
-  // notifs (handled by initPage)
+  nextLoadingStep();
   
-  nextLoadingStep(); // ready
+  nextLoadingStep();
   
-  // Post-init setup
   updateCooldownUI();
   setupInfiniteScroll();
   
@@ -1073,7 +1110,6 @@ async function pageInit() {
   }
 }
 
-// ── START ──
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initPage(pageInit);
