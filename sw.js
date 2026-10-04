@@ -1,7 +1,7 @@
 // ── CESC HUB SERVICE WORKER ──
 // No terminal needed - just copy this file!
 
-const CACHE_NAME = 'cesc-hub-v3'; // Bumped for the chat + notes + offline release
+const CACHE_NAME = 'cesc-hub-v3.5'; // Bumped for the chat + notes + offline release
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -14,7 +14,10 @@ const STATIC_ASSETS = [
   '/offline.html',
   '/shared.js',
   '/shared.css',
+  '/badwords.json',
+  'version.json',
   '/js/chat.js',
+  '/js/ads.js',
   '/js/theme-presets.js',
   '/js/theme-engine.js',
   '/css/pages/index.css',
@@ -24,6 +27,7 @@ const STATIC_ASSETS = [
   '/css/pages/notifications.css',
   '/css/pages/login.css',
   '/css/pages/download.css',
+  '/css/ads.css',
   '/manifest.json',
   '/icons/icon-512x512.png',
   '/icons/icon-192x192.png'
@@ -117,7 +121,7 @@ self.addEventListener('message', event => {
 });
 
 // ── VERSION INFO ──
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '3.5.0';
 const UPDATE_DATE = new Date().toISOString();
 
 console.log(`✅ CESC Hub v${APP_VERSION} - ${UPDATE_DATE}`);

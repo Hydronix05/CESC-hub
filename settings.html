@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="/css/pages/settings.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 
 <!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -78,6 +79,8 @@ if ('serviceWorker' in navigator) {
   </div>
   
   <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
 </div>
 
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
@@ -146,6 +149,8 @@ if ('serviceWorker' in navigator) {
     <i class="fas fa-chevron-right"></i>
     <span class="toggle-label">Collapse</span>
   </button>
+
+  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
 </aside>
 
 <!-- ── MAIN ── -->
@@ -387,6 +392,8 @@ if ('serviceWorker' in navigator) {
       <span class="downbar-more-label">Logout</span>
     </button>
   </div>
+
+  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
 </div>
 
 <script>
@@ -927,5 +934,6 @@ if (document.readyState === 'loading') {
   initPage(pageInit);
 }
 </script>
+<script src="/js/ads.js"></script>
 </body>
 </html>

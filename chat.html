@@ -20,8 +20,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/chat.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -74,6 +76,8 @@ if ('serviceWorker' in navigator) {
   </div>
   
   <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
 </div>
 
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
@@ -139,6 +143,8 @@ if ('serviceWorker' in navigator) {
     <i class="fas fa-chevron-right"></i>
     <span class="toggle-label">Collapse</span>
   </button>
+
+  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
 </aside>
 
 <!-- ── MAIN (MESSENGER LAYOUT) ── -->
@@ -176,6 +182,9 @@ if ('serviceWorker' in navigator) {
       <div class="inbox-list" id="inbox-list">
         <!-- rendered by js/chat.js -->
       </div>
+
+      <!-- Inbox bottom persistent ad slot -->
+      <div class="inbox-ad-slot" id="inbox-ad-slot"></div>
     </aside>
     
     <!-- ═══ CHAT AREA (right column) ═══ -->
@@ -188,6 +197,14 @@ if ('serviceWorker' in navigator) {
         <div class="chat-empty-sub">Or search someone to start a conversation</div>
       </div>
       
+      <!-- AD CHAT VIEW (shown when an ad pseudo-DM is opened) -->
+      <div class="ad-chat-view" id="ad-chat-view" style="display:none;">
+        <div class="chat-head" id="ad-chat-head"></div>
+        <div class="chat-wrapper">
+          <div class="ad-chat-body" id="ad-chat-body"></div>
+        </div>
+      </div>
+
       <!-- Chat view (shown when a chat is open) -->
       <div class="chat-view" id="chat-view" style="display:none;">
         
@@ -347,6 +364,8 @@ if ('serviceWorker' in navigator) {
     <a href="/notifications" class="downbar-more-item" id="downbar-more-notif"><span class="downbar-more-icon"><i class="fas fa-bell"></i></span><span class="downbar-more-label">Notifications</span><span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span></a>
     <button class="downbar-more-item logout" onclick="window.logout()"><span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span><span class="downbar-more-label">Logout</span></button>
   </div>
+
+  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
 </div>
 
 <script src="/js/chat.js"></script>

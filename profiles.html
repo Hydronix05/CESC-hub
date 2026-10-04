@@ -23,8 +23,10 @@
 <!-- Load shared.js -->
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/profiles.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
 
 <!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
@@ -77,6 +79,8 @@ if ('serviceWorker' in navigator) {
   </div>
   
   <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
 </div>
 
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
@@ -146,6 +150,8 @@ if ('serviceWorker' in navigator) {
     <i class="fas fa-chevron-right"></i>
     <span class="toggle-label">Collapse</span>
   </button>
+
+  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
 </aside>
 
 <!-- ── MAIN ── -->
@@ -245,6 +251,8 @@ if ('serviceWorker' in navigator) {
       <span class="downbar-more-label">Logout</span>
     </button>
   </div>
+
+  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
 </div>
 
 <script>
@@ -559,7 +567,17 @@ async function pageInit() {
   
   nextLoadingStep(); // members
   await loadProfiles();
-  
+
+  // ── ADS: mount profiles tile ad ──
+  try {
+    if (window.Ads && typeof window.Ads.mountProfilesSlot === 'function') {
+      const grid = document.getElementById('profile-grid');
+      if (grid) window.Ads.mountProfilesSlot(grid);
+    }
+  } catch (e) {
+    console.log('[Ads profiles]', e);
+  }
+
   nextLoadingStep(); // online (handled by initPage)
   // notifs (handled by initPage)
   

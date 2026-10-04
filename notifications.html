@@ -23,8 +23,10 @@
 <!-- Load shared.js -->
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/notifications.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
 
 <!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
@@ -77,6 +79,8 @@ if ('serviceWorker' in navigator) {
   </div>
   
   <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
 </div>
 
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
@@ -147,6 +151,8 @@ if ('serviceWorker' in navigator) {
     <span class="toggle-label">Collapse</span>
   </button>
 
+  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
+
 </aside>
 
 <!-- ── MAIN ── -->
@@ -158,7 +164,9 @@ if ('serviceWorker' in navigator) {
     </div>
     <button class="mark-all-btn" onclick="window.markAllRead()">Mark all read</button>
   </div>
-  
+
+  <div id="notifications-ad-slot"></div>
+
   <div class="notif-list" id="notif-list">
     <div class="skel-notif">
       <div class="skel-av"></div>
@@ -236,6 +244,8 @@ if ('serviceWorker' in navigator) {
       <span class="downbar-more-label">Logout</span>
     </button>
   </div>
+
+  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
 </div>
 
 <script>
@@ -442,7 +452,17 @@ async function pageInit() {
   
   nextLoadingStep(); // notifications
   await loadNotifs();
-  
+
+  // ── ADS: mount notifications banner ──
+  try {
+    if (window.Ads && typeof window.Ads.mountNotificationsBanner === 'function') {
+      const slot = document.getElementById('notifications-ad-slot');
+      if (slot) window.Ads.mountNotificationsBanner(slot);
+    }
+  } catch (e) {
+    console.log('[Ads notifications]', e);
+  }
+
   nextLoadingStep(); // online (handled by initPage)
   
   nextLoadingStep(); // ready

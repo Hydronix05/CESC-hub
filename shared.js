@@ -678,12 +678,36 @@ async function initPage(pageInitFn) {
       loadOnlineCount(),
       loadNotifCount()
     ]);
-    
-    // Complete
+        // Complete
     nextLoadingStep();
     completeLoading();
     _loadingInProgress = false;
-    
+
+    // ── ADS: kick off ad loading after everything else is ready ──
+    try {
+      if (window.Ads && typeof window.Ads.init === 'function') {
+        window.Ads.init().then(() => {
+          // Loading-screen ad (all pages)
+          const loadingSlot = document.getElementById('loading-ad-slot');
+          if (loadingSlot && typeof window.Ads.mountLoadingSlot === 'function') {
+            window.Ads.mountLoadingSlot(loadingSlot);
+          }
+          // Sidebar ad (all pages with a sidebar)
+          const sidebarSlot = document.getElementById('sidebar-ad-slot');
+          if (sidebarSlot && typeof window.Ads.mountSidebarSlot === 'function') {
+            window.Ads.mountSidebarSlot(sidebarSlot);
+          }
+          // Downbar more drawer ad (mobile expanded drawer)
+          const downbarSlot = document.getElementById('downbar-ad-slot');
+          if (downbarSlot && typeof window.Ads.mountDownbarSlot === 'function') {
+            window.Ads.mountDownbarSlot(downbarSlot);
+          }
+        }).catch(err => console.log('[Ads init]', err));
+      }
+    } catch (e) {
+      console.log('[Ads init exception]', e);
+    }
+
   } catch (error) {
     console.error('Loading error:', error);
     _loadingInProgress = false;

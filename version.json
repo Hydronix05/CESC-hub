@@ -1,0 +1,126 @@
+{
+  "current": "3.5.0",
+  "versions": {
+    "v3": [
+      {
+        "version": "3.5.0",
+        "date": "2026-10-04",
+        "changes": "Ads update · Sponsored cards across feed, chat, profiles, notifications, loading screen · Anti-cheat click tracking · Advertiser support"
+      },
+      {
+        "version": "3.4",
+        "date": "2026-10-03",
+        "changes": "Huge chat and ui update · Private dms and notes update · Read receipts, active status, real-time messaging"
+      },
+      {
+        "version": "3.3",
+        "date": "2026-08-30",
+        "changes": "Added PWA · Installable app, offline support, service worker caching"
+      },
+      {
+        "version": "3.2.2",
+        "date": "2026-08-27",
+        "changes": "Loading screen and performance optimization · Faster boot, smoother animations"
+      },
+      {
+        "version": "3.2.1",
+        "date": "2026-08-26",
+        "changes": "Updated sidebar and header · Added bottom nav for mobile"
+      },
+      {
+        "version": "3.2",
+        "date": "2026-08-XX",
+        "changes": "Great ui update · Custom themes, ui updates"
+      },
+      {
+        "version": "3.1",
+        "date": "2026-08-XX",
+        "changes": "The functionable reopened CESC-hub · With clean files"
+      },
+      {
+        "version": "3.0",
+        "date": "2026-08-XX",
+        "changes": "The brand new reopening"
+      }
+    ],
+    "v2": [
+      {
+        "version": "2.8",
+        "date": "2026-05-06",
+        "changes": "Released the website CESC-hub for first users entry"
+      },
+      {
+        "version": "2.7",
+        "date": "2026-05-05",
+        "changes": "Added log system in admin site"
+      },
+      {
+        "version": "2.6",
+        "date": "2026-03-05",
+        "changes": "Index.html got user's activity views and streak leaderboard and theme toggle"
+      },
+      {
+        "version": "2.5.2",
+        "date": "unknown",
+        "changes": "Admin page can create accounts for new users and owner role got new rules"
+      },
+      {
+        "version": "2.5.1",
+        "date": "unknown",
+        "changes": "Admin page can now delete, edit messages posts"
+      },
+      {
+        "version": "2.5",
+        "date": "unknown",
+        "changes": "A huge update of the website security · Admin page was added to keep the website community safe"
+      },
+      {
+        "version": "2.4",
+        "date": "unknown",
+        "changes": "Added notifications.html · Users will be notified when anyone comments or likes on their posts"
+      },
+      {
+        "version": "2.3",
+        "date": "unknown",
+        "changes": "Added profiles.html and revamped index.html with cooler ui · Profiles.html : all users profiles are shown there and search bar was also there · Index.html : animations, sidebar edits, heading was added"
+      },
+      {
+        "version": "2.2",
+        "date": "unknown",
+        "changes": "Added settings.html · Users can set profile pic, bio and even change their password there"
+      },
+      {
+        "version": "2.1.1",
+        "date": "unknown",
+        "changes": "Removed signup because of constant bug and confused users"
+      },
+      {
+        "version": "2.1.0",
+        "date": "unknown",
+        "changes": "Added signup.html · Users can create their own accounts by simply inputting username, email and password · Email confirmation was also there"
+      },
+      {
+        "version": "2.0.0",
+        "date": "unknown",
+        "changes": "Created index.html, login.html and chat.html · Index.html : Posts feature · Chat.html : messaging · Login.html : login with email and password"
+      }
+    ],
+    "v1": [
+      {
+        "version": "1.2",
+        "date": "2026-02-04",
+        "changes": "Added functioning dashboard features"
+      },
+      {
+        "version": "1.1",
+        "date": "2026-01-04",
+        "changes": "Added live chatting"
+      },
+      {
+        "version": "1.0",
+        "date": "2026-03-02",
+        "changes": "First Deployment with bare things"
+      }
+    ]
+  }
+}

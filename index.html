@@ -19,9 +19,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/index.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
-
+<script src="/js/ads.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -82,7 +83,9 @@ window.addEventListener('appinstalled', () => {
     </button>
   </div>
   
-  <div class="loading-debug-hint">[ESC] force show</div>
+    <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
 </div>
 
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
@@ -145,10 +148,12 @@ window.addEventListener('appinstalled', () => {
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
   </a>
 
-  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
+    <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
     <i class="fas fa-chevron-right"></i>
     <span class="toggle-label">Collapse</span>
   </button>
+
+  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
 </aside>
 
 <!-- ── MAIN ── -->
@@ -298,11 +303,13 @@ window.addEventListener('appinstalled', () => {
       <span class="downbar-more-label">Notifications</span>
       <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
     </a>
-    <button class="downbar-more-item logout" onclick="logout()">
+    <button class="downbar-more-item logout" onclick="window.logout()">
       <span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>
       <span class="downbar-more-label">Logout</span>
     </button>
   </div>
+
+  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
 </div>
 
 <script>
@@ -732,6 +739,17 @@ async function refreshFeed() {
   document.getElementById('feed-loading').style.display = 'none';
   document.getElementById('feed-loading').textContent = 'Loading more posts...';
   await loadFeed();
+
+  // ── ADS: re-mount feed injection after refresh ──
+  try {
+    if (window.Ads && typeof window.Ads.mountFeedInjection === 'function') {
+      setTimeout(() => {
+        const feedEl = document.getElementById('feed');
+        if (feedEl) window.Ads.mountFeedInjection(feedEl);
+      }, 400);
+    }
+  } catch (e) {}
+
   btn.classList.remove('loading');
   btn.disabled = false;
 }
@@ -1088,8 +1106,21 @@ async function pageInit() {
   
   nextLoadingStep();
   
-  nextLoadingStep();
+    nextLoadingStep();
   await loadFeed();
+  
+  // ── ADS: mount feed injection after posts are rendered ──
+  try {
+    if (window.Ads && typeof window.Ads.mountFeedInjection === 'function') {
+      // Wait a tiny bit so the feed DOM is stable
+      setTimeout(() => {
+        const feedEl = document.getElementById('feed');
+        if (feedEl) window.Ads.mountFeedInjection(feedEl);
+      }, 400);
+    }
+  } catch (e) {
+    console.log('[Ads feed]', e);
+  }
   
   nextLoadingStep();
   

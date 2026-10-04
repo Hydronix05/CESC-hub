@@ -18,11 +18,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="/css/pages/download.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="shared.js"></script>
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
 
 <!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
@@ -38,6 +40,48 @@ if ('serviceWorker' in navigator) {
 </head>
 <body>
 
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+
+  <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
 <div class="bg-canvas">
   <div class="orb orb1"></div>
   <div class="orb orb2"></div>
@@ -45,13 +89,10 @@ if ('serviceWorker' in navigator) {
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-<!-- ── MOBILE MENU HAMBURGER (HIDDEN ON MOBILE) ── -->
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<!-- ── HEADER (FULL WIDTH AT TOP) ── -->
+<!-- ── HEADER ── -->
 <header class="top-header">
   <div class="header-left">
     <a href="/" class="header-logo">
@@ -92,14 +133,14 @@ if ('serviceWorker' in navigator) {
   </div>
 </header>
 
-<!-- ── SIDEBAR (DESKTOP - UNDER HEADER) ── -->
+<!-- ── SIDEBAR ── -->
 <aside class="sidebar" id="sidebar">
   <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
   <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
   <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
   <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item active"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-    <a href="/notifications" class="nav-item" id="notif-nav">
+  <a href="/notifications" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
@@ -109,237 +150,329 @@ if ('serviceWorker' in navigator) {
     <i class="fas fa-chevron-right"></i>
     <span class="toggle-label">Collapse</span>
   </button>
+
+  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
 </aside>
 
 <!-- ── MAIN ── -->
 <main class="main">
-  <div class="page-header">
-    <div>
-      <h1>📲 Install CESC Hub</h1>
-      <p>Get the app on your device for the best experience</p>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <span class="version-badge" id="version-badge">v1.0.0</span>
-      <button class="refresh-btn" onclick="checkForUpdates()">
-        <span class="spin"><i class="fas fa-sync-alt"></i></span> Check Updates
-      </button>
-    </div>
-  </div>
+  <div class="dl-wrap">
 
-  <!-- ── INSTALL PROMPT ── -->
-  <div class="install-card" id="install-card" style="display:none;">
-    <div class="install-card-icon"><i class="fas fa-download"></i></div>
-    <div class="install-card-content">
-      <h3>Install CESC Hub</h3>
-      <p>Get the app on your home screen for quick access, offline support, and a native-like experience.</p>
-      <button class="btn" id="install-btn" onclick="installApp()">
+    <!-- ═══ HERO ═══ -->
+    <section class="dl-hero">
+      <div class="dl-hero-bg"></div>
+      <div class="dl-hero-content">
+        <div class="dl-hero-icon">
+          <i class="fas fa-mobile-screen-button"></i>
+        </div>
+        <h1 class="dl-hero-title">Get CESC Hub on your device</h1>
+        <p class="dl-hero-sub">Faster, offline-ready, and one tap away. Install the app in seconds.</p>
+        <div class="dl-hero-meta">
+          <span class="dl-version-pill">
+            <i class="fas fa-code-branch"></i>
+            <span id="version-badge">v3.5.0</span>
+          </span>
+          <button class="dl-hero-refresh" onclick="checkForUpdates()" id="hero-refresh-btn">
+            <span class="dl-spin"><i class="fas fa-sync-alt"></i></span>
+            Check for updates
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ INSTALL PROMPT ═══ -->
+    <section class="dl-card dl-install-prompt" id="install-card" style="display:none;">
+      <div class="dl-card-icon dl-icon-accent"><i class="fas fa-download"></i></div>
+      <div class="dl-card-body">
+        <h3>Install CESC Hub</h3>
+        <p>Add it to your home screen for quick access, offline support, and a native-like experience.</p>
+      </div>
+      <button class="dl-btn dl-btn-primary" onclick="installApp()">
         <i class="fas fa-download"></i> Install App
       </button>
-    </div>
-  </div>
+    </section>
 
-  <!-- ── UPDATE NOTIFICATION ── -->
-  <div class="update-banner" id="update-banner" style="display:none;">
-    <div class="update-banner-content">
-      <span class="update-icon"><i class="fas fa-sync-alt fa-spin"></i></span>
-      <div>
-        <strong>Update available!</strong>
-        <span id="update-desc">A new version of CESC Hub is ready.</span>
+    <!-- ═══ UPDATE BANNER ═══ -->
+    <section class="dl-update-banner" id="update-banner" style="display:none;">
+      <div class="dl-update-icon"><i class="fas fa-arrow-rotate-right fa-spin"></i></div>
+      <div class="dl-update-body">
+        <div class="dl-update-title">Update available!</div>
+        <div class="dl-update-sub" id="update-desc">A new version of CESC Hub is ready.</div>
       </div>
-      <button class="btn small" onclick="applyUpdate()">Update Now</button>
-    </div>
-  </div>
+      <button class="dl-btn dl-btn-primary dl-btn-sm" onclick="applyUpdate()">Update Now</button>
+    </section>
 
-  <!-- ── WATCH VIDEO ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-play-circle" style="color:var(--neon)"></i> Watch Guide</div>
-    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">
-      Watch this short video to learn how to install CESC Hub on your device.
-      <br>
-      <span style="color:var(--neon);font-size:0.75rem;font-family:'Space Mono',monospace;">
-        (rn it's only rickroll, real video coming soon)
-      </span>
-    </p>
-    
-    <div class="video-container">
-      <iframe 
-        width="100%" 
-        height="100%" 
-        src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
-        frameborder="0" 
-        allowfullscreen>
-      </iframe>
-    </div>
-  </div>
-
-  <!-- ── INSTALL STEPS ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-list" style="color:var(--neon)"></i> Installation Steps</div>
-    
-    <div class="steps-grid">
-      <div class="step-card">
-        <div class="step-number">1</div>
-        <div class="step-icon"><i class="fas fa-globe"></i></div>
-        <h4>Visit the Site</h4>
-        <p>Open ceschub.vercel.app in your browser</p>
-      </div>
-      
-      <div class="step-card">
-        <div class="step-number">2</div>
-        <div class="step-icon"><i class="fas fa-share-alt"></i></div>
-        <h4>Tap Share / Menu</h4>
-        <p>Find the share button in your browser</p>
-        <div class="step-device-info">
-          <span class="device-tag"><i class="fab fa-android"></i> Android: ⋮ → Add to Home Screen</span>
-          <span class="device-tag"><i class="fab fa-apple"></i> iOS: Share → Add to Home Screen</span>
-          <span class="device-tag"><i class="fas fa-desktop"></i> Chrome: Install icon in address bar</span>
-        </div>
-      </div>
-      
-      <div class="step-card">
-        <div class="step-number">3</div>
-        <div class="step-icon"><i class="fas fa-home"></i></div>
-        <h4>Add to Home Screen</h4>
-        <p>Select "Add to Home Screen" or "Install"</p>
-      </div>
-      
-      <div class="step-card">
-        <div class="step-number">4</div>
-        <div class="step-icon"><i class="fas fa-check-circle"></i></div>
-        <h4>Done!</h4>
-        <p>Launch CESC Hub from your home screen</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── VERSION HISTORY ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-history" style="color:var(--neon)"></i> Version History</div>
-    
-    <div class="version-list" id="version-list">
-      <!-- Will be populated by JavaScript -->
-      <div style="color:var(--muted);font-size:0.8rem;padding:10px 0;">
-        <i class="fas fa-spinner fa-spin"></i> Loading version history...
-      </div>
-    </div>
-  </div>
-
-  <!-- ── UPDATE CHECKER ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-rocket" style="color:var(--neon)"></i> Update Settings</div>
-    <div class="update-settings">
-      <div class="toggle-row">
+    <!-- ═══ VIDEO GUIDE ═══ -->
+    <section class="dl-section">
+      <div class="dl-section-head">
+        <div class="dl-section-icon"><i class="fas fa-play"></i></div>
         <div>
-          <div style="font-weight:700;color:var(--text-bright);">Auto-check for updates</div>
-          <div style="font-size:0.75rem;color:var(--muted);">Check for new versions when you open the app</div>
+          <h2 class="dl-section-title">Watch the guide</h2>
+          <p class="dl-section-sub">A 30-second walkthrough on installing the app on your phone.</p>
         </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="auto-update-toggle" checked>
-          <span class="toggle-slider"></span>
+      </div>
+      <div class="dl-video">
+        <iframe 
+          src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+          frameborder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          loading="lazy">
+        </iframe>
+      </div>
+      <p class="dl-note">
+        <i class="fas fa-circle-info"></i>
+        Placeholder for now — the real walkthrough is coming soon.
+      </p>
+    </section>
+
+    <!-- ═══ INSTALL STEPS ═══ -->
+    <section class="dl-section">
+      <div class="dl-section-head">
+        <div class="dl-section-icon"><i class="fas fa-list-check"></i></div>
+        <div>
+          <h2 class="dl-section-title">How to install</h2>
+          <p class="dl-section-sub">Works on Android, iOS, and desktop Chrome.</p>
+        </div>
+      </div>
+      <div class="dl-steps">
+        <div class="dl-step">
+          <div class="dl-step-num">1</div>
+          <div class="dl-step-icon"><i class="fas fa-globe"></i></div>
+          <div class="dl-step-title">Visit the site</div>
+          <div class="dl-step-desc">Open the site in your browser</div>
+        </div>
+        <div class="dl-step">
+          <div class="dl-step-num">2</div>
+          <div class="dl-step-icon"><i class="fas fa-share-nodes"></i></div>
+          <div class="dl-step-title">Tap share / menu</div>
+          <div class="dl-step-desc">Find the share or menu button</div>
+          <div class="dl-step-tags">
+            <span class="dl-tag"><i class="fab fa-android"></i> ⋮ → Add to Home Screen</span>
+            <span class="dl-tag"><i class="fab fa-apple"></i> Share → Add to Home Screen</span>
+            <span class="dl-tag"><i class="fas fa-desktop"></i> Install icon in address bar</span>
+          </div>
+        </div>
+        <div class="dl-step">
+          <div class="dl-step-num">3</div>
+          <div class="dl-step-icon"><i class="fas fa-house"></i></div>
+          <div class="dl-step-title">Add to home</div>
+          <div class="dl-step-desc">Choose "Add to Home Screen"</div>
+        </div>
+        <div class="dl-step">
+          <div class="dl-step-num">4</div>
+          <div class="dl-step-icon"><i class="fas fa-circle-check"></i></div>
+          <div class="dl-step-title">All set!</div>
+          <div class="dl-step-desc">Launch from your home screen</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ VERSION HISTORY ═══ -->
+    <section class="dl-section">
+      <div class="dl-section-head">
+        <div class="dl-section-icon"><i class="fas fa-timeline"></i></div>
+        <div>
+          <h2 class="dl-section-title">Version history</h2>
+          <p class="dl-section-sub">Browse every era of CESC Hub, newest first.</p>
+        </div>
+      </div>
+
+      <!-- Era tabs -->
+      <div class="dl-era-tabs" id="era-tabs">
+        <button class="dl-era-tab active" data-era="v3" onclick="switchEra('v3')">
+          <span class="dl-era-label">V3</span>
+          <span class="dl-era-badge">current</span>
+        </button>
+        <button class="dl-era-tab" data-era="v2" onclick="switchEra('v2')">
+          <span class="dl-era-label">V2</span>
+          <span class="dl-era-badge archived">archived</span>
+        </button>
+        <button class="dl-era-tab" data-era="v1" onclick="switchEra('v1')">
+          <span class="dl-era-label">V1</span>
+          <span class="dl-era-badge legacy">legacy</span>
+        </button>
+      </div>
+
+      <!-- Versions list -->
+      <div class="dl-versions" id="version-list">
+        <div class="dl-versions-loading">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ UPDATE SETTINGS ═══ -->
+    <section class="dl-section">
+      <div class="dl-section-head">
+        <div class="dl-section-icon"><i class="fas fa-sliders"></i></div>
+        <div>
+          <h2 class="dl-section-title">Update preferences</h2>
+          <p class="dl-section-sub">Control how CESC Hub checks for new versions.</p>
+        </div>
+      </div>
+
+      <div class="dl-toggles">
+        <label class="dl-toggle-row">
+          <div class="dl-toggle-text">
+            <div class="dl-toggle-title">Auto-check for updates</div>
+            <div class="dl-toggle-sub">Check for new versions when you open the app</div>
+          </div>
+          <span class="dl-switch">
+            <input type="checkbox" id="auto-update-toggle" checked>
+            <span class="dl-switch-slider"></span>
+          </span>
+        </label>
+
+        <label class="dl-toggle-row">
+          <div class="dl-toggle-text">
+            <div class="dl-toggle-title">Show update notifications</div>
+            <div class="dl-toggle-sub">Get notified when a new version is available</div>
+          </div>
+          <span class="dl-switch">
+            <input type="checkbox" id="notif-toggle" checked>
+            <span class="dl-switch-slider"></span>
+          </span>
         </label>
       </div>
-      
-      <div class="toggle-row">
-        <div>
-          <div style="font-weight:700;color:var(--text-bright);">Show update notifications</div>
-          <div style="font-size:0.75rem;color:var(--muted);">Get notified when a new version is available</div>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="notif-toggle" checked>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      
-      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-        <button class="btn secondary" onclick="checkForUpdates()">
+
+      <div class="dl-actions">
+        <button class="dl-btn dl-btn-ghost" onclick="checkForUpdates()">
           <i class="fas fa-search"></i> Check for Updates
         </button>
-        <button class="btn secondary" onclick="clearCache()">
+        <button class="dl-btn dl-btn-ghost" onclick="clearCache()">
           <i class="fas fa-broom"></i> Clear Cache
         </button>
-        <button class="btn secondary" onclick="refreshApp()">
-          <i class="fas fa-redo"></i> Refresh App
+        <button class="dl-btn dl-btn-ghost" onclick="refreshApp()">
+          <i class="fas fa-rotate"></i> Refresh App
         </button>
       </div>
-    </div>
+    </section>
+
   </div>
 </main>
 
-<!-- ── DOWNBAR (MOBILE BOTTOM NAV - 5 EQUAL COLUMNS) ── -->
+<!-- ── DOWNBAR (MOBILE) ── -->
 <nav class="downbar" id="downbar">
   <div class="downbar-inner">
-    <a href="/" class="downbar-item" id="downbar-home">
-      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
-    </a>
-    <a href="/chat" class="downbar-item" id="downbar-chat">
-      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
-    </a>
-    <a href="/profiles" class="downbar-item" id="downbar-profiles">
-      <span class="downbar-icon"><i class="fas fa-users"></i></span>
-    </a>
-    <a href="/settings" class="downbar-item" id="downbar-settings">
-      <span class="downbar-icon"><i class="fas fa-cog"></i></span>
-    </a>
-    <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
-      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
-    </button>
+    <a href="/" class="downbar-item" id="downbar-home"><span class="downbar-icon"><i class="fas fa-newspaper"></i></span></a>
+    <a href="/chat" class="downbar-item" id="downbar-chat"><span class="downbar-icon"><i class="fas fa-comments"></i></span></a>
+    <a href="/profiles" class="downbar-item" id="downbar-profiles"><span class="downbar-icon"><i class="fas fa-users"></i></span></a>
+    <a href="/settings" class="downbar-item" id="downbar-settings"><span class="downbar-icon"><i class="fas fa-cog"></i></span></a>
+    <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn"><span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span></button>
   </div>
 </nav>
 
-<!-- ── DOWNBAR MORE OVERLAY ── -->
 <div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
 
-<!-- ── DOWNBAR MORE DRAWER (GRID/TABLE LAYOUT - 5 COLUMNS) ── -->
 <div class="downbar-more" id="downbar-more">
   <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
-  
   <div class="downbar-more-grid">
-    <a href="/" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span>
-      <span class="downbar-more-label">Feed</span>
-    </a>
-    <a href="/chat" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
-      <span class="downbar-more-label">Chat</span>
-    </a>
-    <a href="/profiles" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
-      <span class="downbar-more-label">Profiles</span>
-    </a>
-    <a href="/settings" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
-      <span class="downbar-more-label">Settings</span>
-    </a>
-    <a href="/download" class="downbar-more-item active">
-      <span class="downbar-more-icon"><i class="fas fa-download"></i></span>
-      <span class="downbar-more-label">Downloads</span>
-    </a>
-    <a href="/notifications" class="downbar-more-item" id="downbar-more-notif">
-      <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
-      <span class="downbar-more-label">Notifications</span>
-      <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
-    </a>
-    <button class="downbar-more-item logout" onclick="window.logout()">
-      <span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>
-      <span class="downbar-more-label">Logout</span>
-    </button>
+    <a href="/" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span><span class="downbar-more-label">Feed</span></a>
+    <a href="/chat" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-comments"></i></span><span class="downbar-more-label">Chat</span></a>
+    <a href="/profiles" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-users"></i></span><span class="downbar-more-label">Profiles</span></a>
+    <a href="/settings" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-cog"></i></span><span class="downbar-more-label">Settings</span></a>
+    <a href="/download" class="downbar-more-item active"><span class="downbar-more-icon"><i class="fas fa-download"></i></span><span class="downbar-more-label">Downloads</span></a>
+    <a href="/notifications" class="downbar-more-item" id="downbar-more-notif"><span class="downbar-more-icon"><i class="fas fa-bell"></i></span><span class="downbar-more-label">Notifications</span><span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span></a>
+    <button class="downbar-more-item logout" onclick="window.logout()"><span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span><span class="downbar-more-label">Logout</span></button>
   </div>
+
+  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
 </div>
 
 <script>
 // ── DOWNLOAD PAGE LOGIC ──
 
-const APP_VERSION = '1.0.0';
+let APP_VERSION = '3.5.0';
+let VERSION_DATA = null;
+let CURRENT_ERA = 'v3';
 let deferredPrompt = null;
 
-// ── VERSION HISTORY ──
-const VERSION_HISTORY = [
-  { version: '1.0.0', date: '2026-09-01', changes: 'Initial release with Feed, Chat, Profiles, Settings, Notifications, and PWA support' },
-  { version: '0.9.0', date: '2026-08-28', changes: 'Added chat images, reply system, edit message (15min window)' },
-  { version: '0.8.0', date: '2026-08-25', changes: 'Custom theme system, profile picture uploads, notification system' },
-  { version: '0.7.0', date: '2026-08-20', changes: 'Posts with images, like system, comments, cooldown' },
-  { version: '0.6.0', date: '2026-08-15', changes: 'Real-time chat, profiles page, online status' }
-];
+// ── FETCH VERSION.JSON ──
+async function loadVersionData() {
+  try {
+    const res = await fetch('/version.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('version.json not found');
+    VERSION_DATA = await res.json();
+    if (VERSION_DATA.current) {
+      APP_VERSION = VERSION_DATA.current;
+    }
+    return VERSION_DATA;
+  } catch (e) {
+    console.warn('[Version] Failed to load version.json:', e.message);
+    return null;
+  }
+}
+
+// ── RENDER TABS ──
+function renderTabs() {
+  const tabs = document.querySelectorAll('.dl-era-tab');
+  tabs.forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.era === CURRENT_ERA);
+  });
+}
+
+// ── SWITCH ERA ──
+function switchEra(era) {
+  if (era === CURRENT_ERA) return;
+  CURRENT_ERA = era;
+  renderTabs();
+  renderVersionList();
+}
+
+// ── RENDER VERSION LIST ──
+function renderVersionList() {
+  const container = document.getElementById('version-list');
+  if (!container) return;
+
+  const era = CURRENT_ERA;
+  const data = VERSION_DATA;
+
+  if (!data || !data.versions || !Array.isArray(data.versions[era])) {
+    container.innerHTML = `
+      <div class="dl-versions-empty">
+        <i class="fas fa-inbox"></i>
+        <div>No version history available for this era.</div>
+      </div>`;
+    return;
+  }
+
+  const versions = data.versions[era];
+
+  if (versions.length === 0) {
+    container.innerHTML = `
+      <div class="dl-versions-empty">
+        <i class="fas fa-inbox"></i>
+        <div>No versions recorded yet for this era.</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+
+  versions.forEach((item, index) => {
+    const isLatestOfCurrentEra = (era === 'v3' && index === 0);
+    const div = document.createElement('div');
+    div.className = 'dl-version' + (isLatestOfCurrentEra ? ' dl-version-latest' : '');
+    div.style.animationDelay = (index * 0.04) + 's';
+
+    div.innerHTML = `
+      <div class="dl-version-line"></div>
+      <div class="dl-version-dot"></div>
+      <div class="dl-version-body">
+        <div class="dl-version-head">
+          <div class="dl-version-tag">
+            v${window.escapeHTML(item.version)}
+            ${isLatestOfCurrentEra ? '<span class="dl-version-current">current</span>' : ''}
+          </div>
+          <div class="dl-version-date">${window.escapeHTML(item.date || 'unknown')}</div>
+        </div>
+        <div class="dl-version-changes">${window.escapeHTML(item.changes || '')}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
 
 // ── INSTALL APP ──
 function installApp() {
@@ -357,7 +490,6 @@ function installApp() {
   }
 }
 
-// ── PWA INSTALL PROMPT ──
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
@@ -371,23 +503,18 @@ window.addEventListener('appinstalled', () => {
 
 // ── CHECK FOR UPDATES ──
 async function checkForUpdates() {
-  const btn = document.querySelector('.refresh-btn');
-  btn.classList.add('loading');
-  btn.disabled = true;
-  
-  // Check if a new service worker is waiting
+  const btns = document.querySelectorAll('.dl-hero-refresh, .dl-btn');
+  btns.forEach(b => b.classList.add('loading'));
+
   if ('serviceWorker' in navigator) {
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration) {
-      // Check for update
       try {
         await registration.update();
-        
-        // Check if there's a waiting service worker
         if (registration.waiting) {
-          document.getElementById('update-banner').style.display = 'block';
+          document.getElementById('update-banner').style.display = 'flex';
           document.getElementById('update-desc').textContent = 'A new version has been downloaded and is ready to install.';
-          showToast('🔄 Update available! Click "Update Now"', 'info');
+          showToast('🔄 Update available!', 'info');
         } else {
           showToast('✅ You\'re on the latest version!', 'success');
         }
@@ -396,29 +523,23 @@ async function checkForUpdates() {
       }
     }
   }
-  
-  btn.classList.remove('loading');
-  btn.disabled = false;
+
+  setTimeout(() => btns.forEach(b => b.classList.remove('loading')), 600);
 }
 
-// ── APPLY UPDATE ──
 function applyUpdate() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(reg => {
       if (reg && reg.waiting) {
         reg.waiting.postMessage('checkUpdate');
-        // Reload after the new SW takes over
         document.getElementById('update-banner').style.display = 'none';
         showToast('🔄 Updating... Reloading app', 'info');
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        setTimeout(() => window.location.reload(), 1500);
       }
     });
   }
 }
 
-// ── CLEAR CACHE ──
 async function clearCache() {
   if ('caches' in window) {
     const cacheNames = await caches.keys();
@@ -428,13 +549,11 @@ async function clearCache() {
   }
 }
 
-// ── REFRESH APP ──
 function refreshApp() {
   showToast('🔄 Refreshing app...', 'info');
   setTimeout(() => window.location.reload(), 500);
 }
 
-// ── TOGGLE SETTINGS ──
 document.getElementById('auto-update-toggle')?.addEventListener('change', function() {
   localStorage.setItem('cesc_auto_update', this.checked ? 'true' : 'false');
 });
@@ -443,81 +562,67 @@ document.getElementById('notif-toggle')?.addEventListener('change', function() {
   localStorage.setItem('cesc_update_notif', this.checked ? 'true' : 'false');
 });
 
-// ── LOAD VERSION HISTORY ──
-function loadVersionHistory() {
-  const container = document.getElementById('version-list');
-  container.innerHTML = '';
-  
-  VERSION_HISTORY.forEach((item, index) => {
-    const div = document.createElement('div');
-    div.className = 'version-item';
-    div.style.animationDelay = (index * 0.05) + 's';
-    
-    const isLatest = index === 0;
-    div.innerHTML = `
-      <div class="version-header">
-        <span class="version-tag ${isLatest ? 'latest' : ''}">
-          ${isLatest ? '⭐ ' : ''}v${item.version}
-        </span>
-        <span class="version-date">${item.date}</span>
-      </div>
-      <div class="version-changes">${item.changes}</div>
-    `;
-    container.appendChild(div);
-  });
+// ── EXPOSE FOR INLINE ONCLICK ──
+window.switchEra = switchEra;
+window.installApp = installApp;
+window.checkForUpdates = checkForUpdates;
+window.applyUpdate = applyUpdate;
+window.clearCache = clearCache;
+window.refreshApp = refreshApp;
+
+// ── LOADING STEPS ──
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'version', label: 'Loading version history...', technical: 'Fetching releases' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'Downloads ready' }
+  ]);
 }
 
-// ── INIT ──
-async function init() {
-  if (typeof window.initTheme !== 'function') {
-    setTimeout(init, 200);
-    return;
-  }
-  
-  window.initTheme();
-  
-  // Load version
+// ── PAGE INIT (wrapped by shared.js initPage) ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep(); // theme
+
+  // Version data
+  nextLoadingStep(); // version
+  await loadVersionData();
+
   document.getElementById('version-badge').textContent = `v${APP_VERSION}`;
-  
-  // Load version history
-  loadVersionHistory();
-  
-  // Load settings
+  renderTabs();
+  renderVersionList();
+
+  // Restore settings
   const autoUpdate = localStorage.getItem('cesc_auto_update');
   if (autoUpdate !== null) {
     document.getElementById('auto-update-toggle').checked = autoUpdate === 'true';
   }
-  
   const notifSetting = localStorage.getItem('cesc_update_notif');
   if (notifSetting !== null) {
     document.getElementById('notif-toggle').checked = notifSetting === 'true';
   }
-  
-  // Auto-check for updates
   if (document.getElementById('auto-update-toggle').checked) {
     setTimeout(checkForUpdates, 3000);
   }
-  
-  const sess = await window.initAuth();
-  if (!sess) return;
-  
-  const profile = await window.loadUserProfile();
-  if (profile) window.updateUserUI(profile);
-  
-  await window.loadNotifCount();
-  await window.loadOnlineCount();
-  
-  setInterval(async () => {
-    if (!window.session) return;
-    await Promise.all([window.loadNotifCount(), window.loadOnlineCount()]);
-  }, 15000);
+
+  // online / notifs are handled by initPage
+  nextLoadingStep();
+  nextLoadingStep();
+  nextLoadingStep(); // ready
 }
 
 // ── START ──
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
 } else {
-  setTimeout(init, 100);
+  initPage(pageInit);
 }
 </script>
 

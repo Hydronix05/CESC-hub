@@ -82,6 +82,12 @@ let notesCache = [];
 let notesChannel = null;
 let currentViewingNote = null;
 
+// Ads (chat)
+let currentChatAd = null;          // the ad shown as the pseudo-DM row
+let currentInboxBottomAd = null;   // the ad shown in the inbox bottom slot
+let chatAdRefreshTimer = null;     // rotates pseudo-DM every ROTATE_MS
+let preAdActiveChat = null;        // remember the chat that was open before ad view
+
 // ═══════════════════════════════════════════════════════════
 // ── UTILITIES ──
 // ═══════════════════════════════════════════════════════════
@@ -282,12 +288,19 @@ async function loadConversations() {
     .eq('user_id', myUserId);
 
   if (memErr) { console.error(memErr); return; }
-  if (!members) { conversationsCache = []; return; }
+  if (!members || members.length === 0) { conversationsCache = []; return; }
 
+  // ── Build initial convo objects + collect IDs ──
   const convos = [];
+  const dmIds = [];
+  const gcIds = [];
+  const lastReadMap = {};
+
   for (const m of members) {
     const c = m.conversations;
     if (!c) continue;
+
+    lastReadMap[c.id] = m.last_read_at || '1970-01-01';
 
     let otherUsername = null;
     let otherProfile = null;
@@ -299,24 +312,10 @@ async function loadConversations() {
       otherProfile = otherUsername ? (profilesIndex[otherUsername] || null) : null;
       displayName = otherProfile?.display_name || otherProfile?.username || otherUsername || 'Unknown';
       pfpUrl = otherProfile?.pfp_url || null;
+      dmIds.push(c.id);
+    } else {
+      gcIds.push(c.id);
     }
-
-    const table = c.type === 'dm' ? 'dm_messages' : 'gc_messages';
-    const { data: lastMsgs } = await window.supabaseClient
-      .from(table)
-      .select('content, username, display_name, image_url, created_at')
-      .eq('conversation_id', c.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    const last = lastMsgs && lastMsgs[0] ? lastMsgs[0] : null;
-
-    const { count: unread } = await window.supabaseClient
-      .from(table)
-      .select('id', { count: 'exact', head: true })
-      .eq('conversation_id', c.id)
-      .neq('user_id', myUserId)
-      .gt('created_at', m.last_read_at || '1970-01-01');
 
     convos.push({
       id: c.id,
@@ -326,13 +325,78 @@ async function loadConversations() {
       otherProfile,
       displayName,
       pfpUrl,
-      lastMessage: last,
-      lastAt: last ? last.created_at : (c.last_message_at || null),
-      unread: unread || 0,
+      lastMessage: null,
+      lastAt: c.last_message_at || null,
+      unread: 0,
       memberCount: c.member_count || 0,
     });
   }
 
+  // ── Batch fetch: last messages + unread counts ──
+  const allIds = [...dmIds, ...gcIds];
+  if (allIds.length === 0) { conversationsCache = convos; return; }
+
+  const convoMap = {};
+  convos.forEach(c => { convoMap[c.id] = c; });
+
+  // Fetch recent messages for all conversations in parallel (last 30 per convo)
+  const fetches = [];
+  if (dmIds.length > 0) {
+    fetches.push(
+      window.supabaseClient
+        .from('dm_messages')
+        .select('conversation_id, content, username, display_name, image_url, created_at, user_id')
+        .in('conversation_id', dmIds)
+        .order('created_at', { ascending: false })
+        .limit(150)
+    );
+  }
+  if (gcIds.length > 0) {
+    fetches.push(
+      window.supabaseClient
+        .from('gc_messages')
+        .select('conversation_id, content, username, display_name, image_url, created_at, user_id')
+        .in('conversation_id', gcIds)
+        .order('created_at', { ascending: false })
+        .limit(150)
+    );
+  }
+
+  const results = await Promise.all(fetches);
+
+  // Group messages by conversation
+  const grouped = {};
+  results.forEach(res => {
+    (res.data || []).forEach(msg => {
+      const cid = msg.conversation_id;
+      if (!grouped[cid]) grouped[cid] = [];
+      grouped[cid].push(msg);
+    });
+  });
+
+  // Assign last message + unread count per convo
+  Object.keys(grouped).forEach(cid => {
+    const msgs = grouped[cid];
+    if (!msgs || msgs.length === 0) return;
+    const lastRead = lastReadMap[cid] || '1970-01-01';
+    const last = msgs[0];
+    const convo = convoMap[cid];
+    if (!convo) return;
+
+    convo.lastMessage = {
+      content: last.content,
+      username: last.username,
+      display_name: last.display_name,
+      image_url: last.image_url,
+      created_at: last.created_at,
+    };
+    convo.lastAt = last.created_at;
+    convo.unread = msgs.filter(m =>
+      m.user_id !== myUserId && m.created_at > lastRead
+    ).length;
+  });
+
+  // Sort: newest message first
   convos.sort((a, b) => {
     if (!a.lastAt && !b.lastAt) return 0;
     if (!a.lastAt) return 1;
@@ -758,6 +822,9 @@ function renderInbox() {
     });
     list.appendChild(row);
   });
+
+  // ── Inject the pseudo-DM ad row (slots 2-4) ──
+  maybeInjectChatAdRow(list);
 }
 
 function buildPreviewText(lastMessage) {
@@ -843,6 +910,239 @@ function buildInboxRow(opts) {
 
   return row;
 }
+
+// ═══════════════════════════════════════════════════════════
+// ── CHAT ADS: pseudo-DM row + ad chat view + inbox bottom slot ──
+// ═══════════════════════════════════════════════════════════
+
+function startChatAdRotation() {
+  stopChatAdRotation();
+  // Re-evaluate the pseudo-DM every 10 min so a new ad rotates in
+  // once the previous one is throttled/removed.
+  chatAdRefreshTimer = setInterval(() => {
+    renderInbox();
+    mountInboxBottomAd();
+  }, 10 * 60 * 1000);
+}
+function stopChatAdRotation() {
+  if (chatAdRefreshTimer) {
+    clearInterval(chatAdRefreshTimer);
+    chatAdRefreshTimer = null;
+  }
+}
+
+// Build the pseudo-DM row that goes inside the inbox list.
+// Position: slot 2-4 (after Global Chat + the first 1-3 conversations).
+function maybeInjectChatAdRow(list) {
+  if (!list) return;
+  if (!window.Ads || typeof window.Ads.buildInboxChatAdRow !== 'function') return;
+
+  // Pick the ad that isn't already in the bottom slot (if possible)
+  const excludeIds = currentInboxBottomAd ? [currentInboxBottomAd.id] : [];
+  const ad = window.Ads.pickChatAdForInbox({ excludeIds });
+  if (!ad) {
+    currentChatAd = null;
+    return;
+  }
+  currentChatAd = ad;
+
+  const { el: row } = window.Ads.buildInboxChatAdRow(ad, openChatAdView);
+
+  // ── Positions in the DOM ──
+  // The list looks like this after full render:
+  //   [0] Global Chat
+  //   [1] "Conversations" label    (only if there are conversations)
+  //   [2] conversation 1
+  //   [3] conversation 2
+  //   [4] conversation 3
+  //   ...
+  //
+  // "Slot 2-4" means we want the ad between the 1st and 3rd real conversation.
+  // That means we insert it AFTER at least 1 conversation and BEFORE the 4th.
+  //
+  // Practical insert positions (index in list.children):
+  //   slot 2 → insert before children[3]   (after conv 1)
+  //   slot 3 → insert before children[4]   (after conv 2)
+  //   slot 4 → insert before children[5]   (after conv 3)
+
+  const children = Array.from(list.children);
+  const convStartIndex = children.length > 1 && children[1].classList.contains('inbox-section-label') ? 2 : 1;
+  const convCount = children.length - convStartIndex;
+
+  // Not enough conversations? Just append at the end.
+  if (convCount < 1) {
+    list.appendChild(row);
+    return;
+  }
+
+  // Slot in terms of "after how many conversations?"
+  //   after 1 conv → children index = convStartIndex + 1
+  //   after 2 conv → children index = convStartIndex + 2
+  //   after 3 conv → children index = convStartIndex + 3
+  const maxAfter = Math.min(3, convCount);           // 1..3
+  const afterCount = 1 + Math.floor(Math.random() * maxAfter); // 1..maxAfter
+  const insertAt = convStartIndex + afterCount;
+
+  if (insertAt >= children.length) {
+    list.appendChild(row);
+  } else {
+    list.insertBefore(row, children[insertAt]);
+  }
+}
+
+// Open the ad chat view when a pseudo-DM is clicked.
+function openChatAdView(ad) {
+  if (!ad) return;
+
+  // Remember the currently-open chat so we can return to it on close.
+  preAdActiveChat = activeChat;
+
+  // Hide real chat views
+  const empty = document.getElementById('chat-empty');
+  const chatView = document.getElementById('chat-view');
+  if (empty) empty.style.display = 'none';
+  if (chatView) chatView.style.display = 'none';
+
+  // Show ad chat view
+  const adView = document.getElementById('ad-chat-view');
+  const adHead = document.getElementById('ad-chat-head');
+  const adBody = document.getElementById('ad-chat-body');
+
+  if (!adView || !adHead || !adBody) return;
+
+  // If Ads.js exposes renderAdChatView, use it — it fills header + body
+  if (window.Ads && typeof window.Ads.renderAdChatView === 'function') {
+    window.Ads.renderAdChatView(ad, adView, adHead, adBody);
+
+    // Hook the close + back buttons ourselves (the shared renderer
+    // attaches its own close handler that just hides `container`).
+    // We override it to also restore the previous view.
+    const closeBtns = adHead.querySelectorAll('[data-ad-close], .chat-back-btn');
+    closeBtns.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        closeChatAdView();
+      };
+    });
+
+    // Hook the CTA button so it ALSO closes the view + removes the pseudo-DM.
+    const ctaBtn = adBody.querySelector('.ad-chat-cta');
+    if (ctaBtn) {
+      ctaBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        // Fire the click logging (open the link, bump counter)
+        if (window.Ads && typeof window.Ads.logClick === 'function') {
+          window.Ads.logClick(ad.id, 'chat');
+        }
+        if (window.Ads && typeof window.Ads.markChatAdSeen === 'function') {
+          window.Ads.markChatAdSeen(ad.id);
+        }
+        try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
+
+        // Remove the pseudo-DM row from the inbox
+        const row = document.querySelector(`.inbox-row-ad[data-ad-id="${ad.id}"]`);
+        if (row) row.remove();
+
+        // Close the ad view + return to previous chat/inbox
+        closeChatAdView();
+      };
+    }
+
+    // Also override the image click (it opens the link too, in Ads.js)
+    const imgWrap = adBody.querySelector('.ad-chat-img-wrap');
+    if (imgWrap) {
+      imgWrap.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (window.Ads && typeof window.Ads.logClick === 'function') {
+          window.Ads.logClick(ad.id, 'chat');
+        }
+        if (window.Ads && typeof window.Ads.markChatAdSeen === 'function') {
+          window.Ads.markChatAdSeen(ad.id);
+        }
+        try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
+
+        const row = document.querySelector(`.inbox-row-ad[data-ad-id="${ad.id}"]`);
+        if (row) row.remove();
+
+        closeChatAdView();
+      };
+    }
+  } else {
+    // Fallback: minimal ad view if Ads.js helpers aren't available
+    adHead.innerHTML = `
+      <button class="chat-back-btn" title="Back"><i class="fas fa-arrow-left"></i></button>
+      <div class="chat-head-info">
+        <div class="chat-head-name">Sponsored</div>
+        <div class="chat-head-sub">Ad</div>
+      </div>
+    `;
+    adBody.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)">Ad unavailable</div>`;
+  }
+
+  adView.style.display = 'flex';
+  setMobileView('chat');
+}
+
+function closeChatAdView() {
+  const adView = document.getElementById('ad-chat-view');
+  if (adView) {
+    adView.style.display = 'none';
+    // Wipe contents so nothing leaks into the DOM when it reappears
+    const head = document.getElementById('ad-chat-head');
+    const body = document.getElementById('ad-chat-body');
+    if (head) head.innerHTML = '';
+    if (body) body.innerHTML = '';
+  }
+
+  // Return to whatever was open before, or show empty state
+  if (preAdActiveChat) {
+    const remembered = preAdActiveChat;
+    preAdActiveChat = null;
+
+    if (remembered.type === 'global') {
+      openGlobalChat();
+    } else if (remembered.slug) {
+      openChatBySlug(remembered.slug, remembered.otherUsername);
+    } else {
+      showEmptyView();
+    }
+  } else {
+    showEmptyView();
+  }
+}
+
+function showEmptyView() {
+  const empty = document.getElementById('chat-empty');
+  const chatView = document.getElementById('chat-view');
+  const adView = document.getElementById('ad-chat-view');
+  if (empty) empty.style.display = 'flex';
+  if (chatView) chatView.style.display = 'none';
+  if (adView) adView.style.display = 'none';
+  setMobileView('inbox');
+}
+
+// Mount the persistent bottom-of-inbox ad (different from the pseudo-DM
+// if possible; falls back to the same ad if only one exists).
+function mountInboxBottomAd() {
+  const slot = document.getElementById('inbox-ad-slot');
+  if (!slot) return;
+  if (!window.Ads || typeof window.Ads.mountInboxSlot !== 'function') return;
+
+  // Ads.js's mountInboxSlot just picks a `placement='inbox'` ad.
+  // We can't pass exclusion directly, so temporarily pick manually here.
+  // Simplest approach: if we have currentChatAd, temporarily hide that ad
+  // from the cache during this pick — but that's overkill for the codebase.
+  // Instead, we accept that inbox bottom may occasionally show the same ad.
+  window.Ads.mountInboxSlot(slot);
+
+  // Remember what got mounted so the pseudo-DM picker can avoid it
+  // (best-effort: we don't have direct access here, so skip storing for now).
+}
+
 
 function attachInboxDeleteTrigger(row, convo) {
   let timer = null;
@@ -2644,6 +2944,16 @@ function initMsgInput() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ── CHAT AD DEBUG HOOKS ──
+// ═══════════════════════════════════════════════════════════
+window.openChatAdView = openChatAdView;
+window.closeChatAdView = closeChatAdView;
+window.refreshChatAds = () => {
+  renderInbox();
+  mountInboxBottomAd();
+};
+
+// ═══════════════════════════════════════════════════════════
 // ── PAGE INIT ──
 // ═══════════════════════════════════════════════════════════
 async function pageInit() {
@@ -2716,6 +3026,10 @@ async function pageInit() {
   await loadNotes();
   setupNotesRealtime();
 
+  // ── Mount inbox bottom ad + start rotation for pseudo-DM ──
+  mountInboxBottomAd();
+  startChatAdRotation();
+
   nextLoadingStep();
   nextLoadingStep();
 
@@ -2736,6 +3050,7 @@ async function pageInit() {
 window.addEventListener('beforeunload', () => {
   teardownRealtime();
   stopActiveStatusTicker();
+  stopChatAdRotation();
   if (inboxChannel) { window.supabaseClient.removeChannel(inboxChannel); inboxChannel = null; }
   if (notesChannel) { window.supabaseClient.removeChannel(notesChannel); notesChannel = null; }
   if (profilesChannel) { window.supabaseClient.removeChannel(profilesChannel); profilesChannel = null; }
