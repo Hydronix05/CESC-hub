@@ -183,8 +183,6 @@ if ('serviceWorker' in navigator) {
         <!-- rendered by js/chat.js -->
       </div>
 
-      <!-- Inbox bottom persistent ad slot -->
-      <div class="inbox-ad-slot" id="inbox-ad-slot"></div>
     </aside>
     
     <!-- ═══ CHAT AREA (right column) ═══ -->
@@ -310,14 +308,16 @@ if ('serviceWorker' in navigator) {
     <!-- Compose view -->
     <div class="note-modal-compose" id="note-modal-compose">
       <div class="note-modal-title">Post a note</div>
-      <div class="note-modal-sub">Visible to everyone · expires in 24h</div>
       <textarea 
         id="note-input" 
         class="note-input" 
-        placeholder="What's on your mind?" 
-        maxlength="60"
+        placeholder="What's on your mind? (use Enter for a new line)" 
+        maxlength="100"
         rows="3"
       ></textarea>
+      <div style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:4px;">
+        Shift + Enter for new line · Enter to submit
+      </div>
       <div class="note-char-count"><span id="note-char-count">0</span>/60</div>
       <div class="note-modal-actions">
         <button class="note-btn-cancel" onclick="window.closeNoteModal()">Cancel</button>

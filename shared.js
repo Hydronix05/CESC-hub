@@ -412,7 +412,8 @@ function buildAvatar(username, pfpUrl, size = 40, cls = '') {
   span.style.zIndex = '1';
   div.appendChild(span);
   
-  const url = pfpUrl || pfpCache[username];
+  // Resolve the pfp url from cache if not passed in
+  const url = pfpUrl || pfpCache[username] || null;
   if (url) {
     const img = document.createElement('img');
     img.src = url;
@@ -424,7 +425,8 @@ function buildAvatar(username, pfpUrl, size = 40, cls = '') {
     img.style.objectFit = 'cover';
     img.style.display = 'none';
     img.style.borderRadius = '50%';
-    img.loading = 'lazy';
+    img.loading = 'eager';           // ← load immediately (was lazy)
+    img.decoding = 'async';
     img.onload = () => {
       img.style.display = 'block';
       span.style.display = 'none';
@@ -444,7 +446,8 @@ async function loadPfpCache() {
     const { data } = await supabaseClient.from('profiles').select('username, pfp_url');
     if (data) {
       data.forEach(p => {
-        if (p.pfp_url) pfpCache[p.username] = p.pfp_url;
+        // Cache even null values so we know we checked already
+        pfpCache[p.username] = p.pfp_url || null;
       });
     }
   } catch (e) {
@@ -678,35 +681,50 @@ async function initPage(pageInitFn) {
       loadOnlineCount(),
       loadNotifCount()
     ]);
-        // Complete
-    nextLoadingStep();
-    completeLoading();
-    _loadingInProgress = false;
 
-    // ── ADS: kick off ad loading after everything else is ready ──
+    // ── ADS: load ads + mount slots BEFORE hiding the loading screen ──
+    nextLoadingStep(); // extra step for ads
     try {
       if (window.Ads && typeof window.Ads.init === 'function') {
-        window.Ads.init().then(() => {
-          // Loading-screen ad (all pages)
-          const loadingSlot = document.getElementById('loading-ad-slot');
-          if (loadingSlot && typeof window.Ads.mountLoadingSlot === 'function') {
-            window.Ads.mountLoadingSlot(loadingSlot);
-          }
-          // Sidebar ad (all pages with a sidebar)
-          const sidebarSlot = document.getElementById('sidebar-ad-slot');
-          if (sidebarSlot && typeof window.Ads.mountSidebarSlot === 'function') {
-            window.Ads.mountSidebarSlot(sidebarSlot);
-          }
-          // Downbar more drawer ad (mobile expanded drawer)
-          const downbarSlot = document.getElementById('downbar-ad-slot');
-          if (downbarSlot && typeof window.Ads.mountDownbarSlot === 'function') {
-            window.Ads.mountDownbarSlot(downbarSlot);
-          }
-        }).catch(err => console.log('[Ads init]', err));
+        await window.Ads.init();
+      }
+
+      // Loading-screen ad (show while loading is still visible)
+      const loadingSlot = document.getElementById('loading-ad-slot');
+      if (loadingSlot && window.Ads && typeof window.Ads.mountLoadingSlot === 'function') {
+        window.Ads.mountLoadingSlot(loadingSlot);
+      }
+
+      // Sidebar ad (all pages with a sidebar)
+      const sidebarSlot = document.getElementById('sidebar-ad-slot');
+      if (sidebarSlot && window.Ads && typeof window.Ads.mountSidebarSlot === 'function') {
+        window.Ads.mountSidebarSlot(sidebarSlot);
+      }
+
+      // Downbar more drawer ad (mobile expanded drawer)
+      const downbarSlot = document.getElementById('downbar-ad-slot');
+      if (downbarSlot && window.Ads && typeof window.Ads.mountDownbarSlot === 'function') {
+        window.Ads.mountDownbarSlot(downbarSlot);
       }
     } catch (e) {
       console.log('[Ads init exception]', e);
     }
+
+    // Complete
+    nextLoadingStep();
+    completeLoading();
+    _loadingInProgress = false;
+
+    // ── ADS: re-render ads that depend on the page being ready ──
+    // (feed, profiles, notifications mounts)
+    try {
+      if (window.Ads && typeof window.Ads.reRenderAll === 'function') {
+        // Give the page a moment to finish its own rendering
+        setTimeout(() => {
+          try { window.Ads.reRenderAll(); } catch (e) {}
+        }, 200);
+      }
+    } catch (e) {}
 
   } catch (error) {
     console.error('Loading error:', error);

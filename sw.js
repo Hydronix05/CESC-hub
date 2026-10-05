@@ -1,7 +1,7 @@
 // ── CESC HUB SERVICE WORKER ──
 // No terminal needed - just copy this file!
 
-const CACHE_NAME = 'cesc-hub-v3.5'; // Bumped for the chat + notes + offline release
+const CACHE_NAME = 'cesc-hub-v3.5.1'; // Bumped for the chat + notes + offline release
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -121,7 +121,7 @@ self.addEventListener('message', event => {
 });
 
 // ── VERSION INFO ──
-const APP_VERSION = '3.5.0';
+const APP_VERSION = '3.5.1';
 const UPDATE_DATE = new Date().toISOString();
 
 console.log(`✅ CESC Hub v${APP_VERSION} - ${UPDATE_DATE}`);

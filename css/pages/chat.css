@@ -137,11 +137,11 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 76px;
+  width: 84px;
   flex-shrink: 0;
   cursor: pointer;
   position: relative;
-  padding-top: 30px;
+  padding-top: 56px;
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
 }
 .note-card:hover {
@@ -157,20 +157,27 @@
   background: var(--surface2, rgba(255,255,255,0.08));
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 5px 10px;
-  font-size: 0.68rem;
+  padding: 6px 12px;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-bright);
   font-family: 'Syne', sans-serif;
-  white-space: nowrap;
+  white-space: pre-wrap;      /* respect user's real newlines */
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90px;
+  max-width: 120px;
+  min-width: 70px;
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.35;
   z-index: 2;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   transition: background 0.2s;
+  word-break: normal;
+  overflow-wrap: anywhere;    /* break only if a single word is too long */
+  /* reserve room for up to ~3 lines */
+  max-height: 66px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 .note-card:hover .note-bubble {
   background: var(--neon-glow);
@@ -187,20 +194,20 @@
 /* Avatar wrapper */
 .note-card .note-avatar-wrap {
   position: relative;
-  width: 60px;
-  height: 60px;
+  width: 68px;
+  height: 68px;
   flex-shrink: 0;
 }
 
 .note-card .note-avatar {
-  width: 60px;
-  height: 60px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--neon), var(--neon2));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #000;
   overflow: hidden;
@@ -1805,7 +1812,9 @@
   max-width: 100%;
   word-wrap: break-word;
   margin-top: 4px;
-  line-height: 1.5;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  text-align: left;
 }
 .note-view-time {
   font-size: 0.7rem;
@@ -1875,9 +1884,9 @@
   .inbox-row { padding: 8px 10px; gap: 10px; }
   .inbox-row-avatar { width: 42px; height: 42px; font-size: 0.95rem; }
   .inbox-title { font-size: 1.05rem; }
-  .note-card { width: 68px; }
+  .note-card { width: 78px; padding-top: 52px; }
   .note-card .note-avatar-wrap,
-  .note-card .note-avatar { width: 54px; height: 54px; }
+  .note-card .note-avatar { width: 60px; height: 60px; font-size: 1.35rem; }
 }
 
 @media(max-width:900px) {
@@ -2034,11 +2043,11 @@
   .inbox-row-time { font-size: 0.62rem; }
   .inbox-title { font-size: 1rem; }
   
-  .note-card { width: 62px; }
+  .note-card { width: 70px; padding-top: 52px; }
   .note-card .note-avatar-wrap,
-  .note-card .note-avatar { width: 48px; height: 48px; }
-  .note-card .note-bubble { font-size: 0.6rem; max-width: 76px; padding: 4px 8px; }
-  .note-card .note-name { font-size: 0.62rem; max-width: 62px; }
+  .note-card .note-avatar { width: 56px; height: 56px; font-size: 1.2rem; }
+  .note-card .note-bubble { font-size: 0.62rem; max-width: 100px; padding: 5px 10px; max-height: 58px; }
+  .note-card .note-name { font-size: 0.64rem; max-width: 70px; }
   
   .chat-head { padding: 10px 12px; gap: 8px; }
   .chat-head-avatar { width: 36px; height: 36px; font-size: 0.85rem; }

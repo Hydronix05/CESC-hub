@@ -68,10 +68,18 @@
     } catch { return false; }
   }
 
-  // ── Dismissal map (24h) ──
   function loadDismissMap() {
-    try { return JSON.parse(localStorage.getItem(DISMISS_KEY) || '{}'); }
-    catch { return {}; }
+    try {
+      const map = JSON.parse(localStorage.getItem(DISMISS_KEY) || '{}');
+      // One-time cleanup: since we no longer have dismiss buttons on
+      // non-chat placements, purge any stale dismissals so ads show up
+      // for users who dismissed them in an earlier version.
+      if (Object.keys(map).length > 0) {
+        try { localStorage.removeItem(DISMISS_KEY); } catch {}
+        return {};
+      }
+      return map;
+    } catch { return {}; }
   }
   function saveDismissMap(map) {
     try { localStorage.setItem(DISMISS_KEY, JSON.stringify(map)); } catch {}
@@ -103,12 +111,17 @@
   }
   function canShowChatAd(adId) {
     const map = loadChatSeenMap();
+    // Global cooldown: if ANY ad was seen recently, no ads show
+    if (map['_global'] && Date.now() - map['_global'] < ROTATE_MS) return false;
     const last = map[adId] || 0;
     return Date.now() - last > ROTATE_MS;
   }
   function markChatAdSeen(adId) {
     const map = loadChatSeenMap();
     map[adId] = Date.now();
+    // Also set a global cooldown timestamp so no other chat ad
+    // sneaks in right after the user closed one
+    map['_global'] = Date.now();
     saveChatSeenMap(map);
   }
 
@@ -181,7 +194,9 @@
   function pickWeightedAd(ads, { excludeIds = [], placement = null } = {}) {
     let pool = ads.filter(a => {
       if (excludeIds.includes(a.id)) return false;
-      if (isDismissed(a.id)) return false;
+      // NOTE: dismissal is no longer enforced for non-chat placements
+      // because we removed the dismiss ✕ buttons from feed/sidebar/etc.
+      // Chat pseudo-DM uses canShowChatAd() separately.
       if (placement) {
         const p = a.placements || [];
         if (!Array.isArray(p) || !p.includes(placement)) return false;
@@ -814,17 +829,29 @@
     row.className = 'inbox-row inbox-row-ad';
     row.dataset.adId = ad.id;
 
-    const displayName = ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
-    const sq = pickImage(ad, 'square');
+    // For the inbox row we prefer the SQUARE ad image (1:1) as the avatar
+    // and the ad TITLE as the name — so the advertiser doesn't appear twice
+    // (once as a "person", once as the ad content).
+    const rowTitle = ad.title || ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
+    const rowAvatarUrl =
+      ad.image_square_url ||
+      ad.advertiser_pfp_url ||
+      ad.image_wide_url ||
+      null;
+
+    const initial = (rowTitle[0] || '?').toUpperCase();
 
     row.innerHTML = `
       <div class="inbox-row-avatar">
-        ${ad.advertiser_pfp_url
-          ? `<img src="${escapeHTML(ad.advertiser_pfp_url)}" alt="${escapeHTML(displayName)}" onerror="this.remove()"/>`
-          : `<span>${escapeHTML((displayName[0] || '?').toUpperCase())}</span>`}
+        <span>${escapeHTML(initial)}</span>
+        ${rowAvatarUrl
+          ? `<img src="${escapeHTML(rowAvatarUrl)}" alt="${escapeHTML(rowTitle)}"
+              onload="this.classList.add('loaded');this.previousElementSibling.style.display='none'"
+              onerror="this.remove()"/>`
+          : ''}
       </div>
       <div class="inbox-row-body">
-        <div class="inbox-row-name">${escapeHTML(displayName)}</div>
+        <div class="inbox-row-name">${escapeHTML(rowTitle)}</div>
         <div class="inbox-row-preview">Sponsored · Tap to view</div>
       </div>
       <div class="inbox-row-meta">
@@ -846,17 +873,31 @@
     const displayName = ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
     const wide = pickImage(ad, 'wide');
 
+    // Match the inbox row: use the SQUARE ad image as the avatar and the
+    // ad TITLE as the name so the header stays consistent with the row
+    // the user tapped.
+    const headerTitle = ad.title || ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
+    const headerAvatarUrl =
+      ad.image_square_url ||
+      ad.advertiser_pfp_url ||
+      ad.image_wide_url ||
+      null;
+    const headerInitial = (headerTitle[0] || '?').toUpperCase();
+
     headerEl.innerHTML = `
       <button class="chat-back-btn" title="Back">
         <i class="fas fa-arrow-left"></i>
       </button>
       <div class="chat-head-avatar">
-        ${ad.advertiser_pfp_url
-          ? `<img src="${escapeHTML(ad.advertiser_pfp_url)}" alt="${escapeHTML(displayName)}" onerror="this.remove()"/>`
-          : `<span>${escapeHTML((displayName[0] || '?').toUpperCase())}</span>`}
+        <span>${escapeHTML(headerInitial)}</span>
+        ${headerAvatarUrl
+          ? `<img src="${escapeHTML(headerAvatarUrl)}" alt="${escapeHTML(headerTitle)}"
+              onload="this.classList.add('loaded');this.previousElementSibling.style.display='none'"
+              onerror="this.remove()"/>`
+          : ''}
       </div>
       <div class="chat-head-info">
-        <div class="chat-head-name">${escapeHTML(displayName)}</div>
+        <div class="chat-head-name">${escapeHTML(headerTitle)}</div>
         <div class="chat-head-sub">Sponsored</div>
       </div>
       <div class="chat-head-actions">

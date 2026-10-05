@@ -1,7 +1,12 @@
 {
-  "current": "3.5.0",
+  "current": "3.5.1",
   "versions": {
     "v3": [
+      {
+        "version": "3.5.1",
+        "date": "2026-10-05",
+        "changes": "Ad polish + theme overhaul · Advertiser identity now uses square image + title across chat · Chat ads stay in place on refresh (no flicker) · Inbox bottom ad scrolls with DMs, no border · 7 unified theme families (Monochrome, Nebula, Blossom, Emerald, Ember, Cocoa, Solstice) each with dark + light variant · Feed & chat avatars load immediately on first paint · Notes support newlines (3-line preview, 100 char limit)"
+      },
       {
         "version": "3.5.0",
         "date": "2026-10-04",

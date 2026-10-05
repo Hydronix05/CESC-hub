@@ -757,21 +757,29 @@ async function refreshFeed() {
 async function loadFeed() {
   const feedEl = document.getElementById('feed');
   
-  const { data: posts, error } = await window.supabaseClient
-    .from('posts')
-    .select('*')
-    .order('created_at', { ascending: false });
+  // ── Fetch posts AND profiles IN PARALLEL, then wait for both ──
+  const [postsRes, profilesRes] = await Promise.all([
+    window.supabaseClient
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    window.supabaseClient
+      .from('profiles')
+      .select('username, pfp_url')
+  ]);
   
-  if (error) {
-    window.showToast('could not load feed: ' + error.message, 'error');
+  if (postsRes.error) {
+    window.showToast('could not load feed: ' + postsRes.error.message, 'error');
     return;
   }
   
-  allPosts = posts || [];
+  allPosts = postsRes.data || [];
   
-  const { data: profiles } = await window.supabaseClient.from('profiles').select('username, pfp_url');
-  if (profiles) {
-    profiles.forEach(p => { if (p.pfp_url) window.pfpCache[p.username] = p.pfp_url; });
+  // ── Populate pfpCache BEFORE building any cards ──
+  if (profilesRes.data) {
+    profilesRes.data.forEach(p => {
+      if (p.pfp_url) window.pfpCache[p.username] = p.pfp_url;
+    });
   }
   
   feedEl.innerHTML = '';
@@ -814,7 +822,53 @@ function buildPostCard(post) {
   
   const top = document.createElement('div');
   top.className = 'post-top';
-  top.appendChild(window.buildAvatar(post.username, post.pfp_url || window.pfpCache[post.username] || null));
+  
+  // Resolve pfp: prefer explicit post.pfp_url, then cache
+  const resolvedPfp = post.pfp_url || window.pfpCache[post.username] || null;
+  top.appendChild(window.buildAvatar(post.username, resolvedPfp));
+  
+  // If we didn't have a pfp cached, fetch it in the background and swap
+  if (!resolvedPfp && post.username && !window._pfpFetching?.[post.username]) {
+    window._pfpFetching = window._pfpFetching || {};
+    window._pfpFetching[post.username] = true;
+    window.supabaseClient
+      .from('profiles')
+      .select('pfp_url')
+      .eq('username', post.username)
+      .maybeSingle()
+      .then(({ data }) => {
+        window._pfpFetching[post.username] = false;
+        if (data?.pfp_url) {
+          window.pfpCache[post.username] = data.pfp_url;
+          // Find the avatar div we just built and update it
+          const avatarEl = top.querySelector('.avatar');
+          if (avatarEl && !avatarEl.querySelector('img')) {
+            const span = avatarEl.querySelector('span');
+            const img = document.createElement('img');
+            img.src = data.pfp_url;
+            img.alt = post.username;
+            img.style.position = 'absolute';
+            img.style.inset = '0';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.display = 'none';
+            img.style.borderRadius = '50%';
+            img.loading = 'eager';
+            img.onload = () => {
+              img.style.display = 'block';
+              if (span) span.style.display = 'none';
+              img.classList.add('loaded');
+            };
+            img.onerror = () => img.remove();
+            avatarEl.appendChild(img);
+          }
+        }
+      })
+      .catch(() => {
+        window._pfpFetching[post.username] = false;
+      });
+  }
   
   const meta = document.createElement('div');
   meta.className = 'post-meta';
@@ -1110,14 +1164,26 @@ async function pageInit() {
   await loadFeed();
   
   // ── ADS: mount feed injection after posts are rendered ──
+  // Note: shared.js's initPage awaits Ads.init() and calls Ads.reRenderAll()
+  // after the page finishes loading, which handles this too. But we also
+  // try here in case the page is loaded without a full init cycle.
   try {
-    if (window.Ads && typeof window.Ads.mountFeedInjection === 'function') {
-      // Wait a tiny bit so the feed DOM is stable
-      setTimeout(() => {
-        const feedEl = document.getElementById('feed');
-        if (feedEl) window.Ads.mountFeedInjection(feedEl);
-      }, 400);
-    }
+    const tryMountFeedAd = (attempt = 0) => {
+      if (!window.Ads || typeof window.Ads.getCached !== 'function') {
+        if (attempt < 20) return setTimeout(() => tryMountFeedAd(attempt + 1), 100);
+        return;
+      }
+      const cached = window.Ads.getCached();
+      if (!cached || cached.length === 0) {
+        if (attempt < 20) return setTimeout(() => tryMountFeedAd(attempt + 1), 100);
+        return;
+      }
+      const feedEl = document.getElementById('feed');
+      if (feedEl && typeof window.Ads.mountFeedInjection === 'function') {
+        window.Ads.mountFeedInjection(feedEl);
+      }
+    };
+    tryMountFeedAd();
   } catch (e) {
     console.log('[Ads feed]', e);
   }

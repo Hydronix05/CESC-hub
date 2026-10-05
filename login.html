@@ -49,25 +49,25 @@ if ('serviceWorker' in navigator) {
     <div class="orb orb2"></div>
     <div class="orb orb3"></div>
   </div>
-  
+
   <div class="loading-dots">
     <div class="loading-dot"></div>
     <div class="loading-dot"></div>
     <div class="loading-dot"></div>
   </div>
-  
+
   <div class="loading-progress-wrap">
     <div class="loading-progress-bar">
       <div class="loading-progress-fill" id="loading-progress-fill"></div>
     </div>
     <div class="loading-progress-text" id="loading-progress-text">0%</div>
   </div>
-  
+
   <div class="loading-status">
     <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
     <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
   </div>
-  
+
   <div class="loading-error" id="loading-error">
     <div class="loading-error-friendly" id="loading-error-friendly"></div>
     <div class="loading-error-technical" id="loading-error-technical"></div>
@@ -78,7 +78,7 @@ if ('serviceWorker' in navigator) {
       <i class="fas fa-redo"></i> Retry
     </button>
   </div>
-  
+
   <div class="loading-debug-hint">[ESC] force show</div>
 
   <div class="loading-ad-slot" id="loading-ad-slot"></div>
@@ -92,111 +92,141 @@ if ('serviceWorker' in navigator) {
 
 <div class="toast" id="toast"></div>
 
-<div class="login-card" id="card">
-  <div class="logo-wrap">
-    <div class="logo-row">
-      <img class="logo-img" src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
-      <span class="logo-name">CESC <em>Hub</em></span>
+<!-- ── LOGIN CONTENT (no card border — full screen) ── -->
+<main class="login-shell">
+  <div class="login-content" id="card">
+
+    <!-- LOGO -->
+    <div class="logo-wrap">
+      <div class="logo-row">
+        <img class="logo-img" src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+        <div>
+          <div class="logo-name">CESC <em>Hub</em></div>
+          <div class="logo-sub">// community hub for CESC students</div>
+        </div>
+      </div>
     </div>
-    <div class="logo-sub">// Community hub for CESC students</div>
-    
+
+    <!-- PRIVACY NOTICE -->
     <div class="privacy-notice">
-      <p>
-        <i class="fas fa-lock" style="color:var(--neon);margin-right:6px;"></i>
-        <strong>Only CESC students</strong> can access this app.<br>
-        Your login is used <strong>only for this app</strong>.<br>
-        No data is shared or stored anywhere else.
+      <div class="privacy-line">
+        <i class="fas fa-lock"></i>
+        <span>Only <strong>CESC students</strong> can access this app</span>
+      </div>
+      <div class="privacy-line">
+        <i class="fas fa-user-shield"></i>
+        <span>Your login is used <strong>only for CESC Hub</strong></span>
+      </div>
+      <div class="privacy-line">
+        <i class="fas fa-shield-halved"></i>
+        <span>No data is shared or sold to anyone</span>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="field">
+      <label for="login-input">Username or Email</label>
+      <input
+        type="text"
+        id="login-input"
+        placeholder="username or email"
+        autocomplete="username"
+        onkeydown="window.onEnter(event)"
+      />
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <div class="input-wrap">
+        <input
+          type="password"
+          id="password"
+          class="padded"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          onkeydown="window.onEnter(event)"
+        />
+        <button class="eye-btn" onclick="window.togglePw()" type="button" id="eye-btn" aria-label="Toggle password visibility">
+          <i class="fas fa-eye"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="hint">
+      <i class="fas fa-arrow-turn-down" style="transform:rotate(90deg);"></i>
+      press enter to continue
+    </div>
+
+    <button class="btn" id="login-btn" onclick="window.login()">
+      <span id="btn-text">Sign In</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+
+    <div class="msg error" id="err"></div>
+
+    <div class="divider"></div>
+
+    <!-- NO ACCOUNT — REQUEST ACCESS -->
+    <div class="request-block">
+      <div class="request-title">
+        <i class="fas fa-id-card"></i>
+        Don't have an account yet?
+      </div>
+      <p class="request-desc">
+        CESC Hub is invite-only. Request an account by emailing us — your details
+        will be pre-filled, so all you have to do is hit send.
+      </p>
+      <button class="request-btn" id="request-btn" onclick="window.requestAccount()">
+        <i class="fab fa-google"></i>
+        Request Account via Gmail
+      </button>
+      <p class="request-note">
+        We'll notify you on your Gmail once your account is ready.
       </p>
     </div>
-  </div>
-  
-  <div class="field">
-    <label>Username or Email</label>
-    <input type="text" id="login-input" placeholder="username or email" autocomplete="username" onkeydown="window.onEnter(event)"/>
-  </div>
-  
-  <div class="field">
-    <label>Password</label>
-    <div class="input-wrap">
-      <input type="password" id="password" class="padded" placeholder="••••••••" autocomplete="current-password" onkeydown="window.onEnter(event)"/>
-      <button class="eye-btn" onclick="window.togglePw()" type="button" id="eye-btn"><i class="fas fa-eye"></i></button>
-    </div>
-  </div>
-  
-  <div class="hint">press enter ↵ to continue</div>
-  
-  <button class="btn" id="login-btn" onclick="window.login()">
-    <span id="btn-text">Login</span>
-    <div class="spinner" id="spinner"></div>
-  </button>
-  
-  <div class="msg error" id="err"></div>
-  
-  <div class="divider"></div>
-  
-  <div class="footer-link">
-    <span style="color:var(--muted); font-size:0.8rem;">
-      No account? 
-      <a href="mailto:irfanchowdhurycesc@gmail.com" 
-         style="color:var(--neon); text-decoration:none; font-weight:700;">
-        Hit me up
-      </a>
-      and I'll make one for you ✌️
-    </span>
-    <br>
-    <span style="color:var(--muted); font-size:0.65rem; font-family:'Space Mono',monospace; display:block; margin-top:4px;">
-      (just tell me your desired username)
-    </span>
-  </div>
-</div>
 
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="login-footer">
+    <span>CESC Hub</span>
+    <span class="dot">·</span>
+    <span>Built by NAIX Studio</span>
+  </footer>
+</main>
+
+<!-- ── LOGIN PAGE INIT ── -->
 <script>
-// ── LOGIN PAGE INIT ──
-// Simple loading screen - NO initPage() because this is the login page
-
-// Show loading screen
 window.showLoadingScreen();
-
-// Update progress
 window.updateLoadingProgress(10, 'Loading theme...', 'Applying saved theme preferences');
 
-// Init theme
 if (typeof window.initTheme === 'function') {
   window.initTheme();
 }
 
 window.updateLoadingProgress(40, 'Checking session...', 'Verifying if already logged in');
 
-// Check if already logged in
 window.supabaseClient.auth.getSession().then(({ data }) => {
   if (data.session) {
     window.location.href = '/';
     return;
   }
-  
   window.updateLoadingProgress(100, 'Ready!', 'Login page ready');
-  
-  // Hide loading screen after a moment
-  setTimeout(() => {
-    window.hideLoadingScreen();
-  }, 300);
+  setTimeout(() => window.hideLoadingScreen(), 300);
 }).catch(() => {
-  // If error, still show the login page
   window.updateLoadingProgress(100, 'Ready!', 'Login page ready');
-  setTimeout(() => {
-    window.hideLoadingScreen();
-  }, 300);
+  setTimeout(() => window.hideLoadingScreen(), 300);
 });
 </script>
 
+<!-- ── LOGIN LOGIC ── -->
 <script>
-// ── LOGIN LOGIC ──
 let pwVisible = false;
 
 // ─── DOMAIN LIST ────────────────────────────────
 const EMAIL_DOMAINS = [
   'gmail.com',
-  'yahoo.com', 
+  'yahoo.com',
   'outlook.com',
   'hotmail.com',
   'icloud.com'
@@ -235,11 +265,13 @@ window.togglePw = function () {
   const pwInput = document.getElementById('password');
   const eyeBtn = document.getElementById('eye-btn');
   pwInput.type = pwVisible ? 'text' : 'password';
-  eyeBtn.innerHTML = pwVisible ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+  eyeBtn.innerHTML = pwVisible
+    ? '<i class="fas fa-eye-slash"></i>'
+    : '<i class="fas fa-eye"></i>';
 };
 
-window.onEnter = function (e) { 
-  if (e.key === 'Enter') window.login(); 
+window.onEnter = function (e) {
+  if (e.key === 'Enter') window.login();
 };
 
 function setLoading(on, label) {
@@ -248,7 +280,7 @@ function setLoading(on, label) {
   const btnText = document.getElementById('btn-text');
   btn.disabled = on;
   spinner.style.display = on ? 'block' : 'none';
-  btnText.textContent = on ? (label || 'loading...') : 'Login';
+  btnText.textContent = on ? (label || 'loading...') : 'Sign In';
 }
 
 function showErr(msg) {
@@ -257,7 +289,7 @@ function showErr(msg) {
   el.className = 'msg error show';
   const card = document.getElementById('card');
   card.style.animation = 'none';
-  card.offsetHeight;
+  void card.offsetHeight;
   card.style.animation = 'shake 0.45s ease';
 }
 
@@ -267,23 +299,22 @@ window.login = async function () {
 
   document.getElementById('err').className = 'msg error';
 
-  if (!raw) { showErr('Username or email is required 💀'); return; }
-  if (!password) { showErr('Password is required 💀'); return; }
+  if (!raw) { showErr('Username or email is required'); return; }
+  if (!password) { showErr('Password is required'); return; }
 
   let emailToUse = raw;
 
   if (!raw.includes('@')) {
-    setLoading(true, 'searching across domains...');
+    setLoading(true, 'searching...');
     const result = await findUserByUsername(raw);
 
     if (!result.matched) {
       setLoading(false);
-      showErr(`Username "${raw}" not found on any domain 💀`);
+      showErr(`Username "${raw}" not found.`);
       return;
     }
 
     emailToUse = result.email;
-    console.log(`✅ Found user: ${raw} → ${emailToUse}`);
   }
 
   setLoading(true, 'signing in...');
@@ -296,11 +327,40 @@ window.login = async function () {
   setLoading(false);
 
   if (signInErr) {
-    showErr("Wrong password or account doesn't exist 💀");
+    showErr("Wrong password, or this account doesn't exist.");
     return;
   }
 
   window.location.href = '/';
+};
+
+// ─── REQUEST ACCOUNT (Gmail compose) ────────────────
+window.requestAccount = function () {
+  const to = 'irfanchowdhurycesc@gmail.com';
+  const subject = 'CESC Hub Registration';
+
+  const body = [
+    'CESC Hub Registration',
+    'Please fill in the details below.',
+    '',
+    'Name    : ',
+    'Class   : ',
+    'Section : ',
+    'Roll    : ',
+    '',
+    "We'll notify you once your account is ready.",
+    'Stay tuned in your Gmail inbox.',
+    '',
+    'Thank you for registering.',
+    '— NAIX Studio (Owner, CESC Hub)'
+  ].join('\n');
+
+  const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1'
+    + '&to=' + encodeURIComponent(to)
+    + '&su=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+
+  window.open(gmailUrl, '_blank', 'noopener,noreferrer');
 };
 </script>
 

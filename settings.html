@@ -717,123 +717,75 @@ function renderThemeCards() {
   const grid = document.getElementById('theme-grid');
   const themes = window.THEME_PRESETS || [];
   const current = window.getCurrentTheme();
-  
+
   if (!grid || themes.length === 0) return;
-  
+
   grid.innerHTML = '';
-  
-  const categories = {
-    general: 'General',
-    male: 'Bold',
-    female: 'Soft'
-  };
-  
-  const sortedThemes = [...themes].sort((a, b) => {
-    const order = { general: 0, male: 1, female: 2 };
-    return (order[a.category] || 0) - (order[b.category] || 0);
-  });
-  
-  sortedThemes.forEach(theme => {
+
+  themes.forEach(theme => {
     const card = document.createElement('div');
     card.className = 'theme-card';
     card.dataset.theme = theme.id;
-    
+
     if (current && current.id === theme.id) {
       card.classList.add('active');
     }
-    
+
+    // Split preview: left half dark, right half light
     const preview = document.createElement('div');
-    preview.className = 'theme-preview';
-    preview.style.background = theme.variables['--bg'] || '#0a0a0f';
-    preview.style.borderRadius = '10px';
-    preview.style.padding = '12px';
-    preview.style.marginBottom = '8px';
-    preview.style.position = 'relative';
-    preview.style.overflow = 'hidden';
-    preview.style.minHeight = '60px';
-    preview.style.display = 'flex';
-    preview.style.alignItems = 'center';
-    preview.style.justifyContent = 'center';
-    preview.style.gap = '8px';
-    
-    const accent1 = document.createElement('span');
-    accent1.style.width = '20px';
-    accent1.style.height = '20px';
-    accent1.style.borderRadius = '50%';
-    accent1.style.background = theme.variables['--neon'] || '#4a9eff';
-    accent1.style.boxShadow = `0 0 12px ${theme.variables['--neon-glow'] || 'rgba(74,158,255,0.3)'}`;
-    preview.appendChild(accent1);
-    
-    const accent2 = document.createElement('span');
-    accent2.style.width = '20px';
-    accent2.style.height = '20px';
-    accent2.style.borderRadius = '50%';
-    accent2.style.background = theme.variables['--neon2'] || '#6c5ce7';
-    accent2.style.boxShadow = `0 0 12px ${theme.variables['--neon-glow2'] || 'rgba(108,92,231,0.3)'}`;
-    preview.appendChild(accent2);
-    
-    const bar1 = document.createElement('span');
-    bar1.style.flex = '1';
-    bar1.style.height = '6px';
-    bar1.style.borderRadius = '4px';
-    bar1.style.background = theme.variables['--surface'] || 'rgba(255,255,255,0.1)';
-    preview.appendChild(bar1);
-    
-    const bar2 = document.createElement('span');
-    bar2.style.width = '20px';
-    bar2.style.height = '6px';
-    bar2.style.borderRadius = '4px';
-    bar2.style.background = theme.variables['--text'] || '#e8e8f0';
-    preview.appendChild(bar2);
-    
+    preview.className = 'theme-preview-split';
+
+    const darkVars = theme.variants.dark;
+    const lightVars = theme.variants.light;
+
+    const darkHalf = document.createElement('div');
+    darkHalf.className = 'preview-half preview-dark';
+    darkHalf.style.background = darkVars['--bg'];
+    const darkDot1 = document.createElement('span');
+    darkDot1.style.background = darkVars['--neon'];
+    darkDot1.style.boxShadow = `0 0 10px ${darkVars['--neon-glow']}`;
+    const darkDot2 = document.createElement('span');
+    darkDot2.style.background = darkVars['--neon2'];
+    darkHalf.appendChild(darkDot1);
+    darkHalf.appendChild(darkDot2);
+
+    const lightHalf = document.createElement('div');
+    lightHalf.className = 'preview-half preview-light';
+    lightHalf.style.background = lightVars['--bg'];
+    const lightDot1 = document.createElement('span');
+    lightDot1.style.background = lightVars['--neon'];
+    lightDot1.style.boxShadow = `0 0 10px ${lightVars['--neon-glow']}`;
+    const lightDot2 = document.createElement('span');
+    lightDot2.style.background = lightVars['--neon2'];
+    lightHalf.appendChild(lightDot1);
+    lightHalf.appendChild(lightDot2);
+
+    preview.appendChild(darkHalf);
+    preview.appendChild(lightHalf);
     card.appendChild(preview);
-    
+
+    // Name
     const name = document.createElement('div');
     name.className = 'theme-name';
     name.textContent = theme.name;
-    name.style.fontWeight = '700';
-    name.style.fontSize = '0.85rem';
-    name.style.color = 'var(--text-bright)';
     card.appendChild(name);
-    
-    const categoryLabel = document.createElement('div');
-    categoryLabel.className = 'theme-category';
-    categoryLabel.textContent = categories[theme.category] || 'General';
-    categoryLabel.style.fontSize = '0.6rem';
-    categoryLabel.style.fontWeight = '600';
-    categoryLabel.style.fontFamily = "'Space Mono', monospace";
-    categoryLabel.style.color = 'var(--muted)';
-    categoryLabel.style.textTransform = 'uppercase';
-    categoryLabel.style.letterSpacing = '0.5px';
-    categoryLabel.style.marginTop = '2px';
-    card.appendChild(categoryLabel);
-    
+
+    // Description
     const desc = document.createElement('div');
     desc.className = 'theme-desc';
     desc.textContent = theme.description || '';
-    desc.style.fontSize = '0.7rem';
-    desc.style.color = 'var(--muted)';
-    desc.style.marginTop = '2px';
     card.appendChild(desc);
-    
+
+    // Active badge with current variant
     if (current && current.id === theme.id) {
       const badge = document.createElement('div');
       badge.className = 'theme-active-badge';
-      badge.innerHTML = '<i class="fas fa-check-circle"></i> Active';
-      badge.style.position = 'absolute';
-      badge.style.top = '8px';
-      badge.style.right = '8px';
-      badge.style.fontSize = '0.6rem';
-      badge.style.fontWeight = '700';
-      badge.style.color = 'var(--neon)';
-      badge.style.background = 'var(--bg)';
-      badge.style.padding = '2px 8px';
-      badge.style.borderRadius = '12px';
-      badge.style.border = '1px solid var(--neon)';
-      card.style.position = 'relative';
+      badge.innerHTML = current.variant === 'dark'
+        ? '<i class="fas fa-moon"></i> Dark'
+        : '<i class="fas fa-sun"></i> Light';
       card.appendChild(badge);
     }
-    
+
     card.onclick = () => {
       const success = window.switchTheme(theme.id);
       if (success) {
@@ -842,9 +794,19 @@ function renderThemeCards() {
         window.showToast(`✅ ${theme.name} applied!`, 'success');
       }
     };
-    
+
     grid.appendChild(card);
   });
+}
+
+function updateCurrentThemeName() {
+  const current = window.getCurrentTheme();
+  const el = document.getElementById('current-theme-name');
+  if (el && current) {
+    el.textContent = `${current.name} · ${current.variant}`;
+  } else if (el) {
+    el.textContent = '—';
+  }
 }
 
 function updateCurrentThemeName() {

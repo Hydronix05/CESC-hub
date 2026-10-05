@@ -87,6 +87,8 @@ let currentChatAd = null;          // the ad shown as the pseudo-DM row
 let currentInboxBottomAd = null;   // the ad shown in the inbox bottom slot
 let chatAdRefreshTimer = null;     // rotates pseudo-DM every ROTATE_MS
 let preAdActiveChat = null;        // remember the chat that was open before ad view
+let currentChatAdSlot = null;      // cached slot index (2-4) so the ad doesn't jump
+let currentChatAdSignature = null; // signature of the last rendered ad (id + slot)
 
 // ═══════════════════════════════════════════════════════════
 // ── UTILITIES ──
@@ -493,8 +495,21 @@ function buildNoteCard(opts) {
   if (opts.content) {
     const bubble = document.createElement('div');
     bubble.className = 'note-bubble';
-    const text = opts.content.length > 18 ? opts.content.slice(0, 18) + '…' : opts.content;
-    bubble.textContent = text;
+
+    // Show the user's content as-is.
+    // Real newlines (from Enter) are preserved via CSS white-space: pre-wrap.
+    // Visual truncation to ~3 lines + trailing … is handled by CSS line-clamp.
+    // No character-cutting here — advertisers/authors always see the full text
+    // when they open the note in the modal.
+    const text = String(opts.content);
+
+    // Render each real newline as a <br> so it works even if CSS
+    // white-space is overridden somewhere.
+    bubble.innerHTML = text
+      .split('\n')
+      .map(l => window.escapeHTML(l))
+      .join('<br>');
+
     card.appendChild(bubble);
   }
 
@@ -583,7 +598,11 @@ function openNoteViewModal(note) {
 
   document.getElementById('note-view-name').textContent = note.display_name || note.username;
   document.getElementById('note-view-username').textContent = '@' + note.username;
-  document.getElementById('note-view-content').textContent = note.content;
+  const contentEl = document.getElementById('note-view-content');
+  contentEl.innerHTML = String(note.content)
+    .split('\n')
+    .map(line => window.escapeHTML(line))
+    .join('<br>');
   document.getElementById('note-view-time').textContent = timeAgoShort(note.created_at);
 
   const delBtn = document.getElementById('note-view-delete');
@@ -707,15 +726,52 @@ function setupProfilesRealtime() {
         };
       }
 
-      renderInbox();
+      // ── Update the online dot IN-PLACE instead of rebuilding the inbox ──
+      // Rebuilding tears down every <img> and forces a re-decode → flicker.
+      // We only need to refresh the visual online indicator.
+      updateInboxPresenceDots();
 
       if (activeChat && activeChat.otherUsername === p.username) {
         updateActiveStatusLine(p.username);
       }
 
-      renderNotesRow();
+      // Notes row also rebuilt every profile update — only if the notes
+      // list actually changed. Simplest: only re-render if the pfp cache
+      // would change. For now, skip — notes auto-refresh on their own timer.
+      // renderNotesRow();
     })
     .subscribe();
+}
+
+// Lightweight: iterate through inbox rows and flip the online dot
+// based on the latest `last_seen` in profilesIndex. No DOM rebuild.
+function updateInboxPresenceDots() {
+  const list = document.getElementById('inbox-list');
+  if (!list) return;
+
+  list.querySelectorAll('.inbox-row').forEach(row => {
+    // Skip ad rows
+    if (row.classList.contains('inbox-row-ad')) return;
+
+    const avatar = row.querySelector('.inbox-row-avatar');
+    if (!avatar) return;
+
+    // Figure out which username this row corresponds to
+    // (stored as data-username on the row when it was built)
+    const uname = row.dataset.username;
+    if (!uname) return;
+
+    const isOnline = isUserOnline(uname);
+    const existingDot = avatar.querySelector('.active-dot');
+
+    if (isOnline && !existingDot) {
+      const dot = document.createElement('div');
+      dot.className = 'active-dot';
+      avatar.appendChild(dot);
+    } else if (!isOnline && existingDot) {
+      existingDot.remove();
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -825,6 +881,99 @@ function renderInbox() {
 
   // ── Inject the pseudo-DM ad row (slots 2-4) ──
   maybeInjectChatAdRow(list);
+
+  // ── Append persistent bottom ad INSIDE the scroll list ──
+  maybeInjectBottomAd(list);
+}
+
+// Append the persistent bottom-of-inbox ad INSIDE the scrollable list.
+// Rendered as a normal inbox row (no card look) so it scrolls with DMs.
+function maybeInjectBottomAd(list) {
+  if (!list) return;
+  if (!window.Ads || !window.Ads.getCached) return;
+  const ads = window.Ads.getCached() || [];
+  if (ads.length === 0) return;
+
+  // ── If the bottom ad is already in the DOM, leave it alone ──
+  const existingBottom = list.querySelector('.inbox-row-bottom-ad');
+  if (existingBottom && currentInboxBottomAd) {
+    const existingId = existingBottom.dataset.adId;
+    if (existingId === currentInboxBottomAd.id) {
+      return;
+    }
+  }
+
+  // Pick an ad for the 'inbox' placement (different from the pseudo-DM if possible)
+  const excludeIds = currentChatAd ? [currentChatAd.id] : [];
+  let ad = null;
+  if (typeof window.Ads.pickWeightedAd === 'function') {
+    ad = window.Ads.pickWeightedAd(ads.filter(a => {
+      const p = a.placements || [];
+      return Array.isArray(p) && p.includes('inbox') && !excludeIds.includes(a.id);
+    }));
+  }
+  // Fallback if none matched: pick any inbox ad
+  if (!ad && typeof window.Ads.pickWeightedAd === 'function') {
+    ad = window.Ads.pickWeightedAd(ads.filter(a => {
+      const p = a.placements || [];
+      return Array.isArray(p) && p.includes('inbox');
+    }));
+  }
+  if (!ad) return;
+
+  currentInboxBottomAd = ad;
+
+  // Build as a compact inbox row (same look as a DM row)
+  const row = document.createElement('div');
+  row.className = 'inbox-row inbox-row-ad inbox-row-bottom-ad';
+  row.dataset.adId = ad.id;
+
+  // Match the pseudo-DM row style: use the ad's square image as the avatar
+  // and the ad TITLE as the name — no advertiser duplication.
+  const rowTitle = ad.title || ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
+  const rowAvatarUrl =
+    ad.image_square_url ||
+    ad.advertiser_pfp_url ||
+    ad.image_wide_url ||
+    (window.pfpCache && ad.advertiser_username ? window.pfpCache[ad.advertiser_username] : null);
+
+  const av = document.createElement('div');
+  av.className = 'inbox-row-avatar';
+  const span = document.createElement('span');
+  span.textContent = (rowTitle[0] || '?').toUpperCase();
+  av.appendChild(span);
+  if (rowAvatarUrl) {
+    const img = document.createElement('img');
+    img.src = rowAvatarUrl;
+    img.onload = () => { img.classList.add('loaded'); span.style.display = 'none'; };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+  row.appendChild(av);
+
+  const body = document.createElement('div');
+  body.className = 'inbox-row-body';
+  const nameEl = document.createElement('div');
+  nameEl.className = 'inbox-row-name';
+  nameEl.textContent = rowTitle;
+  const preview = document.createElement('div');
+  preview.className = 'inbox-row-preview';
+  preview.innerHTML = `${window.escapeHTML(ad.advertiser_display_name || ad.advertiser_username || 'Sponsored')} <span style="color:var(--neon);font-weight:600">· Ad</span>`;
+  body.appendChild(nameEl);
+  body.appendChild(preview);
+  row.appendChild(body);
+
+  const meta = document.createElement('div');
+  meta.className = 'inbox-row-meta';
+  meta.innerHTML = '<div class="ad-badge-inline">Ad</div>';
+  row.appendChild(meta);
+
+  row.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openChatAdView(ad);
+  });
+
+  list.appendChild(row);
 }
 
 function buildPreviewText(lastMessage) {
@@ -840,6 +989,10 @@ function buildPreviewText(lastMessage) {
 function buildInboxRow(opts) {
   const row = document.createElement('div');
   row.className = 'inbox-row' + (opts.active ? ' active' : '');
+  // Stamp the username so presence updater can find this row later
+  if (opts.avatarType === 'user' && opts.avatarUser && opts.avatarUser.username) {
+    row.dataset.username = opts.avatarUser.username;
+  }
 
   const av = document.createElement('div');
   av.className = 'inbox-row-avatar';
@@ -921,7 +1074,6 @@ function startChatAdRotation() {
   // once the previous one is throttled/removed.
   chatAdRefreshTimer = setInterval(() => {
     renderInbox();
-    mountInboxBottomAd();
   }, 10 * 60 * 1000);
 }
 function stopChatAdRotation() {
@@ -937,14 +1089,39 @@ function maybeInjectChatAdRow(list) {
   if (!list) return;
   if (!window.Ads || typeof window.Ads.buildInboxChatAdRow !== 'function') return;
 
+  // Ensure ad's pfp is in the pfp cache BEFORE building the row
+  // (fake ads won't have it, so fetch it here)
+  const prepareAd = async () => {
+    const ads = window.Ads.getCached ? window.Ads.getCached() : [];
+    ads.forEach(a => {
+      if (a.advertiser_pfp_url && a.advertiser_username && !window.pfpCache[a.advertiser_username]) {
+        window.pfpCache[a.advertiser_username] = a.advertiser_pfp_url;
+      }
+    });
+  };
+  prepareAd();
+
   // Pick the ad that isn't already in the bottom slot (if possible)
   const excludeIds = currentInboxBottomAd ? [currentInboxBottomAd.id] : [];
   const ad = window.Ads.pickChatAdForInbox({ excludeIds });
   if (!ad) {
     currentChatAd = null;
+    currentChatAdSignature = null;
     return;
   }
+
+  // ── If the SAME ad is already in the DOM, leave it alone ──
+  // This avoids flicker + image reloads on every renderInbox() call.
+  const signature = `${ad.id}`;
+  const existing = list.querySelector(`.inbox-row-ad[data-ad-id="${ad.id}"]`);
+  if (existing && currentChatAdSignature === signature) {
+    // Ad is already there with the same slot position — nothing to do.
+    currentChatAd = ad;
+    return;
+  }
+
   currentChatAd = ad;
+  currentChatAdSignature = signature;
 
   const { el: row } = window.Ads.buildInboxChatAdRow(ad, openChatAdView);
 
@@ -955,15 +1132,12 @@ function maybeInjectChatAdRow(list) {
   //   [2] conversation 1
   //   [3] conversation 2
   //   [4] conversation 3
-  //   ...
   //
   // "Slot 2-4" means we want the ad between the 1st and 3rd real conversation.
-  // That means we insert it AFTER at least 1 conversation and BEFORE the 4th.
   //
-  // Practical insert positions (index in list.children):
-  //   slot 2 → insert before children[3]   (after conv 1)
-  //   slot 3 → insert before children[4]   (after conv 2)
-  //   slot 4 → insert before children[5]   (after conv 3)
+  // Slot index is cached in `currentChatAdSlot` so the ad stays put across
+  // re-renders. Only re-randomize when the cached slot doesn't exist or the
+  // ad itself changed (which we handled above).
 
   const children = Array.from(list.children);
   const convStartIndex = children.length > 1 && children[1].classList.contains('inbox-section-label') ? 2 : 1;
@@ -972,19 +1146,21 @@ function maybeInjectChatAdRow(list) {
   // Not enough conversations? Just append at the end.
   if (convCount < 1) {
     list.appendChild(row);
+    if (currentChatAdSlot === null) currentChatAdSlot = 0;
     return;
   }
 
-  // Slot in terms of "after how many conversations?"
-  //   after 1 conv → children index = convStartIndex + 1
-  //   after 2 conv → children index = convStartIndex + 2
-  //   after 3 conv → children index = convStartIndex + 3
-  const maxAfter = Math.min(3, convCount);           // 1..3
-  const afterCount = 1 + Math.floor(Math.random() * maxAfter); // 1..maxAfter
+  const maxAfter = Math.min(3, convCount);  // 1..3
+
+  // If we haven't picked a slot yet, pick one now and remember it.
+  if (currentChatAdSlot === null || currentChatAdSlot < 1 || currentChatAdSlot > maxAfter) {
+    currentChatAdSlot = 1 + Math.floor(Math.random() * maxAfter); // 1..maxAfter
+  }
+  const afterCount = Math.min(currentChatAdSlot, maxAfter);
   const insertAt = convStartIndex + afterCount;
 
   if (insertAt >= children.length) {
-    list.appendChild(row);
+    list.insertBefore(row, children[children.length - 1]?.nextSibling || null);
   } else {
     list.insertBefore(row, children[insertAt]);
   }
@@ -1047,6 +1223,11 @@ function openChatAdView(ad) {
 
         // Close the ad view + return to previous chat/inbox
         closeChatAdView();
+
+        // Re-render inbox so the rotation logic can evaluate fresh
+        setTimeout(() => {
+          try { renderInbox(); } catch (e) {}
+        }, 500);
       };
     }
 
@@ -1125,23 +1306,7 @@ function showEmptyView() {
   setMobileView('inbox');
 }
 
-// Mount the persistent bottom-of-inbox ad (different from the pseudo-DM
-// if possible; falls back to the same ad if only one exists).
-function mountInboxBottomAd() {
-  const slot = document.getElementById('inbox-ad-slot');
-  if (!slot) return;
-  if (!window.Ads || typeof window.Ads.mountInboxSlot !== 'function') return;
 
-  // Ads.js's mountInboxSlot just picks a `placement='inbox'` ad.
-  // We can't pass exclusion directly, so temporarily pick manually here.
-  // Simplest approach: if we have currentChatAd, temporarily hide that ad
-  // from the cache during this pick — but that's overkill for the codebase.
-  // Instead, we accept that inbox bottom may occasionally show the same ad.
-  window.Ads.mountInboxSlot(slot);
-
-  // Remember what got mounted so the pseudo-DM picker can avoid it
-  // (best-effort: we don't have direct access here, so skip storing for now).
-}
 
 
 function attachInboxDeleteTrigger(row, convo) {
@@ -2950,7 +3115,6 @@ window.openChatAdView = openChatAdView;
 window.closeChatAdView = closeChatAdView;
 window.refreshChatAds = () => {
   renderInbox();
-  mountInboxBottomAd();
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -3026,8 +3190,7 @@ async function pageInit() {
   await loadNotes();
   setupNotesRealtime();
 
-  // ── Mount inbox bottom ad + start rotation for pseudo-DM ──
-  mountInboxBottomAd();
+  // ── Start rotation for pseudo-DM (bottom slot is rendered by renderInbox) ──
   startChatAdRotation();
 
   nextLoadingStep();
