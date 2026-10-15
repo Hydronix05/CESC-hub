@@ -12,8 +12,8 @@
 <meta name="apple-mobile-web-app-title" content="CESC Hub">
 <meta name="theme-color" content="#4a9eff">
 <link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
-
 <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
@@ -99,7 +99,9 @@ if ('serviceWorker' in navigator) {
     <!-- LOGO -->
     <div class="logo-wrap">
       <div class="logo-row">
-        <img class="logo-img" src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+        <span class="logo-fade">
+          <img class="logo-img" src="https://github.com/Hydronix05/CESC-hub/blob/main/icons/icon-512x512.png?raw=true" alt="CESC Hub"/>
+        </span>
         <div>
           <div class="logo-name">CESC <em>Hub</em></div>
           <div class="logo-sub">// community hub for CESC students</div>
@@ -172,16 +174,19 @@ if ('serviceWorker' in navigator) {
         <i class="fas fa-id-card"></i>
         Don't have an account yet?
       </div>
+      <p class="request-sub">Join the CESC Hub community.</p>
       <p class="request-desc">
-        CESC Hub is invite-only. Request an account by emailing us — your details
-        will be pre-filled, so all you have to do is hit send.
+        CESC Hub is currently invite-only. If you're a CESC student, you can request
+        an account by sending us a registration email. We've prepared a simple form
+        for you — just fill in your details and tap send.
       </p>
       <button class="request-btn" id="request-btn" onclick="window.requestAccount()">
-        <i class="fab fa-google"></i>
-        Request Account via Gmail
+        <i class="fas fa-envelope"></i>
+        Request an Account via Email
       </button>
       <p class="request-note">
-        We'll notify you on your Gmail once your account is ready.
+        Once your request has been reviewed and your account is ready, we'll notify
+        you by email. Please make sure your details are accurate.
       </p>
     </div>
 
@@ -334,33 +339,38 @@ window.login = async function () {
   window.location.href = '/';
 };
 
-// ─── REQUEST ACCOUNT (Gmail compose) ────────────────
+// ─── REQUEST ACCOUNT (mailto:) ────────────────
 window.requestAccount = function () {
   const to = 'irfanchowdhurycesc@gmail.com';
-  const subject = 'CESC Hub Registration';
+  const subject = 'CESC Hub — Account Registration Request';
 
   const body = [
-    'CESC Hub Registration',
-    'Please fill in the details below.',
+    'Hello CESC Hub Team,',
     '',
-    'Name    : ',
-    'Class   : ',
-    'Section : ',
-    'Roll    : ',
+    "I'd like to request an account for CESC Hub, the student community platform for CESC students.",
     '',
-    "We'll notify you once your account is ready.",
-    'Stay tuned in your Gmail inbox.',
+    'Here are my details:',
     '',
-    'Thank you for registering.',
-    '— NAIX Studio (Owner, CESC Hub)'
-  ].join('\n');
+    'Full Name:',
+    'Class:',
+    'Section:',
+    'Roll Number:',
+    '',
+    'I confirm that the information provided above is accurate.',
+    '',
+    'Please review my request and let me know by email once my account is ready.',
+    '',
+    'Thank you for your time!',
+    '',
+    'Best regards,',
+    'CESC Hub Applicant'
+  ].join('\r\n');
 
-  const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1'
-    + '&to=' + encodeURIComponent(to)
-    + '&su=' + encodeURIComponent(subject)
+  const mailtoUrl = 'mailto:' + encodeURIComponent(to)
+    + '?subject=' + encodeURIComponent(subject)
     + '&body=' + encodeURIComponent(body);
 
-  window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+  window.location.href = mailtoUrl;
 };
 </script>
 
