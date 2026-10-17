@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8"/>
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CESC Hub — Settings</title>
+<title>CESC Hub — Profiles</title>
 
-<!-- ── PWA META TAGS ── -->
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,18 +16,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
-<link rel="stylesheet" href="/css/pages/settings.css"/>
-<link rel="stylesheet" href="/css/ads.css"/>
 
-<!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- Load theme system -->
+<script src="shared.js"></script>
+<link rel="stylesheet" href="/css/pages/profiles.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
-<!-- Load shared.js -->
-<script src="shared.js"></script>
+<script src="/js/ads.js"></script>
 
-<!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -86,19 +82,15 @@ if ('serviceWorker' in navigator) {
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
-<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<!-- ── MOBILE MENU HAMBURGER ── -->
-<div class="mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></div>
-
-<!-- ── HEADER (FULL WIDTH AT TOP) ── -->
 <header class="top-header">
   <div class="header-left">
     <a href="/" class="header-logo">
       <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
     </a>
-    <span class="header-page-title">Settings</span>
+    <span class="header-page-title">Profiles</span>
   </div>
   <div class="header-right">
     <span class="header-online-status">
@@ -108,7 +100,8 @@ if ('serviceWorker' in navigator) {
       <span class="online-count-number" id="online-count">...</span>
       <span class="online-status-text">online now</span>
     </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    
     <a href="/notifications" class="hdr-btn" title="Notifications">
       <i class="fas fa-bell"></i>
       <span class="notif-badge" id="notif-badge">0</span>
@@ -132,16 +125,15 @@ if ('serviceWorker' in navigator) {
   </div>
 </header>
 
-<!-- ── SIDEBAR (DESKTOP - UNDER HEADER) ── -->
 <aside class="sidebar" id="sidebar">
   <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
   <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
-  <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="/profiles" class="nav-item active"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
   <a href="/games" class="nav-item"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
   <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
   <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-    <a href="/notifications" class="nav-item" id="notif-nav">
+  <a href="/notifications" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
     <span class="nav-label-text">Notifications</span>
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
@@ -155,187 +147,57 @@ if ('serviceWorker' in navigator) {
   <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
 </aside>
 
-<!-- ── MAIN ── -->
 <main class="main">
   <div class="page-header">
     <div>
-      <h1>Settings</h1>
-      <p>manage your profile &amp; preferences</p>
+      <h1>Profiles</h1>
+      <p id="profile-count">Loading members...</p>
+    </div>
+    <button class="profiles-view-toggle" id="view-toggle" onclick="window.toggleViewMode()" title="Switch view">
+      <i class="fas fa-list" id="view-toggle-icon"></i>
+      <span id="view-toggle-label">Rows</span>
+    </button>
+  </div>
+
+  <div class="profiles-toolbar">
+    <div class="search-bar">
+      <i class="fas fa-search search-icon"></i>
+      <input id="search-input" placeholder="Search by username or display name..." oninput="window.debounceSearch()" />
+      <button class="search-clear" id="search-clear" onclick="window.clearSearch()" title="Clear">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
   </div>
 
-  <!-- ── THEME SECTION ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-palette" style="color:var(--neon)"></i> Theme</div>
-    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Choose your vibe · Click any theme to apply</p>
-    
-    <div class="theme-grid" id="theme-grid">
-      <!-- Themes will be rendered by JavaScript -->
-    </div>
-    
-    <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
-      <span style="font-size:0.75rem;color:var(--muted);font-family:'Space Mono',monospace;">
-        <i class="fas fa-arrows-alt-h" style="margin-right:6px;"></i>
-        Click the <strong style="color:var(--text-bright)">moon/sun</strong> icon in header to toggle dark/light
-      </span>
-      <span style="font-size:0.7rem;color:var(--muted);font-family:'Space Mono',monospace;background:var(--bg2);padding:2px 10px;border-radius:6px;border:1px solid var(--border);">
-        Current: <span id="current-theme-name" style="color:var(--neon);font-weight:700;">—</span>
-      </span>
-    </div>
-  </div>
+  <!-- CARDS VIEW -->
+  <div class="profile-grid" id="profile-grid"></div>
 
-  <!-- ── CHAT LAYOUT ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-comments" style="color:var(--neon)"></i> Chat Layout</div>
-    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Choose how chat messages look</p>
-    
-    <div class="chat-layout-options">
-      <label class="layout-option" data-value="meta">
-        <input type="radio" name="chat-layout" value="meta" onchange="window.setChatLayout('meta')"/>
-        <div class="layout-preview meta-preview">
-          <div class="lp-row lp-left">
-            <div class="lp-avatar"></div>
-            <div class="lp-bubble"></div>
-          </div>
-          <div class="lp-row lp-right">
-            <div class="lp-bubble own"></div>
-            <div class="lp-avatar own"></div>
-          </div>
-        </div>
-        <div class="layout-label">
-          <div class="layout-name">Meta</div>
-          <div class="layout-desc">WhatsApp / Instagram style · your messages on the right</div>
-        </div>
-      </label>
-      
-      <label class="layout-option" data-value="discord">
-        <input type="radio" name="chat-layout" value="discord" onchange="window.setChatLayout('discord')"/>
-        <div class="layout-preview discord-preview">
-          <div class="lp-row">
-            <div class="lp-avatar"></div>
-            <div class="lp-lines">
-              <div class="lp-line short"></div>
-              <div class="lp-line"></div>
-            </div>
-          </div>
-          <div class="lp-row">
-            <div class="lp-avatar"></div>
-            <div class="lp-lines">
-              <div class="lp-line short"></div>
-              <div class="lp-line"></div>
-            </div>
-          </div>
-        </div>
-        <div class="layout-label">
-          <div class="layout-name">Discord</div>
-          <div class="layout-desc">Classic style · all messages left-aligned with avatars</div>
-        </div>
-      </label>
+  <!-- ROWS VIEW -->
+  <div class="profile-rows-wrap" id="profile-rows" style="display:none;">
+    <div class="profile-rows-head">
+      <div class="prh-col prh-user">Member</div>
+      <div class="prh-col prh-bio">Bio</div>
+      <div class="prh-col prh-roles">Roles</div>
+      <div class="prh-col prh-status">Status</div>
     </div>
-  </div>
-
-  <!-- ── PROFILE ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-user" style="color:var(--neon)"></i> Profile</div>
-
-    <!-- Username (readonly) -->
-    <div class="field">
-      <label>Username <span>(permanent)</span></label>
-      <input type="text" id="username-display" readonly placeholder="loading..."/>
-      <div class="locked-note"><i class="fas fa-lock" style="margin-right:4px;"></i> usernames can't be changed</div>
-    </div>
-
-    <!-- Display Name + change limit -->
-    <div class="display-name-row">
-      <div class="field">
-        <label>Display Name <span>(shown to others)</span></label>
-        <input type="text" id="display-name-input" placeholder="Your display name..." maxlength="30"/>
-        <div class="change-limit-badge" id="change-limit-badge">
-          <i class="fas fa-pen"></i> <span class="count" id="change-count">2</span> changes left this week
-        </div>
-      </div>
-    </div>
-
-    <!-- Bio -->
-    <div class="field" style="margin-top:18px;">
-      <label>Bio <span>(optional)</span></label>
-      <textarea id="bio-input" placeholder="say something about yourself..." maxlength="200"></textarea>
-    </div>
-
-    <!-- Profile Picture -->
-    <div class="field" style="margin-top:18px;">
-      <label>Profile Picture <span>(jpg/png/gif/webp, max 2MB)</span></label>
-      <div class="pfp-row">
-        <div class="pfp-left">
-          <div class="pfp-preview" id="pfp-preview">
-            <img id="pfp-img" src="" alt="pfp"/>
-            <span class="pfp-initial" id="pfp-initial">?</span>
-          </div>
-          <div class="pfp-label">profile pic</div>
-        </div>
-        <div class="pfp-right">
-          <div class="upload-zone" id="upload-zone">
-            <input type="file" id="pfp-file" accept="image/jpeg,image/png,image/gif,image/webp"/>
-            <div class="upload-icon"><i class="fas fa-camera"></i></div>
-            <div class="upload-text">
-              <strong>Click or drag an image here</strong>
-              your current pfp will be replaced
-            </div>
-            <div class="upload-hint">jpg · png · gif · webp · max 2MB</div>
-          </div>
-          <div class="upload-progress" id="upload-progress">
-            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-            <div class="progress-text" id="progress-text">uploading...</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="btn-row" style="margin-top:20px;">
-      <button class="btn" id="save-btn" onclick="saveProfile()"><i class="fas fa-save"></i> Save Profile</button>
-      <button class="btn secondary" onclick="window.location.href='/'"><i class="fas fa-arrow-left"></i> Back to Feed</button>
-    </div>
-  </div>
-
-  <!-- ── SECURITY ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-shield-alt" style="color:var(--neon)"></i> Security</div>
-    <div class="field">
-      <label>New Password</label>
-      <div class="input-wrapper">
-        <input type="password" id="new-password" placeholder="Enter new password..." minlength="6"/>
-        <div class="input-actions">
-          <button class="action-icon" onclick="togglePass('new-password')" title="Toggle visibility"><i class="fas fa-eye"></i></button>
-          <button class="action-icon" onclick="copyPass('new-password')" title="Copy password"><i class="fas fa-copy"></i></button>
-        </div>
-      </div>
-    </div>
-    <div class="field">
-      <label>Confirm New Password</label>
-      <div class="input-wrapper">
-        <input type="password" id="confirm-password" placeholder="Repeat new password..."/>
-        <div class="input-actions">
-          <button class="action-icon" onclick="togglePass('confirm-password')" title="Toggle visibility"><i class="fas fa-eye"></i></button>
-        </div>
-      </div>
-    </div>
-    <div class="btn-row" style="margin-top:16px;">
-      <button class="btn" id="pass-btn" onclick="updatePassword()"><i class="fas fa-key"></i> Update Password</button>
-    </div>
-  </div>
-
-  <!-- ── DANGER ZONE ── -->
-  <div class="settings-section">
-    <div class="section-title"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> Danger Zone</div>
-    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:14px;">clears local browser data only — your account stays safe in Supabase</p>
-    <div class="btn-row">
-      <button class="btn danger" onclick="clearLocalData()"><i class="fas fa-trash"></i> Clear Local Data</button>
-      <button class="btn danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </div>
+    <div class="profile-rows-list" id="profile-rows-list"></div>
   </div>
 </main>
 
-<!-- ── DOWNBAR (MOBILE BOTTOM NAV - 5 EQUAL COLUMNS) ── -->
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modal-overlay" onclick="window.closeModal(event)">
+  <div class="modal-card">
+    <button class="modal-close" onclick="window.closeModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-avatar" id="modal-avatar"><span>?</span></div>
+    <div class="modal-name" id="modal-name">—</div>
+    <div class="modal-username" id="modal-username">@username</div>
+    <div class="modal-role" id="modal-role"></div>
+    <div class="modal-bio" id="modal-bio">No bio yet</div>
+    <div class="modal-joined" id="modal-joined"></div>
+    <div class="modal-last-seen" id="modal-last-seen"></div>
+  </div>
+</div>
+
 <nav class="downbar" id="downbar">
   <div class="downbar-inner">
     <a href="/" class="downbar-item" id="downbar-home">
@@ -344,22 +206,20 @@ if ('serviceWorker' in navigator) {
     <a href="/chat" class="downbar-item" id="downbar-chat">
       <span class="downbar-icon"><i class="fas fa-comments"></i></span>
     </a>
-    <a href="/profiles" class="downbar-item" id="downbar-profiles">
+    <a href="/profiles" class="downbar-item active" id="downbar-profiles">
       <span class="downbar-icon"><i class="fas fa-users"></i></span>
     </a>
     <a href="/games" class="downbar-item" id="downbar-games">
-  <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
-</a>
+      <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
+    </a>
     <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
       <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
     </button>
   </div>
 </nav>
 
-<!-- ── DOWNBAR MORE OVERLAY ── -->
 <div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
 
-<!-- ── DOWNBAR MORE DRAWER ── -->
 <div class="downbar-more" id="downbar-more">
   <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
   
@@ -373,18 +233,18 @@ if ('serviceWorker' in navigator) {
       <span class="downbar-more-label">Chat</span>
     </a>
     <a href="/profiles" class="downbar-more-item">
-  <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
-  <span class="downbar-more-label">Profiles</span>
-</a>
-<a href="/games" class="downbar-more-item">
-  <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
-  <span class="downbar-more-label">Games</span>
-</a>
-<a href="/leaderboard" class="downbar-more-item">
-  <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
-  <span class="downbar-more-label">Leaderboard</span>
-</a>
-    <a href="/settings" class="downbar-more-item active">
+      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
+      <span class="downbar-more-label">Profiles</span>
+    </a>
+    <a href="/games" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
+      <span class="downbar-more-label">Games</span>
+    </a>
+    <a href="/leaderboard" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
+      <span class="downbar-more-label">Leaderboard</span>
+    </a>
+    <a href="/settings" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
       <span class="downbar-more-label">Settings</span>
     </a>
@@ -407,13 +267,26 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <script>
-// ── PAGE-SPECIFIC CODE ──
-const DISPLAY_NAME_STORAGE_KEY = 'cesc_display_name_changes';
-const MAX_DISPLAY_NAME_CHANGES = 2;
-const CHAT_LAYOUT_KEY = 'cesc_chat_layout';
+// ═══════════════════════════════════════════════════════════
+// ── PROFILES PAGE ──
+// ═══════════════════════════════════════════════════════════
 
-let currentProfile = null;
-let pendingFile = null;
+const VIEW_KEY = 'cesc_profiles_view';
+const TARGET_CARDS = 20;
+const DISPLAYABLE_ROLES = ['advertiser', 'teacher', 'og', 'vip'];
+const ELEVATED_ROLES = ['owner', 'admin', 'moderator', 'teacher', 'vip', 'advertiser'];
+const ROLE_COLORS = {
+  advertiser: 'var(--purple)',
+  teacher: '#7dd3fc',
+  og: '#fbbf24',
+  vip: '#f472b6'
+};
+
+let allProfiles = [];
+let viewMode = 'cards';
+let searchTimeout = null;
+let searchQuery = '';
+let currentAd = null;
 
 // ── LOADING STEPS ──
 function definePageSteps() {
@@ -422,478 +295,542 @@ function definePageSteps() {
     { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
     { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
     { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
-    { id: 'settings', label: 'Loading settings...', technical: 'Preparing settings data' },
+    { id: 'members', label: 'Loading members...', technical: 'Fetching all profiles' },
     { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
     { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
-    { id: 'ready', label: 'Done! ✨', technical: 'Settings ready' }
+    { id: 'ready', label: 'Done! ✨', technical: 'All members loaded' }
   ]);
 }
 
-// ═══════════════════════════════════════════════════════════
-// ── CHAT LAYOUT SETTING ──
-// ═══════════════════════════════════════════════════════════
-function loadChatLayoutSetting() {
-  let saved = localStorage.getItem(CHAT_LAYOUT_KEY);
-  if (saved !== 'discord' && saved !== 'meta') {
-    saved = 'meta';
-    localStorage.setItem(CHAT_LAYOUT_KEY, 'meta');
-  }
-  const radio = document.querySelector(`input[name="chat-layout"][value="${saved}"]`);
-  if (radio) radio.checked = true;
+// ── HELPERS ──
+function formatLastSeen(lastSeen) {
+  if (!lastSeen) return 'Never';
+  const diffSec = Math.floor((Date.now() - new Date(lastSeen).getTime()) / 1000);
+  if (diffSec < 120) return 'Active now';
+  if (diffSec < 300) return 'Active a while ago';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `Active ${diffMin}m ago`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return diffHour === 1 ? 'Active 1h ago' : `Active ${diffHour}h ago`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return diffDay === 1 ? 'Active 1 day ago' : `Active ${diffDay} days ago`;
+  const diffWeek = Math.floor(diffDay / 7);
+  if (diffWeek < 4) return diffWeek === 1 ? 'Active 1 week ago' : `Active ${diffWeek} weeks ago`;
+  return `Last seen ${new Date(lastSeen).toLocaleDateString([], { month:'short', day:'numeric', year:'numeric' })}`;
 }
 
-window.setChatLayout = function(layout) {
-  if (layout !== 'discord' && layout !== 'meta') return;
-  localStorage.setItem(CHAT_LAYOUT_KEY, layout);
-  window.showToast(`✅ ${layout === 'meta' ? 'Meta' : 'Discord'} layout saved`, 'success');
-};
-
-// ── DISPLAY NAME CHANGE LIMIT ──
-function getDisplayNameChanges() {
-  try {
-    const data = JSON.parse(localStorage.getItem(DISPLAY_NAME_STORAGE_KEY) || '{}');
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    const key = weekStart.toISOString().split('T')[0];
-    return data[key] || 0;
-  } catch { return 0; }
+function isOnline(lastSeen) {
+  if (!lastSeen) return false;
+  return new Date(lastSeen).getTime() > Date.now() - 2 * 60 * 1000;
 }
 
-function incrementDisplayNameChanges() {
-  try {
-    const data = JSON.parse(localStorage.getItem(DISPLAY_NAME_STORAGE_KEY) || '{}');
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    const key = weekStart.toISOString().split('T')[0];
-    data[key] = (data[key] || 0) + 1;
-    localStorage.setItem(DISPLAY_NAME_STORAGE_KEY, JSON.stringify(data));
-    updateChangeBadge();
-  } catch {}
+function getDisplayableRoles(profile) {
+  const raw = Array.isArray(profile.roles) && profile.roles.length
+    ? profile.roles
+    : (profile.role ? [profile.role] : []);
+  return raw.filter(r => DISPLAYABLE_ROLES.includes(r));
 }
 
-function updateChangeBadge() {
-  const used = getDisplayNameChanges();
-  const remaining = Math.max(0, MAX_DISPLAY_NAME_CHANGES - used);
-  const badge = document.getElementById('change-limit-badge');
-  const count = document.getElementById('change-count');
-  count.textContent = remaining;
-  badge.className = 'change-limit-badge' + (remaining === 0 ? ' used' : '');
+function roleBadgeHTML(role) {
+  const color = ROLE_COLORS[role] || 'var(--neon)';
+  return `<span class="role-badge" style="color:${color};border-color:${color}40;background:${color}14;">
+    <span class="role-dot" style="background:${color};"></span>${role}
+  </span>`;
 }
 
-// ── PFP ──
-function loadPfpImage(url) {
-  const img = document.getElementById('pfp-img');
-  const initial = document.getElementById('pfp-initial');
-  if (!url) {
-    img.style.display = 'none';
-    initial.style.display = 'block';
-    return;
+// ── SHUFFLE ──
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  img.src = url;
-  img.style.display = 'block';
-  initial.style.display = 'none';
-  img.onload = () => {
-    img.classList.add('loaded');
-  };
-  img.onerror = () => {
-    img.style.display = 'none';
-    initial.style.display = 'block';
-    img.classList.remove('loaded');
-  };
+  return a;
 }
 
-// ── FILE UPLOAD ──
-const fileInput = document.getElementById('pfp-file');
-const uploadZone = document.getElementById('upload-zone');
-
-fileInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    window.showToast('image too big — max 2MB 💀', 'error');
-    return;
-  }
-  pendingFile = file;
-  const reader = new FileReader();
-  reader.onload = ev => loadPfpImage(ev.target.result);
-  reader.readAsDataURL(file);
-  document.querySelector('.upload-text strong').textContent = file.name;
-});
-
-uploadZone.addEventListener('dragover', e => {
-  e.preventDefault();
-  uploadZone.classList.add('dragover');
-});
-uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) {
-    fileInput.files = e.dataTransfer.files;
-    fileInput.dispatchEvent(new Event('change'));
-  }
-});
-
-// ── UPLOAD PFP ──
-async function uploadPfp(file) {
-  const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
-  if (userError || !user) {
-    window.showToast('You must be logged in to upload', 'error');
-    return null;
-  }
-
-  const progress = document.getElementById('upload-progress');
-  const fill = document.getElementById('progress-fill');
-  const text = document.getElementById('progress-text');
-  progress.style.display = 'block';
-  fill.style.width = '10%';
-  text.textContent = 'uploading...';
-
-  const ext = file.name.split('.').pop();
-  const path = `${user.id}/pfp.${ext}`;
-
-  fill.style.width = '40%';
-  const { error } = await window.supabaseClient.storage.from('avatars').upload(path, file, {
-    upsert: true,
-    contentType: file.type
-  });
-
-  if (error) {
-    progress.style.display = 'none';
-    window.showToast('upload failed: ' + error.message, 'error');
-    return null;
-  }
-
-  fill.style.width = '80%';
-  text.textContent = 'getting URL...';
-  const { data: urlData } = window.supabaseClient.storage.from('avatars').getPublicUrl(path);
-  fill.style.width = '100%';
-  text.textContent = 'done ✅';
-  setTimeout(() => {
-    progress.style.display = 'none';
-    fill.style.width = '0%';
-  }, 1200);
-  return urlData.publicUrl;
+// ── VIEW MODE ──
+function loadViewMode() {
+  const saved = localStorage.getItem(VIEW_KEY);
+  viewMode = saved === 'rows' ? 'rows' : 'cards';
+  applyViewMode();
 }
 
-// ── SAVE PROFILE ──
-window.saveProfile = async function() {
-  const saveBtn = document.getElementById('save-btn');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'saving...';
-
-  const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
-  if (userError || !user) {
-    window.showToast('You must be logged in', 'error');
-    saveBtn.disabled = false;
-    saveBtn.textContent = '💾 Save Profile';
-    return;
-  }
-
-  const bio = document.getElementById('bio-input').value.trim();
-  const newDisplayName = document.getElementById('display-name-input').value.trim();
-
-  if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
-    const used = getDisplayNameChanges();
-    if (used >= MAX_DISPLAY_NAME_CHANGES) {
-      window.showToast(`You've used all ${MAX_DISPLAY_NAME_CHANGES} changes this week 💀`, 'error');
-      saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Save Profile';
-      return;
-    }
-  }
-
-  const updates = { bio };
-
-  if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
-    updates.display_name = newDisplayName;
-  }
-
-  let pfp_url = currentProfile?.pfp_url || null;
-  if (pendingFile) {
-    const uploadedUrl = await uploadPfp(pendingFile);
-    if (uploadedUrl) {
-      pfp_url = uploadedUrl;
-      updates.pfp_url = pfp_url;
-      pendingFile = null;
-    } else {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Save Profile';
-      return;
-    }
-  }
-
-  if (!updates.pfp_url && currentProfile?.pfp_url) {
-    delete updates.pfp_url;
-  }
-
-  const { error } = await window.supabaseClient
-    .from('profiles')
-    .update(updates)
-    .eq('id', user.id);
-
-  if (error) {
-    window.showToast('save failed: ' + error.message, 'error');
-    saveBtn.disabled = false;
-    saveBtn.textContent = '💾 Save Profile';
-    return;
-  }
-
-  if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
-    incrementDisplayNameChanges();
-  }
-
-  currentProfile = { ...currentProfile, ...updates };
-
-  if (pfp_url) {
-    loadPfpImage(pfp_url);
-  }
-
-  window.showToast('✅ profile saved!', 'success');
-  saveBtn.disabled = false;
-  saveBtn.textContent = '💾 Save Profile';
-
-  const displayName = currentProfile?.display_name || currentProfile?.username || 'you';
-  document.getElementById('chip-name').textContent = displayName;
-  document.getElementById('dd-name').textContent = displayName;
-};
-
-// ── PASSWORD ──
-window.togglePass = function(id) {
-  const input = document.getElementById(id);
-  input.type = input.type === 'password' ? 'text' : 'password';
-};
-
-window.copyPass = function(id) {
-  const val = document.getElementById(id).value;
-  if (!val) {
-    window.showToast('Nothing to copy! 💨', 'error');
-    return;
-  }
-  navigator.clipboard.writeText(val);
-  window.showToast('Password copied! 📋', 'success');
-};
-
-window.updatePassword = async function() {
-  const newPass = document.getElementById('new-password').value;
-  const confirmPass = document.getElementById('confirm-password').value;
-  const passBtn = document.getElementById('pass-btn');
-
-  if (!newPass || newPass.length < 6) {
-    window.showToast('Password must be at least 6 characters 🛡️', 'error');
-    return;
-  }
-  if (newPass !== confirmPass) {
-    window.showToast('Passwords do not match! ❌', 'error');
-    return;
-  }
-
-  passBtn.disabled = true;
-  passBtn.textContent = 'Updating...';
-
-  const { error } = await window.supabaseClient.auth.updateUser({ password: newPass });
-
-  if (error) {
-    window.showToast(error.message, 'error');
+function applyViewMode() {
+  const grid = document.getElementById('profile-grid');
+  const rows = document.getElementById('profile-rows');
+  const label = document.getElementById('view-toggle-label');
+  const icon = document.getElementById('view-toggle-icon');
+  if (viewMode === 'cards') {
+    grid.style.display = '';
+    rows.style.display = 'none';
+    label.textContent = 'Rows';
+    icon.className = 'fas fa-list';
   } else {
-    window.showToast('Password updated successfully! ✅', 'success');
-    document.getElementById('new-password').value = '';
-    document.getElementById('confirm-password').value = '';
+    grid.style.display = 'none';
+    rows.style.display = 'block';
+    label.textContent = 'Cards';
+    icon.className = 'fas fa-table-cells-large';
   }
+}
 
-  passBtn.disabled = false;
-  passBtn.textContent = 'Update Password';
+window.toggleViewMode = function() {
+  viewMode = viewMode === 'cards' ? 'rows' : 'cards';
+  localStorage.setItem(VIEW_KEY, viewMode);
+  applyViewMode();
+  renderProfiles();
 };
 
-// ── CLEAR LOCAL DATA ──
-window.clearLocalData = function() {
-  if (confirm('Clear local browser data? Your account and data in Supabase stay safe.')) {
-    const theme = localStorage.getItem('cesc_theme');
-    const layout = localStorage.getItem(CHAT_LAYOUT_KEY);
-    localStorage.clear();
-    if (theme) localStorage.setItem('cesc_theme', theme);
-    if (layout) localStorage.setItem(CHAT_LAYOUT_KEY, layout);
-    window.showToast('🗑️ local data cleared', 'success');
-  }
+// ── SEARCH ──
+window.debounceSearch = function() {
+  const input = document.getElementById('search-input');
+  const clearBtn = document.getElementById('search-clear');
+  clearBtn.style.display = input.value ? 'flex' : 'none';
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchQuery = input.value.trim().toLowerCase();
+    renderProfiles();
+  }, 300);
 };
 
-// ── THEME FUNCTIONS ──
-function renderThemeCards() {
-  const grid = document.getElementById('theme-grid');
-  const themes = window.THEME_PRESETS || [];
-  const current = window.getCurrentTheme();
+window.clearSearch = function() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  searchQuery = '';
+  renderProfiles();
+};
 
-  if (!grid || themes.length === 0) return;
+// ── GET FILTERED LIST ──
+function getFilteredList() {
+  if (!searchQuery) return allProfiles;
+  return allProfiles.filter(p => {
+    const u = (p.username || '').toLowerCase();
+    const d = (p.display_name || '').toLowerCase();
+    return u.includes(searchQuery) || d.includes(searchQuery);
+  });
+}
 
+// ── COLUMN COUNT ──
+function getColumnCount() {
+  const grid = document.getElementById('profile-grid');
+  if (!grid) return 4;
+  const style = window.getComputedStyle(grid);
+  const cols = style.gridTemplateColumns.split(' ').filter(Boolean).length;
+  return Math.max(1, cols);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── RENDER: CARDS VIEW ──
+// ═══════════════════════════════════════════════════════════
+function renderCards(list) {
+  const grid = document.getElementById('profile-grid');
   grid.innerHTML = '';
 
-  themes.forEach(theme => {
-    const card = document.createElement('div');
-    card.className = 'theme-card';
-    card.dataset.theme = theme.id;
+  if (list.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1;">
+        <span class="big"><i class="fas fa-users-slash"></i></span>
+        <div>No profiles found${searchQuery ? ` for "${searchQuery}"` : ''}</div>
+      </div>
+    `;
+    return;
+  }
 
-    if (current && current.id === theme.id) {
-      card.classList.add('active');
+  const cols = getColumnCount();
+
+  // Target ~20 cards, fill grid rectangle exactly.
+  // cols=5 → 4 rows × 5 = 20
+  // cols=4 → 5 rows × 4 = 20
+  // cols=3 → 7 rows × 3 = 21
+  // cols=2 → 10 rows × 2 = 20
+  // cols=1 → 20 rows × 1 = 20
+  const targetRows = cols === 3 ? 7 : Math.round(TARGET_CARDS / cols);
+  const targetSlots = cols * targetRows;
+
+  const hasAd = !!currentAd;
+  const profileLimit = targetSlots - (hasAd ? 1 : 0);
+
+  const visible = list.slice(0, profileLimit);
+  const children = [];
+
+  const adSlot = hasAd ? Math.floor(Math.random() * targetSlots) : -1;
+
+  for (let i = 0; i < visible.length; i++) {
+    const insertBefore = hasAd && i === adSlot;
+    if (insertBefore) children.push({ type: 'ad' });
+    children.push({ type: 'profile', data: visible[i] });
+  }
+  if (hasAd && !children.some(c => c.type === 'ad')) {
+    children.push({ type: 'ad' });
+  }
+
+  children.forEach(child => {
+    if (child.type === 'ad') {
+      grid.appendChild(buildAdCard(currentAd));
+    } else {
+      grid.appendChild(buildProfileCard(child.data));
     }
-
-    // Split preview: left half dark, right half light
-    const preview = document.createElement('div');
-    preview.className = 'theme-preview-split';
-
-    const darkVars = theme.variants.dark;
-    const lightVars = theme.variants.light;
-
-    const darkHalf = document.createElement('div');
-    darkHalf.className = 'preview-half preview-dark';
-    darkHalf.style.background = darkVars['--bg'];
-    const darkDot1 = document.createElement('span');
-    darkDot1.style.background = darkVars['--neon'];
-    darkDot1.style.boxShadow = `0 0 10px ${darkVars['--neon-glow']}`;
-    const darkDot2 = document.createElement('span');
-    darkDot2.style.background = darkVars['--neon2'];
-    darkHalf.appendChild(darkDot1);
-    darkHalf.appendChild(darkDot2);
-
-    const lightHalf = document.createElement('div');
-    lightHalf.className = 'preview-half preview-light';
-    lightHalf.style.background = lightVars['--bg'];
-    const lightDot1 = document.createElement('span');
-    lightDot1.style.background = lightVars['--neon'];
-    lightDot1.style.boxShadow = `0 0 10px ${lightVars['--neon-glow']}`;
-    const lightDot2 = document.createElement('span');
-    lightDot2.style.background = lightVars['--neon2'];
-    lightHalf.appendChild(lightDot1);
-    lightHalf.appendChild(lightDot2);
-
-    preview.appendChild(darkHalf);
-    preview.appendChild(lightHalf);
-    card.appendChild(preview);
-
-    // Name
-    const name = document.createElement('div');
-    name.className = 'theme-name';
-    name.textContent = theme.name;
-    card.appendChild(name);
-
-    // Description
-    const desc = document.createElement('div');
-    desc.className = 'theme-desc';
-    desc.textContent = theme.description || '';
-    card.appendChild(desc);
-
-    // Active badge with current variant
-    if (current && current.id === theme.id) {
-      const badge = document.createElement('div');
-      badge.className = 'theme-active-badge';
-      badge.innerHTML = current.variant === 'dark'
-        ? '<i class="fas fa-moon"></i> Dark'
-        : '<i class="fas fa-sun"></i> Light';
-      card.appendChild(badge);
-    }
-
-    card.onclick = () => {
-      const success = window.switchTheme(theme.id);
-      if (success) {
-        renderThemeCards();
-        updateCurrentThemeName();
-        window.showToast(`✅ ${theme.name} applied!`, 'success');
-      }
-    };
-
-    grid.appendChild(card);
   });
-}
 
-function updateCurrentThemeName() {
-  const current = window.getCurrentTheme();
-  const el = document.getElementById('current-theme-name');
-  if (el && current) {
-    el.textContent = `${current.name} · ${current.variant}`;
-  } else if (el) {
-    el.textContent = '—';
+  // Invisible spacers to fill last row
+  const spacersNeeded = targetSlots - children.length;
+  for (let i = 0; i < spacersNeeded; i++) {
+    const spacer = document.createElement('div');
+    spacer.className = 'profile-card profile-card-spacer';
+    spacer.setAttribute('aria-hidden', 'true');
+    grid.appendChild(spacer);
+  }
+
+  const countEl = document.getElementById('profile-count');
+  const shown = visible.length;
+  const total = list.length;
+  if (searchQuery) {
+    countEl.textContent = `${shown} of ${total} match "${searchQuery}"`;
+  } else {
+    countEl.textContent = `${shown} member${shown === 1 ? '' : 's'} shown`;
   }
 }
 
-function updateCurrentThemeName() {
-  const current = window.getCurrentTheme();
-  const el = document.getElementById('current-theme-name');
-  if (el && current) {
-    el.textContent = current.name;
-  } else if (el) {
-    el.textContent = '—';
+// ── PROFILE CARD ──
+function buildProfileCard(p) {
+  const card = document.createElement('div');
+  card.className = 'profile-card';
+  card.onclick = () => window.openModal(p);
+
+  const displayName = p.display_name || p.username;
+  const initial = (p.username?.[0] || '?').toUpperCase();
+  const online = isOnline(p.last_seen);
+  const roles = getDisplayableRoles(p);
+
+  const pfpUrl = p.pfp_url || (window.pfpCache && window.pfpCache[p.username]) || null;
+
+  card.innerHTML = `
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar">
+        <span>${initial}</span>
+        ${pfpUrl ? `<img src="${window.escapeHTML(pfpUrl)}" alt="${window.escapeHTML(p.username)}" onload="this.classList.add('loaded');this.previousElementSibling.style.display='none'" onerror="this.remove()"/>` : ''}
+      </div>
+      <span class="profile-status-dot ${online ? 'online' : 'offline'}"></span>
+    </div>
+    <div class="profile-name">${window.escapeHTML(displayName)}</div>
+    <div class="profile-username">@${window.escapeHTML(p.username)}</div>
+    ${roles.length ? `<div class="profile-roles">${roles.map(roleBadgeHTML).join('')}</div>` : ''}
+    <div class="profile-last-seen ${online ? 'is-online' : ''}">
+      ${online ? '● Online now' : formatLastSeen(p.last_seen)}
+    </div>
+    ${p.bio ? `<div class="profile-bio">${window.escapeHTML(p.bio.length > 90 ? p.bio.slice(0, 90) + '…' : p.bio)}</div>` : ''}
+  `;
+
+  return card;
+}
+
+// ── AD CARD ──
+function buildAdCard(ad) {
+  const card = document.createElement('div');
+  card.className = 'profile-card profile-ad-card';
+  card.style.cursor = 'pointer';
+
+  const displayName = ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
+  const wide = ad.image_wide_url || ad.image_square_url || '';
+
+  card.innerHTML = `
+    <div class="ad-card-badge">Ad</div>
+    <div class="ad-card-image">
+      <img src="${window.escapeHTML(wide)}" alt="${window.escapeHTML(ad.title)}" loading="lazy" onerror="this.parentElement.style.display='none'"/>
+    </div>
+    <div class="ad-card-name">${window.escapeHTML(displayName)}</div>
+    <div class="ad-card-title">${window.escapeHTML(ad.title)}</div>
+    <button class="ad-card-cta" type="button">Learn more <i class="fas fa-arrow-right"></i></button>
+  `;
+
+  card.onclick = () => {
+    if (window.Ads && typeof window.Ads.logClick === 'function') {
+      window.Ads.logClick(ad.id, 'profiles');
+    }
+    try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
+  };
+
+  return card;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── RENDER: ROWS VIEW ──
+// ═══════════════════════════════════════════════════════════
+function renderRows(list) {
+  const container = document.getElementById('profile-rows-list');
+  container.innerHTML = '';
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:60px 20px;">
+        <span class="big"><i class="fas fa-users-slash"></i></span>
+        <div>No profiles found${searchQuery ? ` for "${searchQuery}"` : ''}</div>
+      </div>
+    `;
+    return;
+  }
+
+  const hasAd = !!currentAd;
+  const limit = hasAd ? 19 : 20;
+  const visible = list.slice(0, limit);
+  const adSlot = hasAd ? Math.floor(Math.random() * (visible.length + 1)) : -1;
+
+  const frag = document.createDocumentFragment();
+
+  visible.forEach((p, i) => {
+    if (hasAd && i === adSlot) {
+      frag.appendChild(buildAdRow(currentAd));
+    }
+    frag.appendChild(buildProfileRow(p));
+  });
+  if (hasAd && adSlot >= visible.length) {
+    frag.appendChild(buildAdRow(currentAd));
+  }
+
+  container.appendChild(frag);
+
+  const countEl = document.getElementById('profile-count');
+  const shown = visible.length;
+  const total = list.length;
+  if (searchQuery) {
+    countEl.textContent = `${shown} of ${total} match "${searchQuery}"`;
+  } else {
+    countEl.textContent = `${shown} member${shown === 1 ? '' : 's'} shown`;
   }
 }
+
+function buildProfileRow(p) {
+  const row = document.createElement('div');
+  row.className = 'profile-row';
+  row.onclick = () => window.openModal(p);
+
+  const displayName = p.display_name || p.username;
+  const initial = (p.username?.[0] || '?').toUpperCase();
+  const online = isOnline(p.last_seen);
+  const roles = getDisplayableRoles(p);
+  const pfpUrl = p.pfp_url || (window.pfpCache && window.pfpCache[p.username]) || null;
+
+  row.innerHTML = `
+    <div class="profile-row-user">
+      <div class="profile-row-avatar">
+        <span>${initial}</span>
+        ${pfpUrl ? `<img src="${window.escapeHTML(pfpUrl)}" onload="this.classList.add('loaded');this.previousElementSibling.style.display='none'" onerror="this.remove()"/>` : ''}
+      </div>
+      <div class="profile-row-info">
+        <div class="profile-row-name">${window.escapeHTML(displayName)}</div>
+        <div class="profile-row-username">@${window.escapeHTML(p.username)}</div>
+      </div>
+    </div>
+    <div class="profile-row-bio">${p.bio ? window.escapeHTML(p.bio.length > 120 ? p.bio.slice(0, 120) + '…' : p.bio) : '<span style="color:var(--muted);font-style:italic;">No bio</span>'}</div>
+    <div class="profile-row-roles">${roles.length ? roles.map(roleBadgeHTML).join('') : '<span style="color:var(--muted);font-family:Space Mono,monospace;font-size:0.72rem;">—</span>'}</div>
+    <div class="profile-row-status ${online ? 'is-online' : ''}">
+      <span class="status-pip ${online ? 'online' : 'offline'}"></span>
+      ${online ? 'Online' : formatLastSeen(p.last_seen)}
+    </div>
+  `;
+
+  return row;
+}
+
+function buildAdRow(ad) {
+  const row = document.createElement('div');
+  row.className = 'profile-row profile-row-ad';
+  row.onclick = () => {
+    if (window.Ads && typeof window.Ads.logClick === 'function') {
+      window.Ads.logClick(ad.id, 'profiles');
+    }
+    try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
+  };
+
+  const displayName = ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
+  const thumb = ad.image_square_url || ad.image_wide_url || '';
+
+  row.innerHTML = `
+    <div class="profile-row-user">
+      <div class="profile-row-avatar ad-avatar">
+        ${thumb ? `<img src="${window.escapeHTML(thumb)}" alt="${window.escapeHTML(ad.title)}" onload="this.classList.add('loaded');this.previousElementSibling.style.display='none'" onerror="this.remove()"/>` : '<i class="fas fa-bullhorn"></i>'}
+        <span><i class="fas fa-bullhorn"></i></span>
+      </div>
+      <div class="profile-row-info">
+        <div class="profile-row-name">${window.escapeHTML(ad.title)}</div>
+        <div class="profile-row-username">${window.escapeHTML(displayName)}</div>
+      </div>
+    </div>
+    <div class="profile-row-bio">${ad.description ? window.escapeHTML(ad.description.slice(0, 120)) : '<span style="color:var(--muted);font-style:italic;">Sponsored content</span>'}</div>
+    <div class="profile-row-roles"><span class="role-badge" style="color:var(--neon);border-color:rgba(74,158,255,0.3);background:rgba(74,158,255,0.1);"><span class="role-dot" style="background:var(--neon);"></span>Ad</span></div>
+    <div class="profile-row-status ad-status"><i class="fas fa-external-link-alt"></i> Learn more</div>
+  `;
+
+  return row;
+}
+
+// ── MASTER RENDER ──
+function renderProfiles() {
+  const list = getFilteredList();
+  if (viewMode === 'cards') {
+    renderCards(list);
+  } else {
+    renderRows(list);
+  }
+}
+
+// ── MODAL ──
+window.openModal = function(p) {
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('show');
+
+  const avatar = document.getElementById('modal-avatar');
+  avatar.innerHTML = '';
+
+  const initial = document.createElement('span');
+  initial.textContent = (p.username?.[0] || '?').toUpperCase();
+  avatar.appendChild(initial);
+
+  const pfpUrl = p.pfp_url || (window.pfpCache && window.pfpCache[p.username]) || null;
+  if (pfpUrl) {
+    const img = document.createElement('img');
+    img.src = pfpUrl;
+    img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
+    img.onerror = () => img.remove();
+    avatar.appendChild(img);
+  }
+
+  document.getElementById('modal-name').textContent = p.display_name || p.username;
+  document.getElementById('modal-username').textContent = '@' + p.username;
+  document.getElementById('modal-bio').textContent = p.bio || 'No bio yet';
+
+  const roleEl = document.getElementById('modal-role');
+  const roles = getDisplayableRoles(p);
+  if (roles.length) {
+    roleEl.innerHTML = roles.map(roleBadgeHTML).join('');
+    roleEl.style.display = 'flex';
+    roleEl.style.gap = '6px';
+    roleEl.style.flexWrap = 'wrap';
+    roleEl.style.justifyContent = 'center';
+  } else {
+    roleEl.style.display = 'none';
+  }
+
+  const joinedEl = document.getElementById('modal-joined');
+  if (p.created_at) {
+    joinedEl.textContent = `Joined ${new Date(p.created_at).toLocaleDateString([], { month:'long', day:'numeric', year:'numeric' })}`;
+  } else {
+    joinedEl.textContent = '';
+  }
+
+  const lastSeenEl = document.getElementById('modal-last-seen');
+  const online = isOnline(p.last_seen);
+  if (online) {
+    lastSeenEl.textContent = '● Online now';
+    lastSeenEl.style.color = 'var(--neon)';
+  } else {
+    lastSeenEl.textContent = formatLastSeen(p.last_seen);
+    lastSeenEl.style.color = 'var(--muted)';
+  }
+};
+
+window.closeModal = function(e) {
+  if (!e || e.target.id === 'modal-overlay' || e.target.className === 'modal-close' || e.target.closest('.modal-close')) {
+    document.getElementById('modal-overlay').classList.remove('show');
+  }
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('show');
+});
+
+// ── LOAD PROFILES ──
+// Filter rule: only include profiles that are "alive" — has pfp, has logged in,
+// or has an elevated role. Dead accounts (no pfp + never logged in + user role only) are hidden.
+function isAliveProfile(p) {
+  if (p.pfp_url && String(p.pfp_url).trim() !== '') return true;
+  if (p.last_seen) return true;
+  const raw = Array.isArray(p.roles) && p.roles.length
+    ? p.roles
+    : (p.role ? [p.role] : []);
+  if (raw.some(r => ELEVATED_ROLES.includes(r))) return true;
+  return false;
+}
+
+async function loadProfiles() {
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('profiles')
+      .select('username, display_name, bio, pfp_url, role, roles, created_at, last_seen')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading profiles:', error);
+      document.getElementById('profile-count').textContent = 'Failed to load';
+      document.getElementById('profile-grid').innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <span class="big"><i class="fas fa-exclamation-triangle"></i></span>
+          <div>Failed to load profiles</div>
+        </div>
+      `;
+      return;
+    }
+
+    // Filter out dead accounts, then shuffle once per visit
+    const alive = (data || []).filter(isAliveProfile);
+    allProfiles = shuffle(alive);
+
+    // Pick 1 ad for the profiles placement
+    pickAd();
+
+    renderProfiles();
+  } catch (e) {
+    console.error('loadProfiles exception:', e);
+  }
+}
+
+// ── PICK AD ──
+function pickAd() {
+  currentAd = null;
+  if (!window.Ads || typeof window.Ads.getCached !== 'function') return;
+  const cached = window.Ads.getCached() || [];
+  if (cached.length === 0) return;
+
+  const pool = cached.filter(a => {
+    const p = a.placements || [];
+    return Array.isArray(p) && p.includes('profiles');
+  });
+  if (pool.length === 0) return;
+
+  const total = pool.reduce((s, a) => s + (a.weight || 1), 0);
+  let r = Math.random() * total;
+  for (const ad of pool) {
+    r -= (ad.weight || 1);
+    if (r <= 0) { currentAd = ad; return; }
+  }
+  currentAd = pool[pool.length - 1];
+}
+
+// ── RESIZE HANDLER ──
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (viewMode === 'cards') renderCards(getFilteredList());
+  }, 200);
+});
 
 // ── PAGE INIT ──
 async function pageInit() {
   definePageSteps();
   nextLoadingStep(); // theme
-  
-  loadChatLayoutSetting();
-  
-  nextLoadingStep(); // pfp (already loaded in initPage)
-  
-  nextLoadingStep(); // settings
-  const sess = window.session;
-  if (!sess) return;
 
-  const { data: profile, error } = await window.supabaseClient
-    .from('profiles')
-    .select('username, display_name, bio, pfp_url')
-    .eq('id', sess.user.id)
-    .single();
+  loadViewMode();
 
-  if (error) {
-    window.showToast('failed to load profile 💀', 'error');
-    return;
-  }
+  // auth + profile + pfp handled by initPage
 
-  currentProfile = profile;
-  const displayName = profile?.display_name || profile?.username || 'you';
-  const rawName = profile?.username || 'you';
+  nextLoadingStep(); // members
+  await loadProfiles();
 
-  document.getElementById('username-display').value = profile.username || '';
-  document.getElementById('display-name-input').value = profile.display_name || '';
-  document.getElementById('bio-input').value = profile.bio || '';
-  document.getElementById('chip-name').textContent = displayName;
-  document.getElementById('chip-initial').textContent = rawName[0].toUpperCase();
-  document.getElementById('dd-name').textContent = displayName;
-  document.getElementById('pfp-initial').textContent = rawName[0].toUpperCase();
+  // online + notifs handled by initPage
 
-  if (profile.pfp_url) loadPfpImage(profile.pfp_url);
-
-  if (profile.pfp_url) {
-    const chipAv = document.getElementById('chip-av');
-    if (chipAv) {
-      const initial = chipAv.querySelector('span');
-      const existingImg = chipAv.querySelector('img');
-      if (existingImg) existingImg.remove();
-      
-      const img = document.createElement('img');
-      img.src = profile.pfp_url;
-      img.onload = () => {
-        img.style.display = 'block';
-        img.classList.add('loaded');
-        if (initial) initial.style.display = 'none';
-      };
-      img.onerror = () => img.remove();
-      chipAv.appendChild(img);
-    }
-  }
-
-  updateChangeBadge();
-  
-  renderThemeCards();
-  updateCurrentThemeName();
-  
-  nextLoadingStep(); // online (handled by initPage)
-  // notifs (handled by initPage)
-  
+  nextLoadingStep();
+  nextLoadingStep();
   nextLoadingStep(); // ready
 }
 
@@ -906,6 +843,5 @@ if (document.readyState === 'loading') {
   initPage(pageInit);
 }
 </script>
-<script src="/js/ads.js"></script>
 </body>
 </html>

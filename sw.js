@@ -1,7 +1,7 @@
 // ── CESC HUB SERVICE WORKER ──
 // No terminal needed - just copy this file!
 
-const CACHE_NAME = 'cesc-hub-v3.6.0'; // Bumped for the games + leaderboard release
+const CACHE_NAME = 'cesc-hub-v3.6'; 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
