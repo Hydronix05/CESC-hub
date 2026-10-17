@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CESC Hub — Profiles</title>
+<title>CESC Hub — Settings</title>
 
 <!-- ── PWA META TAGS ── -->
 <link rel="manifest" href="/manifest.json">
@@ -17,16 +17,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
+<link rel="stylesheet" href="/css/pages/settings.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
 
 <!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- Load shared.js -->
-<script src="shared.js"></script>
-<link rel="stylesheet" href="/css/pages/profiles.css"/>
-<link rel="stylesheet" href="/css/ads.css"/>
+<!-- Load theme system -->
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
-<script src="/js/ads.js"></script>
+<!-- Load shared.js -->
+<script src="shared.js"></script>
 
 <!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
@@ -89,8 +89,8 @@ if ('serviceWorker' in navigator) {
 <!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
 
-<!-- ── MOBILE MENU HAMBURGER (HIDDEN ON MOBILE) ── -->
-<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+<!-- ── MOBILE MENU HAMBURGER ── -->
+<div class="mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></div>
 
 <!-- ── HEADER (FULL WIDTH AT TOP) ── -->
 <header class="top-header">
@@ -98,7 +98,7 @@ if ('serviceWorker' in navigator) {
     <a href="/" class="header-logo">
       <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
     </a>
-    <span class="header-page-title">Profiles</span>
+    <span class="header-page-title">Settings</span>
   </div>
   <div class="header-right">
     <span class="header-online-status">
@@ -108,8 +108,7 @@ if ('serviceWorker' in navigator) {
       <span class="online-count-number" id="online-count">...</span>
       <span class="online-status-text">online now</span>
     </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
-    
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="window.cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
     <a href="/notifications" class="hdr-btn" title="Notifications">
       <i class="fas fa-bell"></i>
       <span class="notif-badge" id="notif-badge">0</span>
@@ -137,7 +136,9 @@ if ('serviceWorker' in navigator) {
 <aside class="sidebar" id="sidebar">
   <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
   <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
-  <a href="/profiles" class="nav-item active"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="/games" class="nav-item"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
+  <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
   <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
     <a href="/notifications" class="nav-item" id="notif-nav">
@@ -158,39 +159,181 @@ if ('serviceWorker' in navigator) {
 <main class="main">
   <div class="page-header">
     <div>
-      <h1>Profiles</h1>
-      <p id="profile-count">Loading members...</p>
+      <h1>Settings</h1>
+      <p>manage your profile &amp; preferences</p>
     </div>
   </div>
 
-  <div class="search-bar">
-    <input id="search-input" placeholder="Search username..." oninput="window.debounceSearch()" />
+  <!-- ── THEME SECTION ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-palette" style="color:var(--neon)"></i> Theme</div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Choose your vibe · Click any theme to apply</p>
+    
+    <div class="theme-grid" id="theme-grid">
+      <!-- Themes will be rendered by JavaScript -->
+    </div>
+    
+    <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
+      <span style="font-size:0.75rem;color:var(--muted);font-family:'Space Mono',monospace;">
+        <i class="fas fa-arrows-alt-h" style="margin-right:6px;"></i>
+        Click the <strong style="color:var(--text-bright)">moon/sun</strong> icon in header to toggle dark/light
+      </span>
+      <span style="font-size:0.7rem;color:var(--muted);font-family:'Space Mono',monospace;background:var(--bg2);padding:2px 10px;border-radius:6px;border:1px solid var(--border);">
+        Current: <span id="current-theme-name" style="color:var(--neon);font-weight:700;">—</span>
+      </span>
+    </div>
   </div>
 
-  <div class="profile-grid" id="profile-grid">
-    <!-- Skeletons will be replaced -->
+  <!-- ── CHAT LAYOUT ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-comments" style="color:var(--neon)"></i> Chat Layout</div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Choose how chat messages look</p>
+    
+    <div class="chat-layout-options">
+      <label class="layout-option" data-value="meta">
+        <input type="radio" name="chat-layout" value="meta" onchange="window.setChatLayout('meta')"/>
+        <div class="layout-preview meta-preview">
+          <div class="lp-row lp-left">
+            <div class="lp-avatar"></div>
+            <div class="lp-bubble"></div>
+          </div>
+          <div class="lp-row lp-right">
+            <div class="lp-bubble own"></div>
+            <div class="lp-avatar own"></div>
+          </div>
+        </div>
+        <div class="layout-label">
+          <div class="layout-name">Meta</div>
+          <div class="layout-desc">WhatsApp / Instagram style · your messages on the right</div>
+        </div>
+      </label>
+      
+      <label class="layout-option" data-value="discord">
+        <input type="radio" name="chat-layout" value="discord" onchange="window.setChatLayout('discord')"/>
+        <div class="layout-preview discord-preview">
+          <div class="lp-row">
+            <div class="lp-avatar"></div>
+            <div class="lp-lines">
+              <div class="lp-line short"></div>
+              <div class="lp-line"></div>
+            </div>
+          </div>
+          <div class="lp-row">
+            <div class="lp-avatar"></div>
+            <div class="lp-lines">
+              <div class="lp-line short"></div>
+              <div class="lp-line"></div>
+            </div>
+          </div>
+        </div>
+        <div class="layout-label">
+          <div class="layout-name">Discord</div>
+          <div class="layout-desc">Classic style · all messages left-aligned with avatars</div>
+        </div>
+      </label>
+    </div>
   </div>
 
-  <div class="pagination">
-    <button onclick="window.prevPage()" id="prev-btn">Prev</button>
-    <span id="page-info">Page 1</span>
-    <button onclick="window.nextPage()" id="next-btn">Next</button>
+  <!-- ── PROFILE ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-user" style="color:var(--neon)"></i> Profile</div>
+
+    <!-- Username (readonly) -->
+    <div class="field">
+      <label>Username <span>(permanent)</span></label>
+      <input type="text" id="username-display" readonly placeholder="loading..."/>
+      <div class="locked-note"><i class="fas fa-lock" style="margin-right:4px;"></i> usernames can't be changed</div>
+    </div>
+
+    <!-- Display Name + change limit -->
+    <div class="display-name-row">
+      <div class="field">
+        <label>Display Name <span>(shown to others)</span></label>
+        <input type="text" id="display-name-input" placeholder="Your display name..." maxlength="30"/>
+        <div class="change-limit-badge" id="change-limit-badge">
+          <i class="fas fa-pen"></i> <span class="count" id="change-count">2</span> changes left this week
+        </div>
+      </div>
+    </div>
+
+    <!-- Bio -->
+    <div class="field" style="margin-top:18px;">
+      <label>Bio <span>(optional)</span></label>
+      <textarea id="bio-input" placeholder="say something about yourself..." maxlength="200"></textarea>
+    </div>
+
+    <!-- Profile Picture -->
+    <div class="field" style="margin-top:18px;">
+      <label>Profile Picture <span>(jpg/png/gif/webp, max 2MB)</span></label>
+      <div class="pfp-row">
+        <div class="pfp-left">
+          <div class="pfp-preview" id="pfp-preview">
+            <img id="pfp-img" src="" alt="pfp"/>
+            <span class="pfp-initial" id="pfp-initial">?</span>
+          </div>
+          <div class="pfp-label">profile pic</div>
+        </div>
+        <div class="pfp-right">
+          <div class="upload-zone" id="upload-zone">
+            <input type="file" id="pfp-file" accept="image/jpeg,image/png,image/gif,image/webp"/>
+            <div class="upload-icon"><i class="fas fa-camera"></i></div>
+            <div class="upload-text">
+              <strong>Click or drag an image here</strong>
+              your current pfp will be replaced
+            </div>
+            <div class="upload-hint">jpg · png · gif · webp · max 2MB</div>
+          </div>
+          <div class="upload-progress" id="upload-progress">
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="progress-text" id="progress-text">uploading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:20px;">
+      <button class="btn" id="save-btn" onclick="saveProfile()"><i class="fas fa-save"></i> Save Profile</button>
+      <button class="btn secondary" onclick="window.location.href='/'"><i class="fas fa-arrow-left"></i> Back to Feed</button>
+    </div>
+  </div>
+
+  <!-- ── SECURITY ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-shield-alt" style="color:var(--neon)"></i> Security</div>
+    <div class="field">
+      <label>New Password</label>
+      <div class="input-wrapper">
+        <input type="password" id="new-password" placeholder="Enter new password..." minlength="6"/>
+        <div class="input-actions">
+          <button class="action-icon" onclick="togglePass('new-password')" title="Toggle visibility"><i class="fas fa-eye"></i></button>
+          <button class="action-icon" onclick="copyPass('new-password')" title="Copy password"><i class="fas fa-copy"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Confirm New Password</label>
+      <div class="input-wrapper">
+        <input type="password" id="confirm-password" placeholder="Repeat new password..."/>
+        <div class="input-actions">
+          <button class="action-icon" onclick="togglePass('confirm-password')" title="Toggle visibility"><i class="fas fa-eye"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn" id="pass-btn" onclick="updatePassword()"><i class="fas fa-key"></i> Update Password</button>
+    </div>
+  </div>
+
+  <!-- ── DANGER ZONE ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> Danger Zone</div>
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:14px;">clears local browser data only — your account stays safe in Supabase</p>
+    <div class="btn-row">
+      <button class="btn danger" onclick="clearLocalData()"><i class="fas fa-trash"></i> Clear Local Data</button>
+      <button class="btn danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
   </div>
 </main>
-
-<!-- ── MODAL ── -->
-<div class="modal-overlay" id="modal-overlay" onclick="window.closeModal(event)">
-  <div class="modal-card">
-    <button class="modal-close" onclick="window.closeModal()"><i class="fas fa-times"></i></button>
-    <div class="modal-avatar" id="modal-avatar"><span>?</span></div>
-    <div class="modal-name" id="modal-name">—</div>
-    <div class="modal-username" id="modal-username">@username</div>
-    <div class="modal-role" id="modal-role"></div>
-    <div class="modal-bio" id="modal-bio">No bio yet</div>
-    <div class="modal-joined" id="modal-joined"></div>
-    <div class="modal-last-seen" id="modal-last-seen"></div>
-  </div>
-</div>
 
 <!-- ── DOWNBAR (MOBILE BOTTOM NAV - 5 EQUAL COLUMNS) ── -->
 <nav class="downbar" id="downbar">
@@ -201,12 +344,12 @@ if ('serviceWorker' in navigator) {
     <a href="/chat" class="downbar-item" id="downbar-chat">
       <span class="downbar-icon"><i class="fas fa-comments"></i></span>
     </a>
-    <a href="/profiles" class="downbar-item active" id="downbar-profiles">
+    <a href="/profiles" class="downbar-item" id="downbar-profiles">
       <span class="downbar-icon"><i class="fas fa-users"></i></span>
     </a>
-    <a href="/settings" class="downbar-item" id="downbar-settings">
-      <span class="downbar-icon"><i class="fas fa-cog"></i></span>
-    </a>
+    <a href="/games" class="downbar-item" id="downbar-games">
+  <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
+</a>
     <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
       <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
     </button>
@@ -216,7 +359,7 @@ if ('serviceWorker' in navigator) {
 <!-- ── DOWNBAR MORE OVERLAY ── -->
 <div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
 
-<!-- ── DOWNBAR MORE DRAWER (GRID/TABLE LAYOUT - 5 COLUMNS) ── -->
+<!-- ── DOWNBAR MORE DRAWER ── -->
 <div class="downbar-more" id="downbar-more">
   <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
   
@@ -229,11 +372,19 @@ if ('serviceWorker' in navigator) {
       <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
       <span class="downbar-more-label">Chat</span>
     </a>
-    <a href="/profiles" class="downbar-more-item active">
-      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
-      <span class="downbar-more-label">Profiles</span>
-    </a>
-    <a href="/settings" class="downbar-more-item">
+    <a href="/profiles" class="downbar-more-item">
+  <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
+  <span class="downbar-more-label">Profiles</span>
+</a>
+<a href="/games" class="downbar-more-item">
+  <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
+  <span class="downbar-more-label">Games</span>
+</a>
+<a href="/leaderboard" class="downbar-more-item">
+  <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
+  <span class="downbar-more-label">Leaderboard</span>
+</a>
+    <a href="/settings" class="downbar-more-item active">
       <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
       <span class="downbar-more-label">Settings</span>
     </a>
@@ -256,14 +407,13 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <script>
-// ── PROFILES PAGE ──
-// Use window.session, window.currentUser, window.supabaseClient from shared.js
+// ── PAGE-SPECIFIC CODE ──
+const DISPLAY_NAME_STORAGE_KEY = 'cesc_display_name_changes';
+const MAX_DISPLAY_NAME_CHANGES = 2;
+const CHAT_LAYOUT_KEY = 'cesc_chat_layout';
 
-let profilesCache = [];
-let page = 0;
-let search = '';
-const limit = 20;
-let searchTimeout = null;
+let currentProfile = null;
+let pendingFile = null;
 
 // ── LOADING STEPS ──
 function definePageSteps() {
@@ -272,312 +422,475 @@ function definePageSteps() {
     { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
     { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
     { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
-    { id: 'members', label: 'Loading members...', technical: 'Fetching all profiles' },
+    { id: 'settings', label: 'Loading settings...', technical: 'Preparing settings data' },
     { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
     { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
-    { id: 'ready', label: 'Done! ✨', technical: 'All members loaded' }
+    { id: 'ready', label: 'Done! ✨', technical: 'Settings ready' }
   ]);
 }
 
-// ── LAST SEEN FORMATTER ──
-function formatLastSeen(lastSeen) {
-  if (!lastSeen) return 'Never';
-  
-  const now = Date.now();
-  const then = new Date(lastSeen).getTime();
-  const diffMs = now - then;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-  const diffWeek = Math.floor(diffDay / 7);
-  
-  // Online (within 2 minutes)
-  if (diffSec < 120) return 'Active now';
-  
-  // Within 5 minutes
-  if (diffSec < 300) return 'Active a while ago';
-  
-  // Minutes
-  if (diffMin < 60) return `Active ${diffMin}m ago`;
-  
-  // Hours (1-23)
-  if (diffHour < 24) {
-    if (diffHour === 1) return 'Active 1h ago';
-    return `Active ${diffHour}h ago`;
+// ═══════════════════════════════════════════════════════════
+// ── CHAT LAYOUT SETTING ──
+// ═══════════════════════════════════════════════════════════
+function loadChatLayoutSetting() {
+  let saved = localStorage.getItem(CHAT_LAYOUT_KEY);
+  if (saved !== 'discord' && saved !== 'meta') {
+    saved = 'meta';
+    localStorage.setItem(CHAT_LAYOUT_KEY, 'meta');
   }
-  
-  // Days (1-6)
-  if (diffDay < 7) {
-    if (diffDay === 1) return 'Active 1 day ago';
-    return `Active ${diffDay} days ago`;
-  }
-  
-  // Weeks
-  if (diffWeek < 4) {
-    if (diffWeek === 1) return 'Active 1 week ago';
-    return `Active ${diffWeek} weeks ago`;
-  }
-  
-  // Months - just show the date
-  const date = new Date(lastSeen);
-  return `Last seen ${date.toLocaleDateString([], { month:'short', day:'numeric', year:'numeric' })}`;
+  const radio = document.querySelector(`input[name="chat-layout"][value="${saved}"]`);
+  if (radio) radio.checked = true;
 }
 
-// ── DEBOUNCE SEARCH ──
-window.debounceSearch = function() {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    search = document.getElementById('search-input').value.trim();
-    page = 0;
-    loadProfiles();
-  }, 300);
+window.setChatLayout = function(layout) {
+  if (layout !== 'discord' && layout !== 'meta') return;
+  localStorage.setItem(CHAT_LAYOUT_KEY, layout);
+  window.showToast(`✅ ${layout === 'meta' ? 'Meta' : 'Discord'} layout saved`, 'success');
 };
 
-// ── PAGINATION ──
-window.nextPage = function() {
-  const total = profilesCache.length;
-  if ((page + 1) * limit < total) {
-    page++;
-    loadProfiles();
-  }
-};
-
-window.prevPage = function() {
-  if (page > 0) {
-    page--;
-    loadProfiles();
-  }
-};
-
-// ── LOAD PROFILES ──
-async function loadProfiles() {
-  const grid = document.getElementById('profile-grid');
-  const countEl = document.getElementById('profile-count');
-
-  // Show skeletons
-  grid.innerHTML = '';
-  for (let i = 0; i < 8; i++) {
-    const skel = document.createElement('div');
-    skel.className = 'skel-card';
-    skel.innerHTML = `
-      <div class="skel-avatar"></div>
-      <div class="skel-line medium"></div>
-      <div class="skel-line short"></div>
-      <div class="skel-line long" style="height:8px;margin-top:6px;"></div>
-    `;
-    grid.appendChild(skel);
-  }
-
+// ── DISPLAY NAME CHANGE LIMIT ──
+function getDisplayNameChanges() {
   try {
-    let query = window.supabaseClient
-      .from('profiles')
-      .select('username, display_name, bio, pfp_url, role, created_at, last_seen')
-      .order('created_at', { ascending: false });
+    const data = JSON.parse(localStorage.getItem(DISPLAY_NAME_STORAGE_KEY) || '{}');
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const key = weekStart.toISOString().split('T')[0];
+    return data[key] || 0;
+  } catch { return 0; }
+}
 
-    if (search) {
-      query = query.ilike('username', `%${search}%`);
-    }
+function incrementDisplayNameChanges() {
+  try {
+    const data = JSON.parse(localStorage.getItem(DISPLAY_NAME_STORAGE_KEY) || '{}');
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const key = weekStart.toISOString().split('T')[0];
+    data[key] = (data[key] || 0) + 1;
+    localStorage.setItem(DISPLAY_NAME_STORAGE_KEY, JSON.stringify(data));
+    updateChangeBadge();
+  } catch {}
+}
 
-    const { data, error } = await query;
+function updateChangeBadge() {
+  const used = getDisplayNameChanges();
+  const remaining = Math.max(0, MAX_DISPLAY_NAME_CHANGES - used);
+  const badge = document.getElementById('change-limit-badge');
+  const count = document.getElementById('change-count');
+  count.textContent = remaining;
+  badge.className = 'change-limit-badge' + (remaining === 0 ? ' used' : '');
+}
 
-    if (error) {
-      console.error('Error loading profiles:', error);
-      grid.innerHTML = '<div class="empty-state"><span class="big"><i class="fas fa-exclamation-triangle"></i></span><div>Failed to load profiles</div></div>';
+// ── PFP ──
+function loadPfpImage(url) {
+  const img = document.getElementById('pfp-img');
+  const initial = document.getElementById('pfp-initial');
+  if (!url) {
+    img.style.display = 'none';
+    initial.style.display = 'block';
+    return;
+  }
+  img.src = url;
+  img.style.display = 'block';
+  initial.style.display = 'none';
+  img.onload = () => {
+    img.classList.add('loaded');
+  };
+  img.onerror = () => {
+    img.style.display = 'none';
+    initial.style.display = 'block';
+    img.classList.remove('loaded');
+  };
+}
+
+// ── FILE UPLOAD ──
+const fileInput = document.getElementById('pfp-file');
+const uploadZone = document.getElementById('upload-zone');
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    window.showToast('image too big — max 2MB 💀', 'error');
+    return;
+  }
+  pendingFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => loadPfpImage(ev.target.result);
+  reader.readAsDataURL(file);
+  document.querySelector('.upload-text strong').textContent = file.name;
+});
+
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadZone.classList.add('dragover');
+});
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+  }
+});
+
+// ── UPLOAD PFP ──
+async function uploadPfp(file) {
+  const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
+  if (userError || !user) {
+    window.showToast('You must be logged in to upload', 'error');
+    return null;
+  }
+
+  const progress = document.getElementById('upload-progress');
+  const fill = document.getElementById('progress-fill');
+  const text = document.getElementById('progress-text');
+  progress.style.display = 'block';
+  fill.style.width = '10%';
+  text.textContent = 'uploading...';
+
+  const ext = file.name.split('.').pop();
+  const path = `${user.id}/pfp.${ext}`;
+
+  fill.style.width = '40%';
+  const { error } = await window.supabaseClient.storage.from('avatars').upload(path, file, {
+    upsert: true,
+    contentType: file.type
+  });
+
+  if (error) {
+    progress.style.display = 'none';
+    window.showToast('upload failed: ' + error.message, 'error');
+    return null;
+  }
+
+  fill.style.width = '80%';
+  text.textContent = 'getting URL...';
+  const { data: urlData } = window.supabaseClient.storage.from('avatars').getPublicUrl(path);
+  fill.style.width = '100%';
+  text.textContent = 'done ✅';
+  setTimeout(() => {
+    progress.style.display = 'none';
+    fill.style.width = '0%';
+  }, 1200);
+  return urlData.publicUrl;
+}
+
+// ── SAVE PROFILE ──
+window.saveProfile = async function() {
+  const saveBtn = document.getElementById('save-btn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'saving...';
+
+  const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
+  if (userError || !user) {
+    window.showToast('You must be logged in', 'error');
+    saveBtn.disabled = false;
+    saveBtn.textContent = '💾 Save Profile';
+    return;
+  }
+
+  const bio = document.getElementById('bio-input').value.trim();
+  const newDisplayName = document.getElementById('display-name-input').value.trim();
+
+  if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
+    const used = getDisplayNameChanges();
+    if (used >= MAX_DISPLAY_NAME_CHANGES) {
+      window.showToast(`You've used all ${MAX_DISPLAY_NAME_CHANGES} changes this week 💀`, 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Save Profile';
       return;
     }
+  }
 
-    profilesCache = data || [];
-    countEl.textContent = `${profilesCache.length} members`;
+  const updates = { bio };
 
-    const start = page * limit;
-    const end = start + limit;
-    const pageData = profilesCache.slice(start, end);
+  if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
+    updates.display_name = newDisplayName;
+  }
 
-    grid.innerHTML = '';
-
-    if (pageData.length === 0) {
-      grid.innerHTML = `
-        <div class="empty-state" style="grid-column:1/-1;">
-          <span class="big"><i class="fas fa-users-slash"></i></span>
-          <div>No profiles found${search ? ` for "${search}"` : ''}</div>
-        </div>
-      `;
-      document.getElementById('page-info').textContent = `Page ${page + 1}`;
-      document.getElementById('prev-btn').disabled = page === 0;
-      document.getElementById('next-btn').disabled = true;
+  let pfp_url = currentProfile?.pfp_url || null;
+  if (pendingFile) {
+    const uploadedUrl = await uploadPfp(pendingFile);
+    if (uploadedUrl) {
+      pfp_url = uploadedUrl;
+      updates.pfp_url = pfp_url;
+      pendingFile = null;
+    } else {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Save Profile';
       return;
     }
+  }
 
-    // Check online status for each profile
-    const cutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  if (!updates.pfp_url && currentProfile?.pfp_url) {
+    delete updates.pfp_url;
+  }
 
-    pageData.forEach((p, i) => {
-      const card = document.createElement('div');
-      card.className = 'profile-card';
-      card.style.animationDelay = (i * 0.04) + 's';
-      card.onclick = () => openModal(p);
+  const { error } = await window.supabaseClient
+    .from('profiles')
+    .update(updates)
+    .eq('id', user.id);
 
-      const displayName = p.display_name || p.username;
-      const isOnline = p.last_seen && p.last_seen > cutoff;
+  if (error) {
+    window.showToast('save failed: ' + error.message, 'error');
+    saveBtn.disabled = false;
+    saveBtn.textContent = '💾 Save Profile';
+    return;
+  }
 
-      // Avatar
-      const avatarDiv = document.createElement('div');
-      avatarDiv.className = 'profile-avatar';
-      const initial = document.createElement('span');
-      initial.textContent = (p.username?.[0] || '?').toUpperCase();
-      avatarDiv.appendChild(initial);
+  if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
+    incrementDisplayNameChanges();
+  }
 
-      if (p.pfp_url || window.pfpCache?.[p.username]) {
-        const img = document.createElement('img');
-        img.src = p.pfp_url || window.pfpCache?.[p.username];
-        img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
-        img.onerror = () => img.remove();
-        avatarDiv.appendChild(img);
+  currentProfile = { ...currentProfile, ...updates };
+
+  if (pfp_url) {
+    loadPfpImage(pfp_url);
+  }
+
+  window.showToast('✅ profile saved!', 'success');
+  saveBtn.disabled = false;
+  saveBtn.textContent = '💾 Save Profile';
+
+  const displayName = currentProfile?.display_name || currentProfile?.username || 'you';
+  document.getElementById('chip-name').textContent = displayName;
+  document.getElementById('dd-name').textContent = displayName;
+};
+
+// ── PASSWORD ──
+window.togglePass = function(id) {
+  const input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+};
+
+window.copyPass = function(id) {
+  const val = document.getElementById(id).value;
+  if (!val) {
+    window.showToast('Nothing to copy! 💨', 'error');
+    return;
+  }
+  navigator.clipboard.writeText(val);
+  window.showToast('Password copied! 📋', 'success');
+};
+
+window.updatePassword = async function() {
+  const newPass = document.getElementById('new-password').value;
+  const confirmPass = document.getElementById('confirm-password').value;
+  const passBtn = document.getElementById('pass-btn');
+
+  if (!newPass || newPass.length < 6) {
+    window.showToast('Password must be at least 6 characters 🛡️', 'error');
+    return;
+  }
+  if (newPass !== confirmPass) {
+    window.showToast('Passwords do not match! ❌', 'error');
+    return;
+  }
+
+  passBtn.disabled = true;
+  passBtn.textContent = 'Updating...';
+
+  const { error } = await window.supabaseClient.auth.updateUser({ password: newPass });
+
+  if (error) {
+    window.showToast(error.message, 'error');
+  } else {
+    window.showToast('Password updated successfully! ✅', 'success');
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+  }
+
+  passBtn.disabled = false;
+  passBtn.textContent = 'Update Password';
+};
+
+// ── CLEAR LOCAL DATA ──
+window.clearLocalData = function() {
+  if (confirm('Clear local browser data? Your account and data in Supabase stay safe.')) {
+    const theme = localStorage.getItem('cesc_theme');
+    const layout = localStorage.getItem(CHAT_LAYOUT_KEY);
+    localStorage.clear();
+    if (theme) localStorage.setItem('cesc_theme', theme);
+    if (layout) localStorage.setItem(CHAT_LAYOUT_KEY, layout);
+    window.showToast('🗑️ local data cleared', 'success');
+  }
+};
+
+// ── THEME FUNCTIONS ──
+function renderThemeCards() {
+  const grid = document.getElementById('theme-grid');
+  const themes = window.THEME_PRESETS || [];
+  const current = window.getCurrentTheme();
+
+  if (!grid || themes.length === 0) return;
+
+  grid.innerHTML = '';
+
+  themes.forEach(theme => {
+    const card = document.createElement('div');
+    card.className = 'theme-card';
+    card.dataset.theme = theme.id;
+
+    if (current && current.id === theme.id) {
+      card.classList.add('active');
+    }
+
+    // Split preview: left half dark, right half light
+    const preview = document.createElement('div');
+    preview.className = 'theme-preview-split';
+
+    const darkVars = theme.variants.dark;
+    const lightVars = theme.variants.light;
+
+    const darkHalf = document.createElement('div');
+    darkHalf.className = 'preview-half preview-dark';
+    darkHalf.style.background = darkVars['--bg'];
+    const darkDot1 = document.createElement('span');
+    darkDot1.style.background = darkVars['--neon'];
+    darkDot1.style.boxShadow = `0 0 10px ${darkVars['--neon-glow']}`;
+    const darkDot2 = document.createElement('span');
+    darkDot2.style.background = darkVars['--neon2'];
+    darkHalf.appendChild(darkDot1);
+    darkHalf.appendChild(darkDot2);
+
+    const lightHalf = document.createElement('div');
+    lightHalf.className = 'preview-half preview-light';
+    lightHalf.style.background = lightVars['--bg'];
+    const lightDot1 = document.createElement('span');
+    lightDot1.style.background = lightVars['--neon'];
+    lightDot1.style.boxShadow = `0 0 10px ${lightVars['--neon-glow']}`;
+    const lightDot2 = document.createElement('span');
+    lightDot2.style.background = lightVars['--neon2'];
+    lightHalf.appendChild(lightDot1);
+    lightHalf.appendChild(lightDot2);
+
+    preview.appendChild(darkHalf);
+    preview.appendChild(lightHalf);
+    card.appendChild(preview);
+
+    // Name
+    const name = document.createElement('div');
+    name.className = 'theme-name';
+    name.textContent = theme.name;
+    card.appendChild(name);
+
+    // Description
+    const desc = document.createElement('div');
+    desc.className = 'theme-desc';
+    desc.textContent = theme.description || '';
+    card.appendChild(desc);
+
+    // Active badge with current variant
+    if (current && current.id === theme.id) {
+      const badge = document.createElement('div');
+      badge.className = 'theme-active-badge';
+      badge.innerHTML = current.variant === 'dark'
+        ? '<i class="fas fa-moon"></i> Dark'
+        : '<i class="fas fa-sun"></i> Light';
+      card.appendChild(badge);
+    }
+
+    card.onclick = () => {
+      const success = window.switchTheme(theme.id);
+      if (success) {
+        renderThemeCards();
+        updateCurrentThemeName();
+        window.showToast(`✅ ${theme.name} applied!`, 'success');
       }
-      card.appendChild(avatarDiv);
+    };
 
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'profile-name';
-      nameDiv.textContent = displayName;
-      card.appendChild(nameDiv);
+    grid.appendChild(card);
+  });
+}
 
-      const usernameDiv = document.createElement('div');
-      usernameDiv.className = 'profile-username';
-      usernameDiv.innerHTML = `@${p.username} <span class="profile-online-dot ${isOnline ? 'online' : 'offline'}"></span>`;
-      card.appendChild(usernameDiv);
-
-      // Last seen
-      const lastSeenDiv = document.createElement('div');
-      lastSeenDiv.className = 'profile-last-seen';
-      if (isOnline) {
-        lastSeenDiv.textContent = '● Online';
-        lastSeenDiv.style.color = 'var(--neon)';
-      } else {
-        lastSeenDiv.textContent = formatLastSeen(p.last_seen);
-        lastSeenDiv.style.color = 'var(--muted)';
-      }
-      card.appendChild(lastSeenDiv);
-
-      if (p.bio) {
-        const bioDiv = document.createElement('div');
-        bioDiv.className = 'profile-bio';
-        bioDiv.textContent = p.bio.length > 90 ? p.bio.slice(0, 90) + '...' : p.bio;
-        card.appendChild(bioDiv);
-      }
-
-      if (p.role && p.role !== 'user') {
-        const roleDiv = document.createElement('div');
-        roleDiv.className = 'profile-role';
-        roleDiv.textContent = p.role;
-        card.appendChild(roleDiv);
-      }
-
-      grid.appendChild(card);
-    });
-
-    document.getElementById('page-info').textContent = `Page ${page + 1}`;
-    document.getElementById('prev-btn').disabled = page === 0;
-    document.getElementById('next-btn').disabled = (page + 1) * limit >= profilesCache.length;
-  } catch (e) {
-    console.error('Error loading profiles:', e);
-    grid.innerHTML = '<div class="empty-state"><span class="big"><i class="fas fa-exclamation-triangle"></i></span><div>Error loading profiles</div></div>';
+function updateCurrentThemeName() {
+  const current = window.getCurrentTheme();
+  const el = document.getElementById('current-theme-name');
+  if (el && current) {
+    el.textContent = `${current.name} · ${current.variant}`;
+  } else if (el) {
+    el.textContent = '—';
   }
 }
 
-// ── MODAL ──
-window.openModal = function(p) {
-  const overlay = document.getElementById('modal-overlay');
-  overlay.classList.add('show');
-
-  const avatar = document.getElementById('modal-avatar');
-  const initial = avatar.querySelector('span') || document.createElement('span');
-  if (!avatar.querySelector('span')) {
-    initial.textContent = (p.username?.[0] || '?').toUpperCase();
-    avatar.appendChild(initial);
-  } else {
-    initial.textContent = (p.username?.[0] || '?').toUpperCase();
+function updateCurrentThemeName() {
+  const current = window.getCurrentTheme();
+  const el = document.getElementById('current-theme-name');
+  if (el && current) {
+    el.textContent = current.name;
+  } else if (el) {
+    el.textContent = '—';
   }
-
-  // Remove old image
-  const oldImg = avatar.querySelector('img');
-  if (oldImg) oldImg.remove();
-
-  if (p.pfp_url || window.pfpCache?.[p.username]) {
-    const img = document.createElement('img');
-    img.src = p.pfp_url || window.pfpCache?.[p.username];
-    img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
-    img.onerror = () => img.remove();
-    avatar.appendChild(img);
-  }
-
-  const displayName = p.display_name || p.username;
-  document.getElementById('modal-name').textContent = displayName;
-  document.getElementById('modal-username').textContent = '@' + p.username;
-  document.getElementById('modal-bio').textContent = p.bio || 'No bio yet';
-
-  const roleEl = document.getElementById('modal-role');
-  if (p.role && p.role !== 'user') {
-    roleEl.textContent = p.role;
-    roleEl.style.display = 'inline-block';
-  } else {
-    roleEl.style.display = 'none';
-  }
-
-  const joinedEl = document.getElementById('modal-joined');
-  if (p.created_at) {
-    const date = new Date(p.created_at);
-    joinedEl.textContent = `Joined ${date.toLocaleDateString([], { month:'long', day:'numeric', year:'numeric' })}`;
-  } else {
-    joinedEl.textContent = '';
-  }
-
-  // Last seen in modal
-  const lastSeenEl = document.getElementById('modal-last-seen');
-  const cutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-  const isOnline = p.last_seen && p.last_seen > cutoff;
-  if (isOnline) {
-    lastSeenEl.textContent = '🟢 Online now';
-    lastSeenEl.style.color = 'var(--neon)';
-  } else {
-    lastSeenEl.textContent = formatLastSeen(p.last_seen);
-    lastSeenEl.style.color = 'var(--muted)';
-  }
-};
-
-window.closeModal = function(e) {
-  if (!e || e.target.id === 'modal-overlay' || e.target.className === 'modal-close' || e.target.closest('.modal-close')) {
-    document.getElementById('modal-overlay').classList.remove('show');
-  }
-};
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('show');
-});
+}
 
 // ── PAGE INIT ──
 async function pageInit() {
   definePageSteps();
   nextLoadingStep(); // theme
   
-  // auth is handled by initPage
-  // profile is handled by initPage
+  loadChatLayoutSetting();
   
   nextLoadingStep(); // pfp (already loaded in initPage)
   
-  nextLoadingStep(); // members
-  await loadProfiles();
+  nextLoadingStep(); // settings
+  const sess = window.session;
+  if (!sess) return;
 
-  // ── ADS: mount profiles tile ad ──
-  try {
-    if (window.Ads && typeof window.Ads.mountProfilesSlot === 'function') {
-      const grid = document.getElementById('profile-grid');
-      if (grid) window.Ads.mountProfilesSlot(grid);
-    }
-  } catch (e) {
-    console.log('[Ads profiles]', e);
+  const { data: profile, error } = await window.supabaseClient
+    .from('profiles')
+    .select('username, display_name, bio, pfp_url')
+    .eq('id', sess.user.id)
+    .single();
+
+  if (error) {
+    window.showToast('failed to load profile 💀', 'error');
+    return;
   }
 
+  currentProfile = profile;
+  const displayName = profile?.display_name || profile?.username || 'you';
+  const rawName = profile?.username || 'you';
+
+  document.getElementById('username-display').value = profile.username || '';
+  document.getElementById('display-name-input').value = profile.display_name || '';
+  document.getElementById('bio-input').value = profile.bio || '';
+  document.getElementById('chip-name').textContent = displayName;
+  document.getElementById('chip-initial').textContent = rawName[0].toUpperCase();
+  document.getElementById('dd-name').textContent = displayName;
+  document.getElementById('pfp-initial').textContent = rawName[0].toUpperCase();
+
+  if (profile.pfp_url) loadPfpImage(profile.pfp_url);
+
+  if (profile.pfp_url) {
+    const chipAv = document.getElementById('chip-av');
+    if (chipAv) {
+      const initial = chipAv.querySelector('span');
+      const existingImg = chipAv.querySelector('img');
+      if (existingImg) existingImg.remove();
+      
+      const img = document.createElement('img');
+      img.src = profile.pfp_url;
+      img.onload = () => {
+        img.style.display = 'block';
+        img.classList.add('loaded');
+        if (initial) initial.style.display = 'none';
+      };
+      img.onerror = () => img.remove();
+      chipAv.appendChild(img);
+    }
+  }
+
+  updateChangeBadge();
+  
+  renderThemeCards();
+  updateCurrentThemeName();
+  
   nextLoadingStep(); // online (handled by initPage)
   // notifs (handled by initPage)
   
@@ -593,5 +906,6 @@ if (document.readyState === 'loading') {
   initPage(pageInit);
 }
 </script>
+<script src="/js/ads.js"></script>
 </body>
 </html>

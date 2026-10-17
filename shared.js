@@ -660,6 +660,8 @@ async function initPage(pageInitFn) {
     const profile = await loadUserProfile();
     if (profile) {
       updateUserUI(profile);
+      // Streak — runs on every page, once per day, silently
+      try { await updateStreak(); } catch (e) { console.error('updateStreak failed:', e); }
     }
     
     // Step 4: PFP Cache

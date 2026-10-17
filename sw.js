@@ -1,7 +1,7 @@
 // ── CESC HUB SERVICE WORKER ──
 // No terminal needed - just copy this file!
 
-const CACHE_NAME = 'cesc-hub-v3.5.1'; // Bumped for the chat + notes + offline release
+const CACHE_NAME = 'cesc-hub-v3.6.0'; // Bumped for the games + leaderboard release
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -11,6 +11,9 @@ const STATIC_ASSETS = [
   '/settings.html',
   '/notifications.html',
   '/download.html',
+  '/games.html',
+  '/leaderboard.html',
+  '/games/bloxdio.html',
   '/offline.html',
   '/shared.js',
   '/shared.css',
@@ -27,6 +30,9 @@ const STATIC_ASSETS = [
   '/css/pages/notifications.css',
   '/css/pages/login.css',
   '/css/pages/download.css',
+  '/css/pages/games.css',
+  '/css/pages/bloxdio.css',
+  '/css/pages/leaderboard.css',
   '/css/ads.css',
   '/manifest.json',
   '/icons/icon-512x512.png',
@@ -71,13 +77,15 @@ self.addEventListener('fetch', event => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip Supabase and CDN
+  // Skip Supabase, CDNs, and external game hosts
   if (url.hostname.includes('supabase.co') ||
       url.hostname.includes('cdnjs.cloudflare.com') ||
       url.hostname.includes('fonts.googleapis.com') ||
       url.hostname.includes('fonts.gstatic.com') ||
       url.hostname.includes('cdn.jsdelivr.net') ||
-      url.hostname.includes('uploads.onecompiler.io')) {
+      url.hostname.includes('uploads.onecompiler.io') ||
+      url.hostname.includes('bloxd.io') ||
+      url.hostname.includes('bloxd.gg')) {
     return;
   }
 
@@ -121,7 +129,7 @@ self.addEventListener('message', event => {
 });
 
 // ── VERSION INFO ──
-const APP_VERSION = '3.5.1';
+const APP_VERSION = '3.6.0';
 const UPDATE_DATE = new Date().toISOString();
 
 console.log(`✅ CESC Hub v${APP_VERSION} - ${UPDATE_DATE}`);

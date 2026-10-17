@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>CESC Hub — Bloxd.io</title>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="/shared.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/shared.js"></script>
+<link rel="stylesheet" href="/css/pages/bloxdio.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed:', err));
+  });
+}
+</script>
+
+</head>
+<body class="bloxdio-page">
+
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<header class="top-header" id="bloxd-header">
+  <div class="header-left">
+    <a href="/" class="header-logo">
+      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+    </a>
+    <span class="header-page-title">Bloxd.io</span>
+  </div>
+  <div class="header-right">
+    <span class="header-online-status">
+      <span class="online-pulse-ring">
+        <span class="online-pulse-dot"></span>
+      </span>
+      <span class="online-count-number" id="online-count">...</span>
+      <span class="online-status-text">online now</span>
+    </span>
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    <a href="/notifications" class="hdr-btn" title="Notifications">
+      <i class="fas fa-bell"></i>
+      <span class="notif-badge" id="notif-badge">0</span>
+    </a>
+    <div class="profile-chip" id="profile-chip" onclick="window.toggleDropdown()">
+      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
+      <span class="chip-name" id="chip-name">loading</span>
+      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="dd-header">
+          <div class="dd-name" id="dd-name">—</div>
+          <div class="dd-sub">CESC Hub member</div>
+        </div>
+        <a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
+        <a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
+        <a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
+        <div class="dd-div"></div>
+        <button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+  <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
+  <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
+  <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="/games" class="nav-item active"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
+  <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
+  <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
+  <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
+  <a href="/notifications" class="nav-item" id="notif-nav">
+    <span class="nav-icon"><i class="fas fa-bell"></i></span>
+    <span class="nav-label-text">Notifications</span>
+    <span class="nav-badge-count" id="notif-nav-badge">0</span>
+  </a>
+
+  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
+    <i class="fas fa-chevron-right"></i>
+    <span class="toggle-label">Collapse</span>
+  </button>
+
+  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
+</aside>
+
+<main class="main bloxdio-main">
+
+  <!-- ═══ DESKTOP VIEW ═══ -->
+  <div class="bloxdio-desktop" id="bloxdio-desktop">
+    <div class="bloxdio-toolbar">
+      <div class="bt-stat" title="All-time playtime">
+        <i class="fas fa-clock"></i>
+        <span class="bt-label">Total</span>
+        <span class="bt-value" id="bt-total">—</span>
+      </div>
+      <div class="bt-stat" title="Current session">
+        <i class="fas fa-hourglass-half"></i>
+        <span class="bt-label">Session</span>
+        <span class="bt-value" id="bt-session">0s</span>
+      </div>
+      <div class="bt-spacer"></div>
+      <button class="bt-btn" id="bt-tutorial-btn" onclick="window.toggleTutorialDrawer()">
+        <i class="fas fa-book"></i>
+        <span>Tutorial</span>
+        <i class="fas fa-chevron-down bt-caret"></i>
+      </button>
+      <button class="bt-btn" onclick="window.toggleFullscreenDesktop()">
+        <i class="fas fa-expand"></i>
+        <span>Fullscreen</span>
+      </button>
+    </div>
+
+    <div class="bloxdio-frame-wrap">
+      <div class="bloxdio-frame-notice">
+        <i class="fas fa-shield-halved"></i>
+        Stay on the CESC Hub server or your session won't count
+      </div>
+      <iframe
+        id="bloxdio-iframe-desktop"
+        class="bloxdio-iframe"
+        src="https://bloxd.io/play/classic?lobby=cesc-hub"
+        allow="fullscreen; autoplay; gamepad; clipboard-write; microphone"
+        referrerpolicy="no-referrer-when-downgrade"
+        loading="eager">
+      </iframe>
+    </div>
+  </div>
+
+  <!-- ═══ MOBILE — PREVIEW STATE ═══ -->
+  <div class="bloxdio-preview" id="bloxdio-preview">
+    <div class="bp-hero">
+      <div class="bp-icon">
+        <i class="fas fa-cube"></i>
+      </div>
+      <div class="bp-title">Bloxd.io</div>
+      <div class="bp-desc">Multiplayer sandbox · CESC Hub server</div>
+    </div>
+
+    <div class="bp-stats">
+      <div class="bp-stat">
+        <i class="fas fa-clock"></i>
+        <span class="bp-stat-label">Total</span>
+        <span class="bp-stat-value" id="bp-total">—</span>
+      </div>
+      <div class="bp-stat">
+        <i class="fas fa-hourglass-half"></i>
+        <span class="bp-stat-label">Session</span>
+        <span class="bp-stat-value" id="bp-session">—</span>
+      </div>
+    </div>
+
+    <button class="bp-play-btn" onclick="window.enterMobileFullscreen()">
+      <i class="fas fa-play"></i>
+      Play Now
+    </button>
+
+    <div class="bp-hint">
+      <i class="fas fa-shield-halved"></i>
+      Playtime is tracked only while you're on this tab
+    </div>
+  </div>
+
+  <!-- ═══ MOBILE — FULLSCREEN STATE ═══ -->
+  <div class="bloxdio-fullscreen" id="bloxdio-fullscreen">
+    <button class="bp-exit-btn" id="bp-exit-btn" onclick="window.exitMobileFullscreen()" title="Exit">
+      <i class="fas fa-times"></i>
+    </button>
+    <iframe
+      id="bloxdio-iframe-mobile"
+      class="bloxdio-iframe-fullscreen"
+      src="https://bloxd.io/play/classic?lobby=cesc-hub"
+      allow="fullscreen; autoplay; gamepad; clipboard-write; microphone"
+      referrerpolicy="no-referrer-when-downgrade"
+      loading="lazy">
+    </iframe>
+  </div>
+
+</main>
+
+<div class="tutorial-overlay" id="tutorial-overlay" onclick="window.closeTutorialDrawer()"></div>
+<div class="tutorial-drawer" id="tutorial-drawer">
+  <div class="tutorial-header">
+    <div class="tutorial-title"><i class="fas fa-book"></i> Tutorials</div>
+    <button class="tutorial-close" onclick="window.closeTutorialDrawer()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="tutorial-list">
+    <a href="https://www.youtube.com/results?search_query=bloxd.io+how+to+move" target="_blank" rel="noopener noreferrer" class="tutorial-item">
+      <div class="tutorial-item-icon"><i class="fas fa-person-walking"></i></div>
+      <div class="tutorial-item-body">
+        <div class="tutorial-item-title">How to move</div>
+        <div class="tutorial-item-desc">Basic movement & camera controls</div>
+      </div>
+      <i class="fas fa-arrow-up-right-from-square tutorial-item-arrow"></i>
+    </a>
+    <a href="https://www.youtube.com/results?search_query=bloxd.io+how+to+build" target="_blank" rel="noopener noreferrer" class="tutorial-item">
+      <div class="tutorial-item-icon"><i class="fas fa-cubes"></i></div>
+      <div class="tutorial-item-body">
+        <div class="tutorial-item-title">How to build</div>
+        <div class="tutorial-item-desc">Placing blocks, choosing materials</div>
+      </div>
+      <i class="fas fa-arrow-up-right-from-square tutorial-item-arrow"></i>
+    </a>
+    <a href="https://www.youtube.com/results?search_query=bloxd.io+how+to+chat" target="_blank" rel="noopener noreferrer" class="tutorial-item">
+      <div class="tutorial-item-icon"><i class="fas fa-comment"></i></div>
+      <div class="tutorial-item-body">
+        <div class="tutorial-item-title">How to chat</div>
+        <div class="tutorial-item-desc">Talk to other players in the lobby</div>
+      </div>
+      <i class="fas fa-arrow-up-right-from-square tutorial-item-arrow"></i>
+    </a>
+  </div>
+</div>
+
+<nav class="downbar" id="downbar">
+  <div class="downbar-inner">
+    <a href="/" class="downbar-item" id="downbar-home">
+      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
+    </a>
+    <a href="/chat" class="downbar-item" id="downbar-chat">
+      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
+    </a>
+    <a href="/profiles" class="downbar-item" id="downbar-profiles">
+      <span class="downbar-icon"><i class="fas fa-users"></i></span>
+    </a>
+    <a href="/games" class="downbar-item active" id="downbar-games">
+      <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
+    </a>
+    <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
+      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
+    </button>
+  </div>
+</nav>
+
+<div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
+
+<div class="downbar-more" id="downbar-more">
+  <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
+  <div class="downbar-more-grid">
+    <a href="/" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span><span class="downbar-more-label">Feed</span></a>
+    <a href="/chat" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-comments"></i></span><span class="downbar-more-label">Chat</span></a>
+    <a href="/profiles" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-users"></i></span><span class="downbar-more-label">Profiles</span></a>
+    <a href="/games" class="downbar-more-item active"><span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span><span class="downbar-more-label">Games</span></a>
+    <a href="/leaderboard" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-trophy"></i></span><span class="downbar-more-label">Leaderboard</span></a>
+    <a href="/settings" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-cog"></i></span><span class="downbar-more-label">Settings</span></a>
+    <a href="/download" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-download"></i></span><span class="downbar-more-label">Downloads</span></a>
+    <a href="/notifications" class="downbar-more-item" id="downbar-more-notif"><span class="downbar-more-icon"><i class="fas fa-bell"></i></span><span class="downbar-more-label">Notifications</span><span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span></a>
+    <button class="downbar-more-item logout" onclick="window.logout()"><span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span><span class="downbar-more-label">Logout</span></button>
+  </div>
+  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── BLOXD.IO PAGE LOGIC ──
+// ═══════════════════════════════════════════════════════════
+
+const GAME_ID = 'bloxdio';
+const FLUSH_INTERVAL_MS = 30 * 1000;
+const INACTIVITY_TIMEOUT_MS = 2 * 60 * 1000;
+const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'click', 'scroll'];
+
+let totalSecondsAllTime = 0;
+let sessionSeconds = 0;
+let pendingSeconds = 0;
+let isTracking = false;
+let isMobileFullscreen = false;
+let currentSessionId = null;
+
+let tickInterval = null;
+let flushInterval = null;
+let inactivityTimer = null;
+
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'playtime', label: 'Loading playtime...', technical: 'Fetching stats' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Ready! ✨', technical: 'Game loaded' }
+  ]);
+}
+
+function formatPlaytime(totalSeconds) {
+  if (!totalSeconds || totalSeconds < 1) return null;
+  const s = Math.floor(totalSeconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+function formatSession(seconds) {
+  const s = Math.floor(seconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+// ── FIXED: Total = DB + session only (no double-count of pending) ──
+function updateHUD() {
+  const totalStr = formatPlaytime(totalSecondsAllTime + sessionSeconds) || '0s';
+  const sessionStr = formatSession(sessionSeconds);
+
+  const btTotal = document.getElementById('bt-total');
+  const btSession = document.getElementById('bt-session');
+  if (btTotal) btTotal.textContent = totalStr;
+  if (btSession) btSession.textContent = sessionStr;
+
+  const bpTotal = document.getElementById('bp-total');
+  const bpSession = document.getElementById('bp-session');
+  if (bpTotal) bpTotal.textContent = totalStr;
+  if (bpSession) bpSession.textContent = sessionSeconds > 0 ? sessionStr : '—';
+}
+
+async function loadMyPlaytime() {
+  if (!window.session) return;
+  try {
+    const { data } = await window.supabaseClient
+      .from('game_playtime')
+      .select('total_seconds')
+      .eq('user_id', window.session.user.id)
+      .eq('game_id', GAME_ID)
+      .maybeSingle();
+    totalSecondsAllTime = Number(data?.total_seconds) || 0;
+  } catch (e) {
+    console.error('loadMyPlaytime:', e);
+  }
+  updateHUD();
+}
+
+async function startSession() {
+  if (!window.session) return;
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: open } = await window.supabaseClient
+      .from('game_sessions')
+      .select('id, started_at')
+      .eq('user_id', window.session.user.id)
+      .eq('game_id', GAME_ID)
+      .is('ended_at', null)
+      .gte('started_at', oneHourAgo)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (open) {
+      currentSessionId = open.id;
+    } else {
+      const { data: inserted, error } = await window.supabaseClient
+        .from('game_sessions')
+        .insert({
+          user_id: window.session.user.id,
+          game_id: GAME_ID,
+          started_at: new Date().toISOString()
+        })
+        .select('id')
+        .single();
+      if (error) {
+        console.error('session insert:', error);
+        return;
+      }
+      currentSessionId = inserted.id;
+    }
+  } catch (e) {
+    console.error('startSession:', e);
+  }
+}
+
+async function endSession() {
+  if (!currentSessionId) return;
+  try {
+    await window.supabaseClient
+      .from('game_sessions')
+      .update({
+        ended_at: new Date().toISOString(),
+        duration_seconds: sessionSeconds
+      })
+      .eq('id', currentSessionId);
+    currentSessionId = null;
+  } catch (e) {
+    console.error('endSession:', e);
+  }
+}
+
+async function flushPending() {
+  const toSend = pendingSeconds;
+  if (toSend < 1) return;
+  pendingSeconds = 0;
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc('add_game_playtime', {
+      p_game_id: GAME_ID,
+      p_seconds: toSend
+    });
+    if (error) {
+      console.error('flush RPC:', error);
+      pendingSeconds += toSend;
+      return;
+    }
+    if (data?.ok && typeof data.total_seconds === 'number') {
+      totalSecondsAllTime = data.total_seconds;
+      // sessionSeconds continues to be the live view; but we already folded
+      // the pending seconds into totalSecondsAllTime in the DB.
+      // To keep total display accurate, subtract what we just pushed:
+      sessionSeconds = Math.max(0, sessionSeconds - toSend);
+    }
+    updateHUD();
+  } catch (e) {
+    console.error('flushPending:', e);
+    pendingSeconds += toSend;
+  }
+}
+
+function tick() {
+  if (!isTracking) return;
+  sessionSeconds++;
+  pendingSeconds++;
+  updateHUD();
+
+  if (pendingSeconds >= 30) {
+    flushPending();
+  }
+}
+
+function startTracking() {
+  if (isTracking) return;
+  isTracking = true;
+}
+
+function stopTracking() {
+  if (!isTracking) return;
+  isTracking = false;
+  flushPending();
+}
+
+function resetInactivity() {
+  clearTimeout(inactivityTimer);
+  if (document.hidden) return;
+  inactivityTimer = setTimeout(() => {
+    stopTracking();
+  }, INACTIVITY_TIMEOUT_MS);
+  if (!document.hidden) startTracking();
+}
+
+function setupTrackingListeners() {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopTracking();
+    } else {
+      resetInactivity();
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    stopTracking();
+  });
+
+  window.addEventListener('focus', () => {
+    resetInactivity();
+  });
+
+  ACTIVITY_EVENTS.forEach(evt => {
+    document.addEventListener(evt, resetInactivity, { passive: true });
+  });
+
+  window.addEventListener('pagehide', () => {
+    stopTracking();
+    if (pendingSeconds >= 1 && currentSessionId) {
+      flushPending();
+    }
+  });
+}
+
+window.toggleFullscreenDesktop = function () {
+  const wrap = document.querySelector('.bloxdio-frame-wrap');
+  if (!wrap) return;
+  if (!document.fullscreenElement) {
+    if (wrap.requestFullscreen) {
+      wrap.requestFullscreen().catch(err => {
+        console.warn('fullscreen failed:', err);
+        window.showToast('Fullscreen blocked by browser', 'error');
+      });
+    }
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+};
+
+window.enterMobileFullscreen = function () {
+  isMobileFullscreen = true;
+  document.body.classList.add('bloxdio-fullscreen-active');
+
+  const fsEl = document.getElementById('bloxdio-fullscreen');
+  if (fsEl) {
+    fsEl.classList.add('show');
+    const el = fsEl;
+    if (el.requestFullscreen) {
+      el.requestFullscreen().catch(() => {});
+    }
+  }
+
+  startTracking();
+  resetInactivity();
+};
+
+window.exitMobileFullscreen = function () {
+  isMobileFullscreen = false;
+  document.body.classList.remove('bloxdio-fullscreen-active');
+
+  const fsEl = document.getElementById('bloxdio-fullscreen');
+  if (fsEl) {
+    fsEl.classList.remove('show');
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  stopTracking();
+};
+
+window.toggleTutorialDrawer = function () {
+  const drawer = document.getElementById('tutorial-drawer');
+  const overlay = document.getElementById('tutorial-overlay');
+  const btn = document.getElementById('bt-tutorial-btn');
+  if (!drawer) return;
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    closeTutorialDrawer();
+  } else {
+    drawer.classList.add('open');
+    if (overlay) overlay.classList.add('show');
+    if (btn) btn.classList.add('open');
+  }
+};
+
+window.closeTutorialDrawer = function () {
+  const drawer = document.getElementById('tutorial-drawer');
+  const overlay = document.getElementById('tutorial-overlay');
+  const btn = document.getElementById('bt-tutorial-btn');
+  if (drawer) drawer.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
+  if (btn) btn.classList.remove('open');
+};
+
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep();
+
+  await loadMyPlaytime();
+  nextLoadingStep();
+
+  await startSession();
+
+  tickInterval = setInterval(tick, 1000);
+  flushInterval = setInterval(flushPending, FLUSH_INTERVAL_MS);
+
+  setupTrackingListeners();
+
+  if (!document.hidden && window.innerWidth > 768) {
+    startTracking();
+    resetInactivity();
+  }
+
+  updateHUD();
+
+  nextLoadingStep();
+  nextLoadingStep();
+  nextLoadingStep();
+}
+
+window.addEventListener('beforeunload', () => {
+  stopTracking();
+  if (tickInterval) clearInterval(tickInterval);
+  if (flushInterval) clearInterval(flushInterval);
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  endSession();
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
+} else {
+  initPage(pageInit);
+}
+</script>
+</body>
+</html>

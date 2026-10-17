@@ -1,7 +1,12 @@
 {
-  "current": "3.5.1",
+  "current": "3.6",
   "versions": {
     "v3": [
+      {
+        "version": "3.6",
+        "date": "2026-10-17",
+        "changes": "Games system · Bloxd.io embedded play page with anti-cheat playtime tracking · Games hub with card grid · New 4-tab leaderboard (Overall, Bloxd.io, Streak, Last Online) · Overall score = (streak × 15) + (playtime_min × 0.5) · Games + Leaderboard added to sidebar and mobile drawer · Playtime tracked only while tab visible + active · Service worker cache bumped to v3.6.0"
+      },
       {
         "version": "3.5.1",
         "date": "2026-10-05",
@@ -113,17 +118,17 @@
     "v1": [
       {
         "version": "1.2",
-        "date": "2026-02-04",
+        "date": "2025-02-04",
         "changes": "Added functioning dashboard features"
       },
       {
         "version": "1.1",
-        "date": "2026-01-04",
+        "date": "2025-01-04",
         "changes": "Added live chatting"
       },
       {
         "version": "1.0",
-        "date": "2026-03-02",
+        "date": "2025-03-02",
         "changes": "First Deployment with bare things"
       }
     ]

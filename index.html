@@ -23,6 +23,707 @@
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
 <script src="/js/ads.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   RICH TEXT POST — STYLES (inline, page-specific)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── POST TEXT — renders parsed content ── */
+.post-text.rich {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.post-text.rich a {
+  color: var(--neon);
+  text-decoration: underline;
+  text-decoration-color: rgba(74,158,255,0.4);
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+.post-text.rich a:hover {
+  color: var(--neon2);
+}
+.post-text.rich strong { font-weight: 800; color: var(--text-bright); }
+.post-text.rich em { font-style: italic; }
+.post-text.rich u { text-decoration: underline; text-underline-offset: 2px; }
+.post-text.rich s { text-decoration: line-through; opacity: 0.7; }
+
+.post-text.rich .sz-small { font-size: 0.85em; }
+.post-text.rich .sz-large { font-size: 1.15em; line-height: 1.6; }
+.post-text.rich .sz-huge { font-size: 1.35em; line-height: 1.5; font-weight: 600; }
+
+/* ── LINK PREVIEW CARD (when no image) ── */
+.post-link-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  max-width: 100%;
+  overflow: hidden;
+}
+.post-link-card:hover {
+  border-color: rgba(74,158,255,0.35);
+  background: rgba(74,158,255,0.04);
+  transform: translateY(-1px);
+}
+.post-link-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.post-link-body {
+  flex: 1;
+  min-width: 0;
+}
+.post-link-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.post-link-domain {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.post-link-arrow {
+  color: var(--muted);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.post-link-card:hover .post-link-arrow {
+  color: var(--neon);
+  transform: translateX(3px);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CREATE POST MODAL
+   ═══════════════════════════════════════════════════════════ */
+.post-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: post-modal-fade 0.25s ease both;
+}
+.post-modal-overlay.show {
+  display: flex;
+}
+@keyframes post-modal-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.post-modal {
+  width: 100%;
+  max-width: 620px;
+  max-height: 92vh;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: post-modal-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+@keyframes post-modal-pop {
+  from { transform: scale(0.94) translateY(10px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.post-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.post-modal-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+.post-modal-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: none;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.post-modal-close:hover {
+  background: rgba(255,77,109,0.12);
+  color: var(--danger);
+}
+
+.post-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.post-modal-body::-webkit-scrollbar { width: 4px; }
+.post-modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* Author row */
+.post-modal-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.post-modal-av {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #000;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.post-modal-av img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  border-radius: 50%;
+}
+.post-modal-av img.loaded { display: block; }
+.post-modal-av span { position: relative; z-index: 1; }
+.post-modal-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+
+/* Toolbar */
+.post-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.pt-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  position: relative;
+}
+.pt-btn:hover {
+  background: var(--surface2);
+  color: var(--text-bright);
+}
+.pt-btn:active {
+  transform: scale(0.94);
+}
+.pt-btn.bold { font-weight: 900; }
+.pt-btn.italic { font-style: italic; font-family: Georgia, serif; font-weight: 700; }
+.pt-btn.underline { text-decoration: underline; text-underline-offset: 2px; }
+.pt-btn.strike { text-decoration: line-through; }
+
+.pt-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Size dropdown */
+.pt-size-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.pt-size-btn {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  transition: all 0.15s;
+}
+.pt-size-btn:hover {
+  background: var(--surface2);
+  color: var(--text-bright);
+}
+.pt-size-btn i {
+  font-size: 0.6rem;
+}
+.pt-size-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  min-width: 130px;
+  display: none;
+  z-index: 10;
+  animation: post-modal-pop 0.2s ease both;
+}
+.pt-size-menu.open {
+  display: block;
+}
+.pt-size-option {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pt-size-option:hover {
+  background: var(--surface);
+  color: var(--text-bright);
+}
+.pt-size-option .preview {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-family: 'Space Mono', monospace;
+}
+
+/* Link input panel (appears when link button clicked) */
+.pt-link-panel {
+  display: none;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: rgba(74,158,255,0.06);
+  border: 1px solid rgba(74,158,255,0.2);
+  border-radius: 10px;
+  animation: post-modal-pop 0.2s ease both;
+}
+.pt-link-panel.open {
+  display: flex;
+}
+.pt-link-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-bright);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  outline: none;
+  min-width: 0;
+}
+.pt-link-input:focus {
+  border-color: rgba(74,158,255,0.4);
+}
+.pt-link-add {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.pt-link-add:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(74,158,255,0.35);
+}
+.pt-link-cancel {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pt-link-cancel:hover {
+  color: var(--text-bright);
+}
+
+/* Textarea */
+.post-modal-ta {
+  width: 100%;
+  min-height: 160px;
+  max-height: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--text-bright);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.post-modal-ta:focus {
+  border-color: rgba(74,158,255,0.4);
+  background: rgba(255,255,255,0.05);
+}
+.post-modal-ta::placeholder {
+  color: var(--muted);
+}
+
+/* Hint */
+.post-modal-hint {
+  font-size: 0.72rem;
+  font-family: 'Space Mono', monospace;
+  color: var(--muted);
+  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.post-modal-hint i {
+  color: var(--neon);
+  font-size: 0.7rem;
+}
+
+/* Preview */
+.post-preview-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+}
+.post-preview-wrap.show {
+  display: flex;
+}
+.post-preview-label {
+  font-size: 0.68rem;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.post-preview-label i {
+  color: var(--neon);
+  font-size: 0.65rem;
+}
+.post-preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 40px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Image preview */
+.post-img-preview {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  display: none;
+}
+.post-img-preview.show {
+  display: block;
+}
+.post-img-preview img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+  background: rgba(0,0,0,0.2);
+}
+.post-img-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+.post-img-remove:hover {
+  background: var(--danger);
+  transform: scale(1.1);
+}
+.post-img-size {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-family: 'Space Mono', monospace;
+}
+
+/* Link preview (auto in modal, before posting) */
+.post-link-preview-modal {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+.post-link-preview-modal.show {
+  display: flex;
+}
+.post-link-preview-modal i {
+  color: var(--neon);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.post-link-preview-modal-body {
+  flex: 1;
+  min-width: 0;
+}
+.post-link-preview-modal-label {
+  font-weight: 700;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.post-link-preview-modal-domain {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  margin-top: 1px;
+}
+
+/* Footer */
+.post-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.post-modal-foot-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.post-modal-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.post-modal-cancel {
+  padding: 10px 18px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.post-modal-cancel:hover {
+  background: var(--surface);
+  color: var(--text-bright);
+}
+.post-modal-submit {
+  padding: 10px 24px;
+  border-radius: 9px;
+  border: none;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s;
+  min-width: 90px;
+  justify-content: center;
+}
+.post-modal-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(74,158,255,0.4);
+}
+.post-modal-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.post-modal-submit i {
+  font-size: 0.8rem;
+}
+
+/* Create Post button in page header */
+.create-post-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  flex-shrink: 0;
+}
+.create-post-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(74,158,255,0.4);
+}
+.create-post-btn:active {
+  transform: scale(0.97);
+}
+.create-post-btn i {
+  font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .post-modal {
+    max-height: 100vh;
+    border-radius: 0;
+    max-width: 100%;
+  }
+  .post-modal-overlay {
+    padding: 0;
+  }
+  .post-modal-body {
+    padding: 14px 16px;
+  }
+  .post-modal-head,
+  .post-modal-foot {
+    padding: 14px 16px;
+  }
+  .post-toolbar {
+    padding: 6px;
+  }
+  .pt-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+  .pt-size-btn {
+    padding: 0 8px;
+    font-size: 0.75rem;
+  }
+  .post-modal-ta {
+    min-height: 140px;
+  }
+  .post-modal-hint {
+    font-size: 0.68rem;
+  }
+  .create-post-btn span {
+    display: none;
+  }
+  .create-post-btn {
+    padding: 10px 12px;
+  }
+}
+</style>
+
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -36,9 +737,7 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  console.log('📱 App install prompt available');
 });
-
 window.addEventListener('appinstalled', () => {
   console.log('✅ App installed successfully');
 });
@@ -46,7 +745,6 @@ window.addEventListener('appinstalled', () => {
 
 </head>
 <body>
-<!-- ── LOADING SCREEN ── -->
 <div id="loading-screen">
 <div class="bg-canvas">
   <div class="orb orb1"></div>
@@ -83,7 +781,7 @@ window.addEventListener('appinstalled', () => {
     </button>
   </div>
   
-    <div class="loading-debug-hint">[ESC] force show</div>
+  <div class="loading-debug-hint">[ESC] force show</div>
 
   <div class="loading-ad-slot" id="loading-ad-slot"></div>
 </div>
@@ -94,7 +792,6 @@ window.addEventListener('appinstalled', () => {
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<!-- ── HEADER ── -->
 <header class="top-header">
   <div class="header-left">
     <a href="/" class="header-logo">
@@ -135,11 +832,12 @@ window.addEventListener('appinstalled', () => {
   </div>
 </header>
 
-<!-- ── SIDEBAR ── -->
 <aside class="sidebar" id="sidebar">
   <a href="/" class="nav-item active"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
   <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
   <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
+  <a href="/games" class="nav-item"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
+  <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
   <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
     <a href="/notifications" class="nav-item" id="notif-nav">
@@ -148,7 +846,7 @@ window.addEventListener('appinstalled', () => {
     <span class="nav-badge-count" id="notif-nav-badge">0</span>
   </a>
 
-    <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
+  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
     <i class="fas fa-chevron-right"></i>
     <span class="toggle-label">Collapse</span>
   </button>
@@ -156,7 +854,6 @@ window.addEventListener('appinstalled', () => {
   <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
 </aside>
 
-<!-- ── MAIN ── -->
 <main class="main">
   <div class="welcome-banner">
     <div>
@@ -171,43 +868,13 @@ window.addEventListener('appinstalled', () => {
       <h1>Feed</h1>
       <p id="feed-subtitle">Loading posts...</p>
     </div>
-    <button class="refresh-btn" id="refresh-btn" onclick="refreshFeed()">
-      <span class="spin"><i class="fas fa-sync-alt"></i></span> Refresh
-    </button>
-  </div>
-
-  <div class="compose-box">
-    <div class="compose-top">
-      <div class="compose-av" id="compose-av"><span id="compose-initial">?</span></div>
-      <div class="compose-name" id="compose-name">loading...</div>
-    </div>
-    <textarea class="compose-ta" id="compose-input" placeholder="What's going on at CESC?" maxlength="500" oninput="onComposeInput()"></textarea>
-    
-    <div class="image-preview-wrap" id="image-preview-wrap">
-      <img id="image-preview" src="" alt="Image preview"/>
-      <button class="image-preview-remove" onclick="removeImage()"><i class="fas fa-times"></i></button>
-      <span class="image-preview-size" id="image-preview-size">0 KB</span>
-    </div>
-    
-    <div class="compose-toolbar">
-      <button class="tool-btn" onclick="toggleEmojiPicker(event)">
-        <i class="fas fa-smile"></i> <span>Emoji</span>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <button class="create-post-btn" onclick="openPostModal()">
+        <i class="fas fa-plus"></i> <span>Create Post</span>
       </button>
-      <button class="tool-btn" onclick="document.getElementById('image-upload').click()">
-        <i class="fas fa-image"></i> <span>Image</span>
+      <button class="refresh-btn" id="refresh-btn" onclick="refreshFeed()">
+        <span class="spin"><i class="fas fa-sync-alt"></i></span> Refresh
       </button>
-      <input type="file" id="image-upload" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleImageUpload(event)"/>
-    </div>
-    
-    <div class="cooldown-bar-wrap" id="cooldown-wrap">
-      <div class="cooldown-bar" id="cooldown-bar" style="width:100%"></div>
-    </div>
-    <div class="compose-foot">
-      <span class="compose-hint" id="compose-hint">post every 3 min</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="char-count" id="char-count">0/500</span>
-        <button class="post-btn" id="post-btn" onclick="submitPost()"><i class="fas fa-paper-plane"></i> Post</button>
-      </div>
     </div>
   </div>
 
@@ -246,12 +913,121 @@ window.addEventListener('appinstalled', () => {
   </div>
 </main>
 
+<!-- ═══════════════════════════════════════════════════════════
+     CREATE POST MODAL
+     ═══════════════════════════════════════════════════════════ -->
+<div class="post-modal-overlay" id="post-modal" onclick="postModalBgClick(event)">
+  <div class="post-modal">
+    <div class="post-modal-head">
+      <div class="post-modal-title">Create Post</div>
+      <button class="post-modal-close" onclick="closePostModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="post-modal-body">
+      <!-- Author -->
+      <div class="post-modal-author">
+        <div class="post-modal-av" id="post-modal-av"><span id="post-modal-av-initial">?</span></div>
+        <div class="post-modal-name" id="post-modal-name">loading</div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="post-toolbar" id="post-toolbar">
+        <button class="pt-btn bold" title="Bold (Ctrl+B)" onclick="applyFormat('bold')"><i class="fas fa-bold"></i></button>
+        <button class="pt-btn italic" title="Italic (Ctrl+I)" onclick="applyFormat('italic')"><i class="fas fa-italic"></i></button>
+        <button class="pt-btn underline" title="Underline (Ctrl+U)" onclick="applyFormat('underline')"><i class="fas fa-underline"></i></button>
+        <button class="pt-btn strike" title="Strikethrough" onclick="applyFormat('strike')"><i class="fas fa-strikethrough"></i></button>
+        <div class="pt-divider"></div>
+        <div class="pt-size-wrap">
+          <button class="pt-size-btn" onclick="toggleSizeMenu(event)" id="pt-size-btn">
+            <i class="fas fa-text-height"></i>
+            <span id="pt-size-label">Size</span>
+            <i class="fas fa-caret-down"></i>
+          </button>
+          <div class="pt-size-menu" id="pt-size-menu">
+            <button class="pt-size-option" onclick="applySize('small')">
+              <span>Small</span>
+              <span class="preview">#text#</span>
+            </button>
+            <button class="pt-size-option" onclick="applySize('normal')">
+              <span>Normal</span>
+              <span class="preview">text</span>
+            </button>
+            <button class="pt-size-option" onclick="applySize('large')">
+              <span>Large</span>
+              <span class="preview">##text##</span>
+            </button>
+            <button class="pt-size-option" onclick="applySize('huge')">
+              <span>Huge</span>
+              <span class="preview">###text###</span>
+            </button>
+          </div>
+        </div>
+        <div class="pt-divider"></div>
+        <button class="pt-btn" title="Add link" onclick="openLinkPanel()"><i class="fas fa-link"></i></button>
+        <button class="pt-btn" title="Add image" onclick="document.getElementById('post-image-input').click()"><i class="fas fa-image"></i></button>
+        <button class="pt-btn" title="Add emoji" onclick="toggleEmojiPicker(event)"><i class="fas fa-smile"></i></button>
+        <input type="file" id="post-image-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleImageUpload(event)"/>
+      </div>
+
+      <!-- Link input panel -->
+      <div class="pt-link-panel" id="pt-link-panel">
+        <input type="text" class="pt-link-input" id="pt-link-input" placeholder="Paste URL or domain..." onkeydown="if(event.key==='Enter'){event.preventDefault();confirmLink();}" />
+        <button class="pt-link-add" onclick="confirmLink()">Add</button>
+        <button class="pt-link-cancel" onclick="closeLinkPanel()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <!-- Textarea -->
+      <textarea class="post-modal-ta" id="post-ta" placeholder="What's on your mind?" oninput="onPostInput()"></textarea>
+
+      <!-- Hint -->
+      <div class="post-modal-hint">
+        <i class="fas fa-lightbulb"></i>
+        select text + tap a style button — or type it manually
+      </div>
+
+      <!-- Preview -->
+      <div class="post-preview-wrap" id="post-preview-wrap">
+        <div class="post-preview-label"><i class="fas fa-eye"></i> preview</div>
+        <div class="post-preview rich post-text" id="post-preview"></div>
+      </div>
+
+      <!-- Image preview -->
+      <div class="post-img-preview" id="post-img-preview">
+        <img id="post-img-el" src="" alt="preview"/>
+        <button class="post-img-remove" onclick="removeImage()"><i class="fas fa-times"></i></button>
+        <span class="post-img-size" id="post-img-size">0 KB</span>
+      </div>
+
+      <!-- Link preview (auto when no image) -->
+      <div class="post-link-preview-modal" id="post-link-preview-modal">
+        <i class="fas fa-link"></i>
+        <div class="post-link-preview-modal-body">
+          <div class="post-link-preview-modal-label" id="link-preview-label">—</div>
+          <div class="post-link-preview-modal-domain" id="link-preview-domain">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="post-modal-foot">
+      <div class="post-modal-foot-left"></div>
+      <div class="post-modal-foot-right">
+        <button class="post-modal-cancel" onclick="closePostModal()">Cancel</button>
+        <button class="post-modal-submit" id="post-submit-btn" onclick="submitPost()">
+          <span>Post</span> <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Image viewer -->
 <div class="post-img-modal" id="img-modal" onclick="closeImageModal()">
   <img id="modal-img" src="" alt="Post image"/>
   <button onclick="closeImageModal()" style="position:fixed;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1000;"><i class="fas fa-times"></i></button>
 </div>
 
-<!-- ── DOWNBAR ── -->
 <nav class="downbar" id="downbar">
   <div class="downbar-inner">
     <a href="/" class="downbar-item active" id="downbar-home">
@@ -263,8 +1039,8 @@ window.addEventListener('appinstalled', () => {
     <a href="/profiles" class="downbar-item" id="downbar-profiles">
       <span class="downbar-icon"><i class="fas fa-users"></i></span>
     </a>
-    <a href="/settings" class="downbar-item" id="downbar-settings">
-      <span class="downbar-icon"><i class="fas fa-cog"></i></span>
+    <a href="/games" class="downbar-item" id="downbar-games">
+      <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
     </a>
     <button class="downbar-item more-btn" onclick="toggleDownbarMore()" id="downbar-more-btn">
       <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
@@ -290,6 +1066,14 @@ window.addEventListener('appinstalled', () => {
       <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
       <span class="downbar-more-label">Profiles</span>
     </a>
+    <a href="/games" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
+      <span class="downbar-more-label">Games</span>
+    </a>
+    <a href="/leaderboard" class="downbar-more-item">
+      <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
+      <span class="downbar-more-label">Leaderboard</span>
+    </a>
     <a href="/settings" class="downbar-more-item">
       <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
       <span class="downbar-more-label">Settings</span>
@@ -313,23 +1097,478 @@ window.addEventListener('appinstalled', () => {
 </div>
 
 <script>
-// ── PAGE-SPECIFIC CODE ──
-const POST_COOLDOWN_MS = 3 * 60 * 1000;
-const STORAGE_KEY = 'cesc_last_post_time';
+// ═══════════════════════════════════════════════════════════
+// ── PAGE STATE ──
+// ═══════════════════════════════════════════════════════════
 const MAX_IMAGE_SIZE = 500 * 1024;
 const POSTS_PER_BATCH = 10;
 
-let cooldownInterval = null;
 let pendingImageFile = null;
-let isUploading = false;
 let emojiPickerInitialized = false;
 let allPosts = [];
 let currentBatch = 0;
 let isLoadingMore = false;
 let hasMorePosts = true;
 let sentinelObserver = null;
+let postModalOpen = false;
 
-// ── EMOJI DATA ──
+// ═══════════════════════════════════════════════════════════
+// ── RICH TEXT PARSER ──
+// ═══════════════════════════════════════════════════════════
+// Order matters: links first (so [label](url) inside bold works),
+// then strike (~~), then underline (__), then bold (**), then italic (*),
+// then sizes (# / ## / ###), then newlines.
+//
+// Everything is HTML-escaped FIRST to prevent XSS.
+// Only our own generated tags reach the output.
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function sanitizeUrl(url) {
+  if (!url) return null;
+  let u = String(url).trim();
+  // Strip unsafe schemes
+  if (/^(javascript|data|vbscript):/i.test(u)) return null;
+  // If no protocol, add https://
+  if (!/^https?:\/\//i.test(u)) {
+    u = 'https://' + u;
+  }
+  try {
+    const parsed = new URL(u);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
+function extractDomain(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+// Find first link in a plain text post and return its { label, url }.
+// Used for the link preview card.
+function findFirstLink(text) {
+  if (!text) return null;
+  const re = /\[([^\]]+)\]\(([^)]+)\)/;
+  const m = text.match(re);
+  if (!m) return null;
+  const safeUrl = sanitizeUrl(m[2]);
+  if (!safeUrl) return null;
+  return { label: m[1], url: safeUrl, domain: extractDomain(safeUrl) };
+}
+
+// Core parser — takes plain text, returns sanitized HTML.
+function parseContent(text) {
+  if (!text) return '';
+
+  let s = escapeHtml(text);
+
+  // ── 1. Links: [label](url) — must run before other formatting ──
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
+    const safe = sanitizeUrl(url);
+    if (!safe) return match; // leave literal if invalid
+    return `<a href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
+
+  // ── 2. Strikethrough: ~~text~~ ──
+  s = s.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+
+  // ── 3. Underline: __text__ ──
+  s = s.replace(/__([^_]+)__/g, '<u>$1</u>');
+
+  // ── 4. Bold: **text** ──
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // ── 5. Italic: *text* (after bold so ** is already consumed) ──
+  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+  // ── 6. Sizes: ###text###, ##text##, #text# ──
+  // Order: huge first, then large, then small (all triple/double/single hashes
+  // must not be matched by shorter patterns, so they run in order).
+  s = s.replace(/###([^#\n]+)###/g, '<span class="sz-huge">$1</span>');
+  s = s.replace(/##([^#\n]+)##/g, '<span class="sz-large">$1</span>');
+  s = s.replace(/#([^#\n]+)#/g, '<span class="sz-small">$1</span>');
+
+  // ── 7. Newlines to <br> (except inside code — we don't support code) ──
+  s = s.replace(/\n/g, '<br>');
+
+  return s;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── CREATE POST MODAL ──
+// ═══════════════════════════════════════════════════════════
+
+function openPostModal() {
+  if (!window.session || !window.currentUser) {
+    window.showToast('You must be logged in', 'error');
+    return;
+  }
+
+  postModalOpen = true;
+  document.getElementById('post-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  // Fill author
+  const displayName = window.currentUser.display_name || window.currentUser.username;
+  document.getElementById('post-modal-name').textContent = displayName;
+  document.getElementById('post-modal-av-initial').textContent = (window.currentUser.username?.[0] || '?').toUpperCase();
+
+  const av = document.getElementById('post-modal-av');
+  const oldImg = av.querySelector('img');
+  if (oldImg) oldImg.remove();
+  if (window.currentUser.pfp_url) {
+    const img = document.createElement('img');
+    img.src = window.currentUser.pfp_url;
+    img.onload = () => { img.classList.add('loaded'); document.getElementById('post-modal-av-initial').style.display = 'none'; };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+
+  // Reset
+  document.getElementById('post-ta').value = '';
+  document.getElementById('post-preview').innerHTML = '';
+  document.getElementById('post-preview-wrap').classList.remove('show');
+  document.getElementById('post-img-preview').classList.remove('show');
+  document.getElementById('post-link-preview-modal').classList.remove('show');
+  document.getElementById('pt-link-panel').classList.remove('open');
+  document.getElementById('pt-size-menu').classList.remove('open');
+  pendingImageFile = null;
+
+  setTimeout(() => document.getElementById('post-ta').focus(), 100);
+}
+
+function closePostModal() {
+  const text = document.getElementById('post-ta').value.trim();
+  if (text || pendingImageFile) {
+    if (!confirm('Discard this post?')) return;
+  }
+  postModalOpen = false;
+  document.getElementById('post-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  document.getElementById('pt-size-menu').classList.remove('open');
+  document.getElementById('pt-link-panel').classList.remove('open');
+}
+
+function postModalBgClick(e) {
+  if (e.target.id === 'post-modal') closePostModal();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && postModalOpen) {
+    const sizeMenu = document.getElementById('pt-size-menu');
+    const linkPanel = document.getElementById('pt-link-panel');
+    if (sizeMenu?.classList.contains('open')) {
+      sizeMenu.classList.remove('open');
+      return;
+    }
+    if (linkPanel?.classList.contains('open')) {
+      linkPanel.classList.remove('open');
+      return;
+    }
+    closePostModal();
+  }
+});
+
+// ── Live preview + link preview auto-update ──
+function onPostInput() {
+  const text = document.getElementById('post-ta').value;
+
+  // Live preview
+  const wrap = document.getElementById('post-preview-wrap');
+  const preview = document.getElementById('post-preview');
+  if (text.trim()) {
+    wrap.classList.add('show');
+    preview.innerHTML = parseContent(text);
+  } else {
+    wrap.classList.remove('show');
+    preview.innerHTML = '';
+  }
+
+  // Auto link preview (only if no image)
+  const linkPreview = document.getElementById('post-link-preview-modal');
+  if (!pendingImageFile && text.trim()) {
+    const link = findFirstLink(text);
+    if (link) {
+      document.getElementById('link-preview-label').textContent = link.label;
+      document.getElementById('link-preview-domain').textContent = link.domain;
+      linkPreview.classList.add('show');
+    } else {
+      linkPreview.classList.remove('show');
+    }
+  } else {
+    linkPreview.classList.remove('show');
+  }
+}
+
+// ── Toolbar: wrap selection with markers ──
+function wrapSelection(open, close) {
+  const ta = document.getElementById('post-ta');
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const value = ta.value;
+
+  if (start === end) {
+    // No selection — insert markers and place cursor between
+    ta.value = value.slice(0, start) + open + close + value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + open.length;
+  } else {
+    // Wrap selection
+    const selected = value.slice(start, end);
+    ta.value = value.slice(0, start) + open + selected + close + value.slice(end);
+    ta.selectionStart = start + open.length;
+    ta.selectionEnd = end + open.length;
+  }
+
+  ta.focus();
+  onPostInput();
+}
+
+function applyFormat(type) {
+  const markers = {
+    bold: ['**', '**'],
+    italic: ['*', '*'],
+    underline: ['__', '__'],
+    strike: ['~~', '~~']
+  };
+  const m = markers[type];
+  if (!m) return;
+  wrapSelection(m[0], m[1]);
+}
+
+// ── Size menu ──
+function toggleSizeMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('pt-size-menu');
+  menu.classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  const menu = document.getElementById('pt-size-menu');
+  const btn = document.getElementById('pt-size-btn');
+  if (menu && menu.classList.contains('open')) {
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.classList.remove('open');
+    }
+  }
+});
+
+function applySize(size) {
+  const ta = document.getElementById('post-ta');
+  document.getElementById('pt-size-menu').classList.remove('open');
+
+  // If there's already a size marker around the selection, strip it first
+  let start = ta.selectionStart;
+  let end = ta.selectionEnd;
+  let value = ta.value;
+
+  // Strip any leading size marker right before selection
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+  const stripRe = /(###|##|#)$/;
+  const stripBefore = before.replace(stripRe, '');
+  const stripAfter = after.replace(/^(###|##|#)/, '');
+
+  // Are we inside a size marker? Then apply a new one (or strip if "normal")
+  start = stripBefore.length;
+  end = stripBefore.length + (end - start);
+  value = stripBefore + value.slice(ta.selectionStart, end) + stripAfter;
+
+  const selected = value.slice(start, end);
+
+  if (size === 'normal') {
+    // Just wrap with nothing (strip any markers already there)
+    ta.value = value.slice(0, start) + selected + value.slice(end);
+    ta.selectionStart = start;
+    ta.selectionEnd = end;
+  } else {
+    const markers = {
+      small: ['#', '#'],
+      large: ['##', '##'],
+      huge: ['###', '###']
+    };
+    const [open, close] = markers[size];
+    ta.value = value.slice(0, start) + open + selected + close + value.slice(end);
+    ta.selectionStart = start + open.length;
+    ta.selectionEnd = end + open.length;
+  }
+
+  ta.focus();
+  onPostInput();
+}
+
+// ── Link panel ──
+function openLinkPanel() {
+  const panel = document.getElementById('pt-link-panel');
+  panel.classList.add('open');
+  const input = document.getElementById('pt-link-input');
+  input.value = '';
+  setTimeout(() => input.focus(), 80);
+}
+
+function closeLinkPanel() {
+  document.getElementById('pt-link-panel').classList.remove('open');
+}
+
+function confirmLink() {
+  const input = document.getElementById('pt-link-input');
+  const url = input.value.trim();
+  if (!url) { closeLinkPanel(); return; }
+
+  const safe = sanitizeUrl(url);
+  if (!safe) {
+    window.showToast('Invalid URL', 'error');
+    return;
+  }
+
+  const ta = document.getElementById('post-ta');
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const value = ta.value;
+
+  let label;
+  if (start === end) {
+    // No selection — use domain as default label
+    label = extractDomain(safe) || safe;
+    // Insert [label](url) at cursor
+    const insertion = `[${label}](${safe})`;
+    ta.value = value.slice(0, start) + insertion + value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + insertion.length;
+  } else {
+    // Wrap selected text
+    label = value.slice(start, end);
+    const insertion = `[${label}](${safe})`;
+    ta.value = value.slice(0, start) + insertion + value.slice(end);
+    ta.selectionStart = start + insertion.length;
+    ta.selectionEnd = start + insertion.length;
+  }
+
+  ta.focus();
+  closeLinkPanel();
+  onPostInput();
+}
+
+// ── Image upload ──
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > MAX_IMAGE_SIZE) {
+    window.showToast(`Image too large (${(file.size/1024).toFixed(0)}KB). Max 500KB`, 'error');
+    e.target.value = '';
+    return;
+  }
+  pendingImageFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('post-img-el').src = ev.target.result;
+    document.getElementById('post-img-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+    document.getElementById('post-img-preview').classList.add('show');
+    // Hide link preview when image is present
+    document.getElementById('post-link-preview-modal').classList.remove('show');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function removeImage() {
+  pendingImageFile = null;
+  document.getElementById('post-img-preview').classList.remove('show');
+  document.getElementById('post-img-el').src = '';
+  // Re-check for link preview
+  onPostInput();
+}
+
+// ── Upload image to Supabase ──
+async function uploadImage(file) {
+  if (!file) return null;
+  const ext = file.name.split('.').pop();
+  const path = `${window.session.user.id}/${Date.now()}.${ext}`;
+  const { error } = await window.supabaseClient.storage.from('post-images').upload(path, file, {
+    contentType: file.type
+  });
+  if (error) {
+    window.showToast('Image upload failed: ' + error.message, 'error');
+    return null;
+  }
+  const { data: urlData } = window.supabaseClient.storage.from('post-images').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+// ── Submit post ──
+async function submitPost() {
+  const text = document.getElementById('post-ta').value.trim();
+  if (!text && !pendingImageFile) {
+    window.showToast('write something or add an image', 'error');
+    return;
+  }
+  if (!window.session || !window.session.user) {
+    window.showToast('You must be logged in', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('post-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  let image_url = null;
+  if (pendingImageFile) {
+    image_url = await uploadImage(pendingImageFile);
+    if (!image_url) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Post</span> <i class="fas fa-paper-plane"></i>';
+      return;
+    }
+  }
+
+  const displayName = window.currentUser.display_name || window.currentUser.username;
+
+  const { error } = await window.supabaseClient.from('posts').insert({
+    user_id: window.session.user.id,
+    username: window.currentUser.username,
+    display_name: displayName,
+    content: text || '📷',
+    image_url: image_url
+  });
+
+  if (error) {
+    window.showToast('post failed: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<span>Post</span> <i class="fas fa-paper-plane"></i>';
+    return;
+  }
+
+  // Reset
+  document.getElementById('post-ta').value = '';
+  document.getElementById('post-preview').innerHTML = '';
+  document.getElementById('post-preview-wrap').classList.remove('show');
+  document.getElementById('post-img-preview').classList.remove('show');
+  document.getElementById('post-link-preview-modal').classList.remove('show');
+  pendingImageFile = null;
+  btn.disabled = false;
+  btn.innerHTML = '<span>Post</span> <i class="fas fa-paper-plane"></i>';
+
+  window.showToast('posted!', 'success');
+  closePostModal();
+  await refreshFeed();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── EMOJI PICKER (reused for modal) ──
+// ═══════════════════════════════════════════════════════════
 const EMOJIS = [
   '😀','😁','😂','🤣','😊','😍','🥰','😘','😜','😝','😛','🤑','🤪','😋','😇','🤗',
   '🤩','🥳','😎','🤓','🧐','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩',
@@ -342,7 +1581,67 @@ const EMOJIS = [
   '⌨️','🖥️','📷','📸','📹','🎬','📺','🎵','📚','📖','✏️','📝','📌','📍','🔗','📎'
 ];
 
-// ── LOADING STEPS ──
+function initEmojiPicker() {
+  if (emojiPickerInitialized) return;
+  const grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  const frag = document.createDocumentFragment();
+  EMOJIS.forEach(emoji => {
+    const span = document.createElement('span');
+    span.textContent = emoji;
+    span.onclick = () => insertEmoji(emoji);
+    frag.appendChild(span);
+  });
+  grid.appendChild(frag);
+  emojiPickerInitialized = true;
+}
+
+function positionEmojiPicker() {
+  const picker = document.getElementById('emoji-picker');
+  const toolbar = document.getElementById('post-toolbar');
+  if (!picker || !toolbar) return;
+  const rect = toolbar.getBoundingClientRect();
+  picker.style.top = (rect.bottom + 8) + 'px';
+  picker.style.left = rect.left + 'px';
+  picker.style.width = Math.min(rect.width, 400) + 'px';
+}
+
+function toggleEmojiPicker(e) {
+  if (e) e.stopPropagation();
+  const picker = document.getElementById('emoji-picker');
+  if (!picker) return;
+  if (!emojiPickerInitialized) initEmojiPicker();
+  const isOpen = picker.classList.contains('open');
+  if (isOpen) {
+    picker.classList.remove('open');
+  } else {
+    positionEmojiPicker();
+    picker.classList.add('open');
+    document.getElementById('pt-size-menu').classList.remove('open');
+  }
+}
+
+function insertEmoji(emoji) {
+  const input = document.getElementById('post-ta');
+  const pos = input.selectionStart ?? input.value.length;
+  input.value = input.value.slice(0, pos) + emoji + input.value.slice(pos);
+  input.selectionStart = input.selectionEnd = pos + emoji.length;
+  input.focus();
+  onPostInput();
+}
+
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('emoji-picker');
+  if (!picker || !picker.classList.contains('open')) return;
+  if (picker.contains(e.target)) return;
+  if (e.target.closest('.tool-btn')) return;
+  if (e.target.closest('.pt-btn')) return;
+  picker.classList.remove('open');
+});
+
+// ═══════════════════════════════════════════════════════════
+// ── FEED LOADING ──
+// ═══════════════════════════════════════════════════════════
 function definePageSteps() {
   defineLoadingSteps([
     { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
@@ -356,7 +1655,6 @@ function definePageSteps() {
   ]);
 }
 
-// ── INFINITE SCROLL ──
 function setupInfiniteScroll() {
   if (sentinelObserver) sentinelObserver.disconnect();
   const sentinel = document.getElementById('feed-sentinel');
@@ -371,7 +1669,6 @@ function setupInfiniteScroll() {
   sentinelObserver.observe(sentinel);
 }
 
-// ── BATCH COMMENT COUNTS ──
 async function attachCommentCounts(posts) {
   if (!posts || posts.length === 0) return;
   const ids = posts.map(p => p.id);
@@ -390,7 +1687,6 @@ async function attachCommentCounts(posts) {
   });
 }
 
-// ── BATCH LIKE DATA (counts + liked-state from likes table) ──
 async function attachLikeData(posts) {
   if (!posts || posts.length === 0) return;
   const ids = posts.map(p => p.id);
@@ -400,10 +1696,7 @@ async function attachLikeData(posts) {
     .select('post_id, user_id')
     .in('post_id', ids);
   
-  if (error) {
-    console.error('Failed to load likes:', error);
-    return;
-  }
+  if (error) return;
   
   const counts = {};
   const likedByMe = new Set();
@@ -465,269 +1758,9 @@ async function loadMorePosts() {
   }
 }
 
-// ── EMOJI PICKER ──
-function initEmojiPicker() {
-  if (emojiPickerInitialized) return;
-  const grid = document.getElementById('emoji-grid');
-  if (!grid) return;
-  const frag = document.createDocumentFragment();
-  EMOJIS.forEach(emoji => {
-    const span = document.createElement('span');
-    span.textContent = emoji;
-    span.onclick = () => insertEmoji(emoji);
-    frag.appendChild(span);
-  });
-  grid.appendChild(frag);
-  emojiPickerInitialized = true;
-}
-
-function positionEmojiPicker() {
-  const picker = document.getElementById('emoji-picker');
-  const composeBox = document.querySelector('.compose-box');
-  if (!picker || !composeBox) return;
-  const rect = composeBox.getBoundingClientRect();
-  picker.style.top = (rect.bottom + 8) + 'px';
-  picker.style.left = rect.left + 'px';
-  picker.style.width = rect.width + 'px';
-}
-
-function toggleEmojiPicker(e) {
-  if (e) e.stopPropagation();
-  const picker = document.getElementById('emoji-picker');
-  if (!picker) return;
-  if (!emojiPickerInitialized) initEmojiPicker();
-  const isOpen = picker.classList.contains('open');
-  if (isOpen) {
-    picker.classList.remove('open');
-  } else {
-    positionEmojiPicker();
-    picker.classList.add('open');
-  }
-}
-
-function insertEmoji(emoji) {
-  const input = document.getElementById('compose-input');
-  const pos = input.selectionStart ?? input.value.length;
-  input.value = input.value.slice(0, pos) + emoji + input.value.slice(pos);
-  input.selectionStart = input.selectionEnd = pos + emoji.length;
-  input.focus();
-  onComposeInput();
-}
-
-document.addEventListener('click', (e) => {
-  const picker = document.getElementById('emoji-picker');
-  if (!picker || !picker.classList.contains('open')) return;
-  if (picker.contains(e.target)) return;
-  if (e.target.closest('.tool-btn')) return;
-  picker.classList.remove('open');
-});
-
-document.addEventListener('click', (e) => {
-  if (e.target.closest('.opts-menu') || e.target.closest('.post-opts-btn')) return;
-  document.querySelectorAll('.opts-menu.open').forEach(m => m.classList.remove('open'));
-});
-
-window.addEventListener('scroll', () => {
-  const picker = document.getElementById('emoji-picker');
-  if (picker && picker.classList.contains('open')) positionEmojiPicker();
-}, { passive: true });
-window.addEventListener('resize', () => {
-  const picker = document.getElementById('emoji-picker');
-  if (picker && picker.classList.contains('open')) positionEmojiPicker();
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.getElementById('emoji-picker')?.classList.remove('open');
-    document.querySelectorAll('.opts-menu.open').forEach(m => m.classList.remove('open'));
-    closeImageModal();
-  }
-});
-
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    const input = document.getElementById('compose-input');
-    if (document.activeElement === input) {
-      e.preventDefault();
-      submitPost();
-    }
-  }
-});
-
-// ── IMAGE UPLOAD ──
-function handleImageUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > MAX_IMAGE_SIZE) {
-    window.showToast(`Image too large (${(file.size/1024).toFixed(0)}KB). Max 500KB 💀`, 'error');
-    e.target.value = '';
-    return;
-  }
-  pendingImageFile = file;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const preview = document.getElementById('image-preview');
-    const wrap = document.getElementById('image-preview-wrap');
-    const size = document.getElementById('image-preview-size');
-    preview.src = ev.target.result;
-    size.textContent = (file.size / 1024).toFixed(1) + ' KB';
-    wrap.classList.add('show');
-  };
-  reader.readAsDataURL(file);
-  e.target.value = '';
-}
-
-function removeImage() {
-  pendingImageFile = null;
-  document.getElementById('image-preview-wrap').classList.remove('show');
-  document.getElementById('image-preview').src = '';
-}
-
-// ── COMPOSE ──
-function onComposeInput() {
-  const v = document.getElementById('compose-input').value;
-  const el = document.getElementById('char-count');
-  el.textContent = v.length + '/500';
-  if (v.length >= 500) el.className = 'char-count full';
-  else if (v.length > 450) el.className = 'char-count near';
-  else el.className = 'char-count';
-}
-
-function getLastPostTime() {
-  return parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
-}
-function setLastPostTime() {
-  localStorage.setItem(STORAGE_KEY, Date.now() + '');
-}
-function getRemainingCooldown() {
-  return Math.max(0, POST_COOLDOWN_MS - (Date.now() - getLastPostTime()));
-}
-
-function updateCooldownUI() {
-  const r = getRemainingCooldown();
-  const btn = document.getElementById('post-btn');
-  const hint = document.getElementById('compose-hint');
-  const wrap = document.getElementById('cooldown-wrap');
-  const bar = document.getElementById('cooldown-bar');
-  
-  if (r > 0) {
-    btn.disabled = true;
-    const m = Math.floor(r / 60000);
-    const s = Math.floor((r % 60000) / 1000);
-    hint.textContent = `wait ${m}:${String(s).padStart(2, '0')} before next post`;
-    hint.className = 'compose-hint warn';
-    wrap.classList.add('show');
-    bar.style.width = ((r / POST_COOLDOWN_MS) * 100) + '%';
-    
-    if (!cooldownInterval) {
-      cooldownInterval = setInterval(() => {
-        const r2 = getRemainingCooldown();
-        if (r2 <= 0) {
-          clearInterval(cooldownInterval);
-          cooldownInterval = null;
-          btn.disabled = false;
-          hint.textContent = 'post every 3 min';
-          hint.className = 'compose-hint';
-          wrap.classList.remove('show');
-        } else {
-          const m2 = Math.floor(r2 / 60000);
-          const s2 = Math.floor((r2 % 60000) / 1000);
-          hint.textContent = `wait ${m2}:${String(s2).padStart(2, '0')} before next post`;
-          bar.style.width = ((r2 / POST_COOLDOWN_MS) * 100) + '%';
-        }
-      }, 1000);
-    }
-  } else {
-    btn.disabled = false;
-    hint.textContent = 'post every 3 min';
-    hint.className = 'compose-hint';
-    wrap.classList.remove('show');
-  }
-}
-
-window.addEventListener('beforeunload', () => {
-  if (cooldownInterval) clearInterval(cooldownInterval);
-});
-
-async function uploadImage(file) {
-  if (!file) return null;
-  const ext = file.name.split('.').pop();
-  const path = `${window.session.user.id}/${Date.now()}.${ext}`;
-  const { error } = await window.supabaseClient.storage.from('post-images').upload(path, file, {
-    contentType: file.type
-  });
-  if (error) {
-    window.showToast('Image upload failed: ' + error.message, 'error');
-    return null;
-  }
-  const { data: urlData } = window.supabaseClient.storage.from('post-images').getPublicUrl(path);
-  return urlData.publicUrl;
-}
-
-// ── SUBMIT POST ──
-async function submitPost() {
-  const text = document.getElementById('compose-input').value.trim();
-  if (!text && !pendingImageFile) {
-    window.showToast('write something or add an image 💀', 'error');
-    return;
-  }
-  if (getRemainingCooldown() > 0) {
-    window.showToast('cooldown active, chill ⏳', 'error');
-    return;
-  }
-  if (!window.session || !window.session.user) {
-    window.showToast('You must be logged in', 'error');
-    return;
-  }
-  if (isUploading) return;
-  
-  const btn = document.getElementById('post-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting';
-  isUploading = true;
-  
-  let image_url = null;
-  if (pendingImageFile) {
-    image_url = await uploadImage(pendingImageFile);
-    if (!image_url) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
-      isUploading = false;
-      return;
-    }
-  }
-  
-  const displayName = window.currentUser.display_name || window.currentUser.username;
-  
-  const { error } = await window.supabaseClient.from('posts').insert({
-    user_id: window.session.user.id,
-    username: window.currentUser.username,
-    display_name: displayName,
-    content: text || '📷',
-    image_url: image_url
-  });
-  
-  if (error) {
-    window.showToast('post failed: ' + error.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
-    isUploading = false;
-    return;
-  }
-  
-  setLastPostTime();
-  document.getElementById('compose-input').value = '';
-  document.getElementById('char-count').textContent = '0/500';
-  document.getElementById('char-count').className = 'char-count';
-  removeImage();
-  btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
-  isUploading = false;
-  updateCooldownUI();
-  window.showToast('posted! 🔥', 'success');
-  await refreshFeed();
-}
-
-// ── FEED ──
+// ═══════════════════════════════════════════════════════════
+// ── FEED RENDER ──
+// ═══════════════════════════════════════════════════════════
 async function refreshFeed() {
   const btn = document.getElementById('refresh-btn');
   btn.classList.add('loading');
@@ -740,7 +1773,6 @@ async function refreshFeed() {
   document.getElementById('feed-loading').textContent = 'Loading more posts...';
   await loadFeed();
 
-  // ── ADS: re-mount feed injection after refresh ──
   try {
     if (window.Ads && typeof window.Ads.mountFeedInjection === 'function') {
       setTimeout(() => {
@@ -757,7 +1789,6 @@ async function refreshFeed() {
 async function loadFeed() {
   const feedEl = document.getElementById('feed');
   
-  // ── Fetch posts AND profiles IN PARALLEL, then wait for both ──
   const [postsRes, profilesRes] = await Promise.all([
     window.supabaseClient
       .from('posts')
@@ -775,7 +1806,6 @@ async function loadFeed() {
   
   allPosts = postsRes.data || [];
   
-  // ── Populate pfpCache BEFORE building any cards ──
   if (profilesRes.data) {
     profilesRes.data.forEach(p => {
       if (p.pfp_url) window.pfpCache[p.username] = p.pfp_url;
@@ -812,7 +1842,7 @@ async function loadFeed() {
   }
 }
 
-// ── BUILD POST CARD ──
+// ── Build post card (uses parseContent) ──
 function buildPostCard(post) {
   const card = document.createElement('div');
   card.className = 'post-card';
@@ -823,11 +1853,9 @@ function buildPostCard(post) {
   const top = document.createElement('div');
   top.className = 'post-top';
   
-  // Resolve pfp: prefer explicit post.pfp_url, then cache
   const resolvedPfp = post.pfp_url || window.pfpCache[post.username] || null;
   top.appendChild(window.buildAvatar(post.username, resolvedPfp));
   
-  // If we didn't have a pfp cached, fetch it in the background and swap
   if (!resolvedPfp && post.username && !window._pfpFetching?.[post.username]) {
     window._pfpFetching = window._pfpFetching || {};
     window._pfpFetching[post.username] = true;
@@ -840,7 +1868,6 @@ function buildPostCard(post) {
         window._pfpFetching[post.username] = false;
         if (data?.pfp_url) {
           window.pfpCache[post.username] = data.pfp_url;
-          // Find the avatar div we just built and update it
           const avatarEl = top.querySelector('.avatar');
           if (avatarEl && !avatarEl.querySelector('img')) {
             const span = avatarEl.querySelector('span');
@@ -894,22 +1921,35 @@ function buildPostCard(post) {
   }
   card.appendChild(top);
   
+  // ── POST BODY: rich parsed content ──
   const body = document.createElement('div');
   body.className = 'post-body';
-  body.innerHTML = `<div class="post-text">${window.escapeHTML(post.content)}</div>`;
+
+  const textHTML = post.content
+    ? `<div class="post-text rich">${parseContent(post.content)}</div>`
+    : '';
+
+  // Image OR link preview card
+  let mediaHTML = '';
   if (post.image_url) {
-    const imgWrap = document.createElement('div');
-    imgWrap.className = 'post-img-wrap';
-    const img = document.createElement('img');
-    img.className = 'post-img';
-    img.src = post.image_url;
-    img.alt = 'Post image';
-    img.loading = 'lazy';
-    img.onclick = (e) => { e.stopPropagation(); openImageModal(post.image_url); };
-    img.onerror = () => { imgWrap.remove(); };
-    imgWrap.appendChild(img);
-    body.appendChild(imgWrap);
+    mediaHTML = `<div class="post-img-wrap"><img class="post-img" src="${window.escapeHTML(post.image_url)}" alt="Post image" loading="lazy" onclick="event.stopPropagation();openImageModal('${window.escapeHTML(post.image_url)}')" onerror="this.parentElement.remove()"/></div>`;
+  } else {
+    const link = findFirstLink(post.content);
+    if (link) {
+      mediaHTML = `
+        <a class="post-link-card" href="${window.escapeHTML(link.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
+          <div class="post-link-icon"><i class="fas fa-link"></i></div>
+          <div class="post-link-body">
+            <div class="post-link-label">${window.escapeHTML(link.label)}</div>
+            <div class="post-link-domain">${window.escapeHTML(link.domain)}</div>
+          </div>
+          <div class="post-link-arrow"><i class="fas fa-arrow-right"></i></div>
+        </a>
+      `;
+    }
   }
+
+  body.innerHTML = textHTML + mediaHTML;
   card.appendChild(body);
   
   const actions = document.createElement('div');
@@ -986,7 +2026,6 @@ async function deletePost(postId) {
   window.showToast('post deleted', 'success');
 }
 
-// ── TOGGLE LIKE (uses likes table only, no posts.likes update) ──
 async function toggleLike(postId, btn) {
   if (!window.session || !window.session.user) {
     window.showToast('You must be logged in', 'error');
@@ -997,7 +2036,6 @@ async function toggleLike(postId, btn) {
   const countEl = btn.querySelector('.like-count');
   const currentCount = parseInt(countEl.textContent) || 0;
   
-  // Optimistic UI
   if (liked) {
     btn.classList.remove('liked');
     countEl.textContent = Math.max(0, currentCount - 1);
@@ -1017,12 +2055,10 @@ async function toggleLike(postId, btn) {
     ({ error } = await window.supabaseClient
       .from('likes')
       .insert({ post_id: postId, user_id: window.session.user.id }));
-    // duplicate — already liked, keep UI as liked
     if (error && error.code === '23505') return;
   }
   
   if (error) {
-    // Revert UI on failure
     if (liked) {
       btn.classList.add('liked');
       countEl.textContent = currentCount;
@@ -1041,7 +2077,6 @@ async function toggleComments(postId, card) {
   if (!open) await loadComments(postId);
 }
 
-// ── LOAD COMMENTS ──
 async function loadComments(postId) {
   const list = document.getElementById('cl-' + postId);
   const { data: comments } = await window.supabaseClient
@@ -1075,13 +2110,12 @@ async function loadComments(postId) {
   list.appendChild(frag);
 }
 
-// ── SUBMIT COMMENT ──
 async function submitComment(postId) {
   const input = document.getElementById('ci-' + postId);
   const text = input.value.trim();
   
   if (!text) {
-    window.showToast('write a comment first 💀', 'error');
+    window.showToast('write a comment first', 'error');
     return;
   }
   if (!window.session || !window.session.user) {
@@ -1128,7 +2162,6 @@ async function submitComment(postId) {
   }
 }
 
-// ── IMAGE MODAL ──
 function openImageModal(url) {
   const modal = document.getElementById('img-modal');
   const img = document.getElementById('modal-img');
@@ -1139,11 +2172,19 @@ function closeImageModal() {
   document.getElementById('img-modal').classList.remove('show');
 }
 
-// ── EXPOSE FUNCTIONS ──
-window.toggleEmojiPicker = toggleEmojiPicker;
+// ── EXPOSE ──
+window.openPostModal = openPostModal;
+window.closePostModal = closePostModal;
+window.postModalBgClick = postModalBgClick;
+window.onPostInput = onPostInput;
+window.applyFormat = applyFormat;
+window.applySize = applySize;
+window.toggleSizeMenu = toggleSizeMenu;
+window.openLinkPanel = openLinkPanel;
+window.closeLinkPanel = closeLinkPanel;
+window.confirmLink = confirmLink;
 window.handleImageUpload = handleImageUpload;
 window.removeImage = removeImage;
-window.onComposeInput = onComposeInput;
 window.submitPost = submitPost;
 window.refreshFeed = refreshFeed;
 window.deletePost = deletePost;
@@ -1152,6 +2193,7 @@ window.toggleComments = toggleComments;
 window.submitComment = submitComment;
 window.openImageModal = openImageModal;
 window.closeImageModal = closeImageModal;
+window.toggleEmojiPicker = toggleEmojiPicker;
 
 // ── PAGE INIT ──
 async function pageInit() {
@@ -1160,13 +2202,9 @@ async function pageInit() {
   
   nextLoadingStep();
   
-    nextLoadingStep();
+  nextLoadingStep();
   await loadFeed();
   
-  // ── ADS: mount feed injection after posts are rendered ──
-  // Note: shared.js's initPage awaits Ads.init() and calls Ads.reRenderAll()
-  // after the page finishes loading, which handles this too. But we also
-  // try here in case the page is loaded without a full init cycle.
   try {
     const tryMountFeedAd = (attempt = 0) => {
       if (!window.Ads || typeof window.Ads.getCached !== 'function') {
@@ -1192,7 +2230,6 @@ async function pageInit() {
   
   nextLoadingStep();
   
-  updateCooldownUI();
   setupInfiniteScroll();
   
   const params = new URLSearchParams(window.location.search);

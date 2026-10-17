@@ -137,7 +137,9 @@ if ('serviceWorker' in navigator) {
   <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
   <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
   <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
-  <a href="/settings" class="nav-item active"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
+  <a href="/games" class="nav-item"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
+  <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
+  <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
   <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
     <a href="/notifications" class="nav-item" id="notif-nav">
     <span class="nav-icon"><i class="fas fa-bell"></i></span>
@@ -345,9 +347,9 @@ if ('serviceWorker' in navigator) {
     <a href="/profiles" class="downbar-item" id="downbar-profiles">
       <span class="downbar-icon"><i class="fas fa-users"></i></span>
     </a>
-    <a href="/settings" class="downbar-item active" id="downbar-settings">
-      <span class="downbar-icon"><i class="fas fa-cog"></i></span>
-    </a>
+    <a href="/games" class="downbar-item" id="downbar-games">
+  <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
+</a>
     <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
       <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
     </button>
@@ -371,9 +373,17 @@ if ('serviceWorker' in navigator) {
       <span class="downbar-more-label">Chat</span>
     </a>
     <a href="/profiles" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
-      <span class="downbar-more-label">Profiles</span>
-    </a>
+  <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
+  <span class="downbar-more-label">Profiles</span>
+</a>
+<a href="/games" class="downbar-more-item">
+  <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
+  <span class="downbar-more-label">Games</span>
+</a>
+<a href="/leaderboard" class="downbar-more-item">
+  <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
+  <span class="downbar-more-label">Leaderboard</span>
+</a>
     <a href="/settings" class="downbar-more-item active">
       <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
       <span class="downbar-more-label">Settings</span>

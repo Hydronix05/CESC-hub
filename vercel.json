@@ -18,6 +18,18 @@
       "destination": "/profiles.html"
     },
     {
+      "source": "/games",
+      "destination": "/games.html"
+    },
+    {
+      "source": "/games/bloxdio",
+      "destination": "/games/bloxdio.html"
+    },
+    {
+      "source": "/leaderboard",
+      "destination": "/leaderboard.html"
+    },
+    {
       "source": "/settings",
       "destination": "/settings.html"
     },
