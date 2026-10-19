@@ -2480,18 +2480,42 @@ async function createDMConversation() {
   activeChat.conversationId = newConvo.id;
   activeChat.ephemeral = false;
 
-  const members = [
-    { conversation_id: newConvo.id, user_id: window.session.user.id, role: 'member' }
-  ];
-  if (activeChat.otherProfile?.id) {
-    members.push({ conversation_id: newConvo.id, user_id: activeChat.otherProfile.id, role: 'member' });
+  // Insert creator's own row first
+  const { error: selfErr } = await window.supabaseClient
+    .from('conversation_members')
+    .insert({
+      conversation_id: newConvo.id,
+      user_id: window.session.user.id,
+      role: 'member'
+    })
+    .select('user_id')
+    .single();
+
+  if (selfErr) {
+    console.error('add self as member failed:', selfErr);
+    window.showToast('Could not join conversation: ' + selfErr.message, 'error');
+    return false;
   }
 
-  const { error: mErr } = await window.supabaseClient
-    .from('conversation_members').insert(members);
-  if (mErr) {
-    console.error('add members error:', mErr);
-    window.showToast('Add members failed: ' + mErr.message, 'error');
+  // Insert the other participant's row (allowed by RLS via DM relationship)
+  if (activeChat.otherProfile?.id) {
+    const { error: otherErr } = await window.supabaseClient
+      .from('conversation_members')
+      .insert({
+        conversation_id: newConvo.id,
+        user_id: activeChat.otherProfile.id,
+        role: 'member'
+      })
+      .select('user_id')
+      .single();
+
+    if (otherErr) {
+      console.error('add other as member failed:', otherErr);
+      // Non-fatal: the conversation exists, the creator is a member.
+      // The recipient will be added later by ensureMembership when they open the chat.
+      // Still, surface it so we know.
+      window.showToast('Note: recipient not added yet: ' + otherErr.message, 'error');
+    }
   }
 
   return true;
@@ -2515,9 +2539,18 @@ async function ensureMembership(conversationId) {
 
   if (toAdd.length === 0) return;
 
-  const { error } = await window.supabaseClient
-    .from('conversation_members').insert(toAdd);
-  if (error) console.error('ensureMembership insert:', error);
+  for (const row of toAdd) {
+    const { error } = await window.supabaseClient
+      .from('conversation_members')
+      .insert(row)
+      .select('user_id')
+      .single();
+    if (error) {
+      console.error('ensureMembership insert row failed:', error);
+      // Try once more without .select() as a last-resort fallback
+      await window.supabaseClient.from('conversation_members').insert(row);
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
