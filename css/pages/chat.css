@@ -657,6 +657,8 @@
   display: flex;
   flex-direction: column;
   scroll-behavior: smooth;
+  /* Prevents scroll-anchoring jitter when we prepend older messages */
+  overflow-anchor: none;
 }
 .messages::-webkit-scrollbar { width: 4px; }
 .messages::-webkit-scrollbar-track { background: transparent; }
@@ -2077,4 +2079,47 @@
   .note-modal { padding: 22px 18px 18px; }
   .note-view-avatar { width: 60px; height: 60px; font-size: 1.3rem; }
   .note-view-content { font-size: 0.95rem; padding: 12px 14px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ── WINDOWED MESSAGE LOADING (new) ──
+   Shows a small pulse indicator at the top of the messages
+   container while the previous page of older messages is
+   being fetched. Kept lightweight so it doesn't jank scroll.
+   ═══════════════════════════════════════════════════════════ */
+.msg-loading-older {
+  text-align: center;
+  padding: 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  animation: msg-loading-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes msg-loading-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ── TYPING INDICATOR (new) ──
+   The chat-head subtitle gets a subtle animated dot while
+   another user is actively typing. chat.js sets the text and
+   adds .active-now via renderTypingLine().
+   ═══════════════════════════════════════════════════════════ */
+#chat-head-sub.active-now.typing-active::after {
+  content: '';
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 4px;
+  background: var(--neon);
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0);     opacity: 0.5; }
+  30%           { transform: translateY(-3px);  opacity: 1;   }
 }

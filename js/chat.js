@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    CESC HUB — CHAT LOGIC (Phase 1.7)
    Inbox + Global + DMs + Groups + Notes + Receipts + Presence
+   + Windowed message loading + Typing indicator
    ═══════════════════════════════════════════════════════════ */
 
 // ═══════════════════════════════════════════════════════════
@@ -17,6 +18,10 @@ const NOTE_MAX_LEN = 60;
 const ONLINE_THRESHOLD_MS = 90 * 1000;
 const ACTIVE_STATUS_TICK_MS = 30 * 1000;
 const NEAR_BOTTOM_THRESHOLD_PX = 120;
+const MSG_PAGE_SIZE = 20;
+const SCROLL_TOP_TRIGGER_PX = 60;
+const TYPING_THROTTLE_MS = 2000;
+const TYPING_EXPIRE_MS = 6000;
 
 const EMOJIS = [
   '😀','😁','😂','🤣','😊','😍','🥰','😘','😜','😝','😛','🤑','🤪','😋','😇','🤗',
@@ -83,12 +88,30 @@ let notesChannel = null;
 let currentViewingNote = null;
 
 // Ads (chat)
-let currentChatAd = null;          // the ad shown as the pseudo-DM row
-let currentInboxBottomAd = null;   // the ad shown in the inbox bottom slot
-let chatAdRefreshTimer = null;     // rotates pseudo-DM every ROTATE_MS
-let preAdActiveChat = null;        // remember the chat that was open before ad view
-let currentChatAdSlot = null;      // cached slot index (2-4) so the ad doesn't jump
-let currentChatAdSignature = null; // signature of the last rendered ad (id + slot)
+let currentChatAd = null;
+let currentInboxBottomAd = null;
+let chatAdRefreshTimer = null;
+let preAdActiveChat = null;
+let currentChatAdSlot = null;
+let currentChatAdSignature = null;
+
+// Message window (pagination)
+let msgWindow = {
+  table: null,
+  conversationId: null,
+  oldestAt: null,
+  newestAt: null,
+  hasOlder: true,
+  loading: false,
+};
+let _scrollLoaderAttached = false;
+
+// Typing indicator
+let typingTimeout = null;
+let lastTypingSent = 0;
+let typingChannel = null;
+let typingPruneInterval = null;
+const typingState = {};
 
 // ═══════════════════════════════════════════════════════════
 // ── UTILITIES ──
@@ -292,7 +315,6 @@ async function loadConversations() {
   if (memErr) { console.error(memErr); return; }
   if (!members || members.length === 0) { conversationsCache = []; return; }
 
-  // ── Build initial convo objects + collect IDs ──
   const convos = [];
   const dmIds = [];
   const gcIds = [];
@@ -334,14 +356,12 @@ async function loadConversations() {
     });
   }
 
-  // ── Batch fetch: last messages + unread counts ──
   const allIds = [...dmIds, ...gcIds];
   if (allIds.length === 0) { conversationsCache = convos; return; }
 
   const convoMap = {};
   convos.forEach(c => { convoMap[c.id] = c; });
 
-  // Fetch recent messages for all conversations in parallel (last 30 per convo)
   const fetches = [];
   if (dmIds.length > 0) {
     fetches.push(
@@ -366,7 +386,6 @@ async function loadConversations() {
 
   const results = await Promise.all(fetches);
 
-  // Group messages by conversation
   const grouped = {};
   results.forEach(res => {
     (res.data || []).forEach(msg => {
@@ -376,7 +395,6 @@ async function loadConversations() {
     });
   });
 
-  // Assign last message + unread count per convo
   Object.keys(grouped).forEach(cid => {
     const msgs = grouped[cid];
     if (!msgs || msgs.length === 0) return;
@@ -398,7 +416,6 @@ async function loadConversations() {
     ).length;
   });
 
-  // Sort: newest message first
   convos.sort((a, b) => {
     if (!a.lastAt && !b.lastAt) return 0;
     if (!a.lastAt) return 1;
@@ -495,21 +512,11 @@ function buildNoteCard(opts) {
   if (opts.content) {
     const bubble = document.createElement('div');
     bubble.className = 'note-bubble';
-
-    // Show the user's content as-is.
-    // Real newlines (from Enter) are preserved via CSS white-space: pre-wrap.
-    // Visual truncation to ~3 lines + trailing … is handled by CSS line-clamp.
-    // No character-cutting here — advertisers/authors always see the full text
-    // when they open the note in the modal.
     const text = String(opts.content);
-
-    // Render each real newline as a <br> so it works even if CSS
-    // white-space is overridden somewhere.
     bubble.innerHTML = text
       .split('\n')
       .map(l => window.escapeHTML(l))
       .join('<br>');
-
     card.appendChild(bubble);
   }
 
@@ -726,38 +733,25 @@ function setupProfilesRealtime() {
         };
       }
 
-      // ── Update the online dot IN-PLACE instead of rebuilding the inbox ──
-      // Rebuilding tears down every <img> and forces a re-decode → flicker.
-      // We only need to refresh the visual online indicator.
       updateInboxPresenceDots();
 
       if (activeChat && activeChat.otherUsername === p.username) {
         updateActiveStatusLine(p.username);
       }
-
-      // Notes row also rebuilt every profile update — only if the notes
-      // list actually changed. Simplest: only re-render if the pfp cache
-      // would change. For now, skip — notes auto-refresh on their own timer.
-      // renderNotesRow();
     })
     .subscribe();
 }
 
-// Lightweight: iterate through inbox rows and flip the online dot
-// based on the latest `last_seen` in profilesIndex. No DOM rebuild.
 function updateInboxPresenceDots() {
   const list = document.getElementById('inbox-list');
   if (!list) return;
 
   list.querySelectorAll('.inbox-row').forEach(row => {
-    // Skip ad rows
     if (row.classList.contains('inbox-row-ad')) return;
 
     const avatar = row.querySelector('.inbox-row-avatar');
     if (!avatar) return;
 
-    // Figure out which username this row corresponds to
-    // (stored as data-username on the row when it was built)
     const uname = row.dataset.username;
     if (!uname) return;
 
@@ -780,6 +774,12 @@ function updateInboxPresenceDots() {
 function updateActiveStatusLine(uname) {
   if (!activeChat || activeChat.type !== 'dm') return;
   if (activeChat.otherUsername !== uname) return;
+
+  // If someone is typing, don't overwrite the typing line
+  if (Object.keys(typingState).length > 0) {
+    renderTypingLine();
+    return;
+  }
 
   const subEl = document.getElementById('chat-head-sub');
   const av = document.getElementById('chat-head-avatar');
@@ -879,22 +879,16 @@ function renderInbox() {
     list.appendChild(row);
   });
 
-  // ── Inject the pseudo-DM ad row (slots 2-4) ──
   maybeInjectChatAdRow(list);
-
-  // ── Append persistent bottom ad INSIDE the scroll list ──
   maybeInjectBottomAd(list);
 }
 
-// Append the persistent bottom-of-inbox ad INSIDE the scrollable list.
-// Rendered as a normal inbox row (no card look) so it scrolls with DMs.
 function maybeInjectBottomAd(list) {
   if (!list) return;
   if (!window.Ads || !window.Ads.getCached) return;
   const ads = window.Ads.getCached() || [];
   if (ads.length === 0) return;
 
-  // ── If the bottom ad is already in the DOM, leave it alone ──
   const existingBottom = list.querySelector('.inbox-row-bottom-ad');
   if (existingBottom && currentInboxBottomAd) {
     const existingId = existingBottom.dataset.adId;
@@ -903,7 +897,6 @@ function maybeInjectBottomAd(list) {
     }
   }
 
-  // Pick an ad for the 'inbox' placement (different from the pseudo-DM if possible)
   const excludeIds = currentChatAd ? [currentChatAd.id] : [];
   let ad = null;
   if (typeof window.Ads.pickWeightedAd === 'function') {
@@ -912,7 +905,6 @@ function maybeInjectBottomAd(list) {
       return Array.isArray(p) && p.includes('inbox') && !excludeIds.includes(a.id);
     }));
   }
-  // Fallback if none matched: pick any inbox ad
   if (!ad && typeof window.Ads.pickWeightedAd === 'function') {
     ad = window.Ads.pickWeightedAd(ads.filter(a => {
       const p = a.placements || [];
@@ -923,13 +915,10 @@ function maybeInjectBottomAd(list) {
 
   currentInboxBottomAd = ad;
 
-  // Build as a compact inbox row (same look as a DM row)
   const row = document.createElement('div');
   row.className = 'inbox-row inbox-row-ad inbox-row-bottom-ad';
   row.dataset.adId = ad.id;
 
-  // Match the pseudo-DM row style: use the ad's square image as the avatar
-  // and the ad TITLE as the name — no advertiser duplication.
   const rowTitle = ad.title || ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
   const rowAvatarUrl =
     ad.image_square_url ||
@@ -989,7 +978,6 @@ function buildPreviewText(lastMessage) {
 function buildInboxRow(opts) {
   const row = document.createElement('div');
   row.className = 'inbox-row' + (opts.active ? ' active' : '');
-  // Stamp the username so presence updater can find this row later
   if (opts.avatarType === 'user' && opts.avatarUser && opts.avatarUser.username) {
     row.dataset.username = opts.avatarUser.username;
   }
@@ -1070,8 +1058,6 @@ function buildInboxRow(opts) {
 
 function startChatAdRotation() {
   stopChatAdRotation();
-  // Re-evaluate the pseudo-DM every 10 min so a new ad rotates in
-  // once the previous one is throttled/removed.
   chatAdRefreshTimer = setInterval(() => {
     renderInbox();
   }, 10 * 60 * 1000);
@@ -1083,14 +1069,10 @@ function stopChatAdRotation() {
   }
 }
 
-// Build the pseudo-DM row that goes inside the inbox list.
-// Position: slot 2-4 (after Global Chat + the first 1-3 conversations).
 function maybeInjectChatAdRow(list) {
   if (!list) return;
   if (!window.Ads || typeof window.Ads.buildInboxChatAdRow !== 'function') return;
 
-  // Ensure ad's pfp is in the pfp cache BEFORE building the row
-  // (fake ads won't have it, so fetch it here)
   const prepareAd = async () => {
     const ads = window.Ads.getCached ? window.Ads.getCached() : [];
     ads.forEach(a => {
@@ -1101,7 +1083,6 @@ function maybeInjectChatAdRow(list) {
   };
   prepareAd();
 
-  // Pick the ad that isn't already in the bottom slot (if possible)
   const excludeIds = currentInboxBottomAd ? [currentInboxBottomAd.id] : [];
   const ad = window.Ads.pickChatAdForInbox({ excludeIds });
   if (!ad) {
@@ -1110,12 +1091,9 @@ function maybeInjectChatAdRow(list) {
     return;
   }
 
-  // ── If the SAME ad is already in the DOM, leave it alone ──
-  // This avoids flicker + image reloads on every renderInbox() call.
   const signature = `${ad.id}`;
   const existing = list.querySelector(`.inbox-row-ad[data-ad-id="${ad.id}"]`);
   if (existing && currentChatAdSignature === signature) {
-    // Ad is already there with the same slot position — nothing to do.
     currentChatAd = ad;
     return;
   }
@@ -1125,36 +1103,20 @@ function maybeInjectChatAdRow(list) {
 
   const { el: row } = window.Ads.buildInboxChatAdRow(ad, openChatAdView);
 
-  // ── Positions in the DOM ──
-  // The list looks like this after full render:
-  //   [0] Global Chat
-  //   [1] "Conversations" label    (only if there are conversations)
-  //   [2] conversation 1
-  //   [3] conversation 2
-  //   [4] conversation 3
-  //
-  // "Slot 2-4" means we want the ad between the 1st and 3rd real conversation.
-  //
-  // Slot index is cached in `currentChatAdSlot` so the ad stays put across
-  // re-renders. Only re-randomize when the cached slot doesn't exist or the
-  // ad itself changed (which we handled above).
-
   const children = Array.from(list.children);
   const convStartIndex = children.length > 1 && children[1].classList.contains('inbox-section-label') ? 2 : 1;
   const convCount = children.length - convStartIndex;
 
-  // Not enough conversations? Just append at the end.
   if (convCount < 1) {
     list.appendChild(row);
     if (currentChatAdSlot === null) currentChatAdSlot = 0;
     return;
   }
 
-  const maxAfter = Math.min(3, convCount);  // 1..3
+  const maxAfter = Math.min(3, convCount);
 
-  // If we haven't picked a slot yet, pick one now and remember it.
   if (currentChatAdSlot === null || currentChatAdSlot < 1 || currentChatAdSlot > maxAfter) {
-    currentChatAdSlot = 1 + Math.floor(Math.random() * maxAfter); // 1..maxAfter
+    currentChatAdSlot = 1 + Math.floor(Math.random() * maxAfter);
   }
   const afterCount = Math.min(currentChatAdSlot, maxAfter);
   const insertAt = convStartIndex + afterCount;
@@ -1166,33 +1128,25 @@ function maybeInjectChatAdRow(list) {
   }
 }
 
-// Open the ad chat view when a pseudo-DM is clicked.
 function openChatAdView(ad) {
   if (!ad) return;
 
-  // Remember the currently-open chat so we can return to it on close.
   preAdActiveChat = activeChat;
 
-  // Hide real chat views
   const empty = document.getElementById('chat-empty');
   const chatView = document.getElementById('chat-view');
   if (empty) empty.style.display = 'none';
   if (chatView) chatView.style.display = 'none';
 
-  // Show ad chat view
   const adView = document.getElementById('ad-chat-view');
   const adHead = document.getElementById('ad-chat-head');
   const adBody = document.getElementById('ad-chat-body');
 
   if (!adView || !adHead || !adBody) return;
 
-  // If Ads.js exposes renderAdChatView, use it — it fills header + body
   if (window.Ads && typeof window.Ads.renderAdChatView === 'function') {
     window.Ads.renderAdChatView(ad, adView, adHead, adBody);
 
-    // Hook the close + back buttons ourselves (the shared renderer
-    // attaches its own close handler that just hides `container`).
-    // We override it to also restore the previous view.
     const closeBtns = adHead.querySelectorAll('[data-ad-close], .chat-back-btn');
     closeBtns.forEach(btn => {
       btn.onclick = (e) => {
@@ -1201,14 +1155,12 @@ function openChatAdView(ad) {
       };
     });
 
-    // Hook the CTA button so it ALSO closes the view + removes the pseudo-DM.
     const ctaBtn = adBody.querySelector('.ad-chat-cta');
     if (ctaBtn) {
       ctaBtn.onclick = (e) => {
         e.stopPropagation();
         e.preventDefault();
 
-        // Fire the click logging (open the link, bump counter)
         if (window.Ads && typeof window.Ads.logClick === 'function') {
           window.Ads.logClick(ad.id, 'chat');
         }
@@ -1217,21 +1169,17 @@ function openChatAdView(ad) {
         }
         try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
 
-        // Remove the pseudo-DM row from the inbox
         const row = document.querySelector(`.inbox-row-ad[data-ad-id="${ad.id}"]`);
         if (row) row.remove();
 
-        // Close the ad view + return to previous chat/inbox
         closeChatAdView();
 
-        // Re-render inbox so the rotation logic can evaluate fresh
         setTimeout(() => {
           try { renderInbox(); } catch (e) {}
         }, 500);
       };
     }
 
-    // Also override the image click (it opens the link too, in Ads.js)
     const imgWrap = adBody.querySelector('.ad-chat-img-wrap');
     if (imgWrap) {
       imgWrap.onclick = (e) => {
@@ -1253,7 +1201,6 @@ function openChatAdView(ad) {
       };
     }
   } else {
-    // Fallback: minimal ad view if Ads.js helpers aren't available
     adHead.innerHTML = `
       <button class="chat-back-btn" title="Back"><i class="fas fa-arrow-left"></i></button>
       <div class="chat-head-info">
@@ -1272,14 +1219,12 @@ function closeChatAdView() {
   const adView = document.getElementById('ad-chat-view');
   if (adView) {
     adView.style.display = 'none';
-    // Wipe contents so nothing leaks into the DOM when it reappears
     const head = document.getElementById('ad-chat-head');
     const body = document.getElementById('ad-chat-body');
     if (head) head.innerHTML = '';
     if (body) body.innerHTML = '';
   }
 
-  // Return to whatever was open before, or show empty state
   if (preAdActiveChat) {
     const remembered = preAdActiveChat;
     preAdActiveChat = null;
@@ -1306,9 +1251,6 @@ function showEmptyView() {
   setMobileView('inbox');
 }
 
-
-
-
 function attachInboxDeleteTrigger(row, convo) {
   let timer = null;
   let startPos = null;
@@ -1323,7 +1265,6 @@ function attachInboxDeleteTrigger(row, convo) {
       if (navigator.vibrate) navigator.vibrate(30);
       confirmDeleteConversation(convo);
     }, LONG_PRESS_MS);
-    // Visual feedback starting at 200ms
     setTimeout(() => {
       if (timer) row.classList.add('long-pressing');
     }, 200);
@@ -1497,6 +1438,7 @@ async function openChatBySlug(slug, hintUsername) {
 
 async function openGlobalChat() {
   stopActiveStatusTicker();
+  stopTyping();
   activeChat = { type: 'global', slug: GLOBAL_CHAT_SLUG };
   renderInbox();
   updateChatHeader({
@@ -1508,10 +1450,12 @@ async function openGlobalChat() {
   setMobileView('chat');
   await loadMessagesForChat();
   setupRealtimeForChat();
+  subscribeTyping();
 }
 
 async function openConversationBySlug(slug, hintUsername) {
   stopActiveStatusTicker();
+  stopTyping();
 
   let { data: existing } = await window.supabaseClient
     .from('conversations')
@@ -1592,10 +1536,10 @@ async function openConversationBySlug(slug, hintUsername) {
   await loadMessagesForChat();
   if (activeChat.conversationId) {
     setupRealtimeForChat();
+    subscribeTyping();
     await markConversationRead(activeChat.conversationId);
   }
 
-  // Start the ticker if it's a DM
   if (activeChat.type === 'dm' && activeChat.otherUsername) {
     startActiveStatusTicker();
   }
@@ -1603,6 +1547,16 @@ async function openConversationBySlug(slug, hintUsername) {
 
 function closeChat() {
   stopActiveStatusTicker();
+  stopTyping();
+  if (typingChannel) {
+    window.supabaseClient.removeChannel(typingChannel);
+    typingChannel = null;
+  }
+  if (typingPruneInterval) {
+    clearInterval(typingPruneInterval);
+    typingPruneInterval = null;
+  }
+  for (const k in typingState) delete typingState[k];
   activeChat = null;
   teardownRealtime();
   pushUrl(null);
@@ -1686,7 +1640,7 @@ function updateChatHeader(opts) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── MESSAGES LOADING ──
+// ── MESSAGES LOADING (windowed: 20 per page) ──
 // ═══════════════════════════════════════════════════════════
 async function loadMessagesForChat() {
   const container = document.getElementById('messages');
@@ -1694,8 +1648,18 @@ async function loadMessagesForChat() {
   container.innerHTML = '<div class="loading-msgs"><div class="loading-spin"></div>loading messages...</div>';
   resetMessageRenderState();
 
+  msgWindow = {
+    table: null,
+    conversationId: null,
+    oldestAt: null,
+    newestAt: null,
+    hasOlder: true,
+    loading: false,
+  };
+
   if (activeChat.type === 'global') {
-    await loadGlobalMessages();
+    msgWindow.table = 'messages';
+    await loadMessagesWindow({ initial: true });
   } else if (activeChat.ephemeral) {
     container.innerHTML = '';
     const sys = document.createElement('div');
@@ -1704,59 +1668,131 @@ async function loadMessagesForChat() {
     container.appendChild(sys);
     return;
   } else if (activeChat.type === 'dm') {
-    await loadDMMessages(activeChat.conversationId);
+    msgWindow.table = 'dm_messages';
+    msgWindow.conversationId = activeChat.conversationId;
+    await loadMessagesWindow({ initial: true });
+    attachAllReceipts();
+    markDMMessagesSeen(activeChat.conversationId);
   } else if (activeChat.type === 'group') {
-    await loadGCMessages(activeChat.conversationId);
+    msgWindow.table = 'gc_messages';
+    msgWindow.conversationId = activeChat.conversationId;
+    await loadMessagesWindow({ initial: true });
+  }
+
+  installScrollLoader();
+}
+
+async function loadMessagesWindow({ initial = false } = {}) {
+  const container = document.getElementById('messages');
+  if (!container || msgWindow.loading || !msgWindow.table) return;
+  msgWindow.loading = true;
+
+  let query = window.supabaseClient
+    .from(msgWindow.table)
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(MSG_PAGE_SIZE);
+
+  if (msgWindow.conversationId) {
+    query = query.eq('conversation_id', msgWindow.conversationId);
+  }
+
+  if (!initial && msgWindow.oldestAt) {
+    query = query.lt('created_at', msgWindow.oldestAt);
+  }
+
+  const { data, error } = await query;
+  msgWindow.loading = false;
+
+  if (error) {
+    window.showToast('Failed to load messages', 'error');
+    return;
+  }
+
+  const rows = (data || []).reverse();
+
+  if (rows.length === 0) {
+    if (initial) {
+      container.innerHTML = activeChat.type === 'global'
+        ? '<div class="system-msg">chat is live ⚡ say something</div>'
+        : '<div class="system-msg">Say hi 👋</div>';
+    }
+    msgWindow.hasOlder = false;
+    return;
+  }
+
+  if (initial) {
+    container.innerHTML = '';
+    resetMessageRenderState();
+    rows.forEach(m => appendMessage(m, false));
+    container.scrollTop = container.scrollHeight;
+    msgWindow.oldestAt = rows[0].created_at;
+    msgWindow.newestAt = rows[rows.length - 1].created_at;
+    msgWindow.hasOlder = rows.length === MSG_PAGE_SIZE;
+  } else {
+    const prevHeight = container.scrollHeight;
+    const prevTop = container.scrollTop;
+
+    let localDate = null;
+    let localUser = null;
+    let localTs = null;
+    const frag = document.createDocumentFragment();
+
+    rows.forEach(m => {
+      const msgDate = fmtDate(m.created_at);
+      const dateDivNeeded = msgDate !== localDate;
+      const timeDiff = localTs ? (new Date(m.created_at) - new Date(localTs)) / 60000 : 999;
+      const isContinued = m.username === localUser && timeDiff < 5 && !m.reply_to && !dateDivNeeded;
+
+      if (dateDivNeeded) {
+        const div = document.createElement('div');
+        div.className = 'date-divider';
+        div.textContent = msgDate;
+        frag.appendChild(div);
+      }
+      frag.appendChild(buildMessageGroup(m, isContinued));
+
+      localDate = msgDate;
+      localUser = m.username;
+      localTs = m.created_at;
+    });
+
+    container.insertBefore(frag, container.firstChild);
+
+    const newHeight = container.scrollHeight;
+    container.scrollTop = prevTop + (newHeight - prevHeight);
+
+    msgWindow.oldestAt = rows[0].created_at;
+    msgWindow.hasOlder = rows.length === MSG_PAGE_SIZE;
   }
 }
 
-async function loadGlobalMessages() {
-  const { data, error } = await window.supabaseClient
-    .from('messages').select('*')
-    .order('created_at', { ascending: true });
-  if (error) { window.showToast('Failed to load messages', 'error'); return; }
+function installScrollLoader() {
   const container = document.getElementById('messages');
-  container.innerHTML = '';
-  if (!data || data.length === 0) {
-    container.innerHTML = '<div class="system-msg">chat is live ⚡ say something</div>';
-    return;
-  }
-  data.forEach(m => appendMessage(m, false));
-  container.scrollTop = container.scrollHeight;
+  if (!container || _scrollLoaderAttached) return;
+  _scrollLoaderAttached = true;
+
+  container.addEventListener('scroll', () => {
+    if (container.scrollTop < SCROLL_TOP_TRIGGER_PX) {
+      maybeLoadOlder();
+    }
+  }, { passive: true });
 }
 
-async function loadDMMessages(conversationId) {
-  const { data, error } = await window.supabaseClient
-    .from('dm_messages').select('*')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true });
-  if (error) { window.showToast('Failed to load messages', 'error'); return; }
+async function maybeLoadOlder() {
+  if (!msgWindow.hasOlder || msgWindow.loading) return;
   const container = document.getElementById('messages');
-  container.innerHTML = '';
-  if (!data || data.length === 0) {
-    container.innerHTML = '<div class="system-msg">Say hi 👋</div>';
-    return;
-  }
-  data.forEach(m => appendMessage(m, false));
-  container.scrollTop = container.scrollHeight;
-  attachAllReceipts();
-  markDMMessagesSeen(conversationId);
-}
+  if (!container) return;
 
-async function loadGCMessages(conversationId) {
-  const { data, error } = await window.supabaseClient
-    .from('gc_messages').select('*')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true });
-  if (error) { window.showToast('Failed to load messages', 'error'); return; }
-  const container = document.getElementById('messages');
-  container.innerHTML = '';
-  if (!data || data.length === 0) {
-    container.innerHTML = '<div class="system-msg">No messages yet</div>';
-    return;
-  }
-  data.forEach(m => appendMessage(m, false));
-  container.scrollTop = container.scrollHeight;
+  const ind = document.createElement('div');
+  ind.className = 'msg-loading-older';
+  ind.textContent = 'loading older messages…';
+  container.insertBefore(ind, container.firstChild);
+
+  const anchorFix = container.scrollHeight - container.scrollTop;
+  await loadMessagesWindow({ initial: false });
+  ind.remove();
+  container.scrollTop = container.scrollHeight - anchorFix;
 }
 
 async function markConversationRead(conversationId) {
@@ -1773,12 +1809,17 @@ async function markConversationRead(conversationId) {
 
 async function markDMMessagesSeen(conversationId) {
   if (!conversationId) return;
-  await window.supabaseClient
+  const { data, error } = await window.supabaseClient
     .from('dm_messages')
     .update({ seen_at: new Date().toISOString() })
     .eq('conversation_id', conversationId)
     .eq('receiver_username', username)
-    .is('seen_at', null);
+    .is('seen_at', null)
+    .select('id');
+
+  if (error) {
+    console.error('markDMMessagesSeen error:', error);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1842,10 +1883,8 @@ function appendMessage(msg, scroll = true) {
   const loading = container.querySelector('.loading-msgs');
   if (loading) loading.remove();
 
-  // DEDUPE
   if (document.querySelector(`.msg-group[data-id="${msg.id}"]`)) return;
 
-  // Only auto-scroll if the user was near the bottom already
   const wasNearBottom = isNearBottom();
 
   const msgDate = fmtDate(msg.created_at);
@@ -1866,7 +1905,6 @@ function appendMessage(msg, scroll = true) {
   lastUser = msg.username;
   lastTimestamp = msg.created_at;
 
-  // Smart scroll: only scroll if caller asked AND user was near bottom
   if (scroll && wasNearBottom) {
     container.scrollTop = container.scrollHeight;
   }
@@ -2060,6 +2098,12 @@ function handleIncoming(msg) {
   }
   appendMessage(msg);
 
+  // Someone else's message means they've stopped typing
+  if (msg.username && msg.username !== username) {
+    delete typingState[msg.username];
+    renderTypingLine();
+  }
+
   if (activeChat.type === 'dm' && msg.receiver_username === username && !msg.seen_at) {
     markDMMessagesSeen(activeChat.conversationId);
   }
@@ -2086,6 +2130,10 @@ function handleMessageUpdate(msg) {
     group.dataset.content = msg.content;
     group.dataset.image_url = msg.image_url || '';
     if (msg.seen_at !== undefined) group.dataset.seen_at = msg.seen_at || '';
+  }
+
+  if (msg.username === username && msg.seen_at) {
+    updateReceiptForMessage(msg);
   }
 }
 
@@ -2309,6 +2357,112 @@ async function sendMentionNotifications(content, messageId) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ── TYPING INDICATOR ──
+// ═══════════════════════════════════════════════════════════
+function onInputTyping() {
+  if (!activeChat || !activeChat.conversationId) return;
+  const now = Date.now();
+  if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
+  lastTypingSent = now;
+
+  window.supabaseClient.rpc('set_typing', {
+    p_conversation_id: activeChat.conversationId,
+    p_is_typing: true,
+  }).then(() => {}, () => {});
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    if (!activeChat || !activeChat.conversationId) return;
+    window.supabaseClient.rpc('set_typing', {
+      p_conversation_id: activeChat.conversationId,
+      p_is_typing: false,
+    }).then(() => {}, () => {});
+  }, TYPING_THROTTLE_MS);
+}
+
+function stopTyping() {
+  if (!activeChat || !activeChat.conversationId) return;
+  clearTimeout(typingTimeout);
+  lastTypingSent = 0;
+  window.supabaseClient.rpc('set_typing', {
+    p_conversation_id: activeChat.conversationId,
+    p_is_typing: false,
+  }).then(() => {}, () => {});
+}
+
+function subscribeTyping() {
+  if (typingChannel) {
+    window.supabaseClient.removeChannel(typingChannel);
+    typingChannel = null;
+  }
+  if (typingPruneInterval) {
+    clearInterval(typingPruneInterval);
+    typingPruneInterval = null;
+  }
+  for (const k in typingState) delete typingState[k];
+
+  if (!activeChat || !activeChat.conversationId) return;
+
+  typingChannel = window.supabaseClient
+    .channel('typing-' + activeChat.conversationId)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'typing_status',
+        filter: `conversation_id=eq.${activeChat.conversationId}`,
+      },
+      (payload) => {
+        const row = payload.new;
+        if (!row || row.username === username) return;
+        if (row.is_typing) {
+          typingState[row.username] = {
+            displayName: row.display_name || row.username,
+            ts: Date.now(),
+          };
+        } else {
+          delete typingState[row.username];
+        }
+        renderTypingLine();
+      }
+    )
+    .subscribe();
+
+  typingPruneInterval = setInterval(() => {
+    let changed = false;
+    const now = Date.now();
+    for (const u in typingState) {
+      if (now - typingState[u].ts > TYPING_EXPIRE_MS) {
+        delete typingState[u];
+        changed = true;
+      }
+    }
+    if (changed) renderTypingLine();
+  }, 2000);
+}
+
+function renderTypingLine() {
+  const subEl = document.getElementById('chat-head-sub');
+  if (!subEl) return;
+  const names = Object.values(typingState).map(v => v.displayName);
+  if (names.length === 0) {
+    if (activeChat?.type === 'dm' && activeChat.otherUsername) {
+      updateActiveStatusLine(activeChat.otherUsername);
+    }
+    return;
+  }
+  const text =
+    names.length === 1
+      ? `${names[0]} is typing…`
+      : names.length === 2
+      ? `${names[0]} and ${names[1]} are typing…`
+      : `${names.length} people are typing…`;
+  subEl.textContent = text;
+  subEl.classList.add('active-now');
+}
+
+// ═══════════════════════════════════════════════════════════
 // ── SEND MESSAGE ──
 // ═══════════════════════════════════════════════════════════
 window.sendMsg = function() {
@@ -2391,15 +2545,12 @@ async function sendMessageToActive(text, btn) {
     return;
   }
 
-  // Optimistic append + force-scroll for own messages
   if (insertedRow) {
     if (wasNewConversation) {
       const sys = document.querySelector('#messages .system-msg');
       if (sys) sys.remove();
     }
-    // Own messages: always scroll to bottom
     const container = document.getElementById('messages');
-    // We bypass `isNearBottom` by directly setting scroll after append
     appendMessage(insertedRow, false);
     if (container) container.scrollTop = container.scrollHeight;
   }
@@ -2421,6 +2572,7 @@ async function sendMessageToActive(text, btn) {
   isUploading = false;
   window.cancelReply();
   closeMentionPanel();
+  stopTyping();
 }
 
 async function createDMConversation() {
@@ -2480,7 +2632,6 @@ async function createDMConversation() {
   activeChat.conversationId = newConvo.id;
   activeChat.ephemeral = false;
 
-  // Insert creator's own row first
   const { error: selfErr } = await window.supabaseClient
     .from('conversation_members')
     .insert({
@@ -2497,7 +2648,6 @@ async function createDMConversation() {
     return false;
   }
 
-  // Insert the other participant's row (allowed by RLS via DM relationship)
   if (activeChat.otherProfile?.id) {
     const { error: otherErr } = await window.supabaseClient
       .from('conversation_members')
@@ -2511,9 +2661,6 @@ async function createDMConversation() {
 
     if (otherErr) {
       console.error('add other as member failed:', otherErr);
-      // Non-fatal: the conversation exists, the creator is a member.
-      // The recipient will be added later by ensureMembership when they open the chat.
-      // Still, surface it so we know.
       window.showToast('Note: recipient not added yet: ' + otherErr.message, 'error');
     }
   }
@@ -2547,7 +2694,6 @@ async function ensureMembership(conversationId) {
       .single();
     if (error) {
       console.error('ensureMembership insert row failed:', error);
-      // Try once more without .select() as a last-resort fallback
       await window.supabaseClient.from('conversation_members').insert(row);
     }
   }
@@ -2567,6 +2713,7 @@ window.refreshChat = async function() {
     await loadNotes();
     if (activeChat) {
       await loadMessagesForChat();
+      if (activeChat.conversationId) subscribeTyping();
     }
   } catch (e) {
     console.error('refreshChat:', e);
@@ -3126,6 +3273,10 @@ function initMsgInput() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 160) + 'px';
     updateMentionPanelForInput();
+    if (activeChat && activeChat.conversationId) {
+      if (this.value.trim().length > 0) onInputTyping();
+      else stopTyping();
+    }
   });
   ta.addEventListener('keydown', e => {
     if (mentionPanelOpen && mentionMatches.length > 0) {
@@ -3223,7 +3374,6 @@ async function pageInit() {
   await loadNotes();
   setupNotesRealtime();
 
-  // ── Start rotation for pseudo-DM (bottom slot is rendered by renderInbox) ──
   startChatAdRotation();
 
   nextLoadingStep();
@@ -3247,6 +3397,9 @@ window.addEventListener('beforeunload', () => {
   teardownRealtime();
   stopActiveStatusTicker();
   stopChatAdRotation();
+  stopTyping();
+  if (typingChannel) { window.supabaseClient.removeChannel(typingChannel); typingChannel = null; }
+  if (typingPruneInterval) { clearInterval(typingPruneInterval); typingPruneInterval = null; }
   if (inboxChannel) { window.supabaseClient.removeChannel(inboxChannel); inboxChannel = null; }
   if (notesChannel) { window.supabaseClient.removeChannel(notesChannel); notesChannel = null; }
   if (profilesChannel) { window.supabaseClient.removeChannel(profilesChannel); profilesChannel = null; }

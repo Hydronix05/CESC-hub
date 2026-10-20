@@ -228,9 +228,9 @@ if ('serviceWorker' in navigator) {
 </div>
         </div>
         
-        <!-- Messages -->
+        <!-- Messages (windowed loading: only 20 messages in DOM at a time) -->
         <div class="chat-wrapper" id="chat-wrapper">
-          <div class="messages" id="messages">
+          <div class="messages" id="messages" data-conversation-id="">
             <div class="loading-msgs"><div class="loading-spin"></div>loading messages...</div>
           </div>
         </div>
