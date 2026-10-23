@@ -725,3 +725,40 @@
   .theme-grid { grid-template-columns: 1fr 1fr; }
   .theme-preview-split { height: 50px; }
 }
+
+/* ── YOUR ROLES ── */
+.user-roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--role-color) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--role-color) 35%, transparent);
+  color: var(--role-color);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  transition: all 0.2s;
+}
+
+.user-role-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--role-color) 25%, transparent);
+}
+
+.user-role-chip i {
+  font-size: 0.78rem;
+}
+
+.user-roles-loading {
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+}

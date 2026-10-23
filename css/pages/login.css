@@ -158,7 +158,7 @@ body {
   border-radius: 11px;
   padding: 13px 16px;
   color: var(--text-bright);
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 0.92rem;
   outline: none;
   transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
@@ -211,7 +211,7 @@ body {
   border-radius: 11px;
   border: none;
   cursor: pointer;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 800;
   font-size: 0.95rem;
   background: linear-gradient(135deg, var(--neon), var(--neon2));
@@ -322,7 +322,7 @@ body {
 /* New subheading */
 .request-sub {
   font-size: 0.78rem;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
   color: var(--text-bright);
   opacity: 0.9;
@@ -346,7 +346,7 @@ body {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-bright);
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;

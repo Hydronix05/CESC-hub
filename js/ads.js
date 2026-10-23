@@ -417,31 +417,69 @@
   // ── MOUNT — FEED INJECTION ──
   // ═══════════════════════════════════════════════════════════
 
-  function mountFeedInjection(feedEl, opts = {}) {
-    if (!feedEl) return;
-    if (!adsCache.length) return;
+function mountFeedInjection(feedEl, opts = {}) {
+  if (!feedEl) return;
+  if (!adsCache.length) return;
 
-    feedEl.querySelectorAll('.ad-card-feed').forEach(el => el.remove());
+  // Remove any existing feed ads before re-rendering
+  feedEl.querySelectorAll('.ad-card-feed').forEach(el => el.remove());
 
-    const ad = pickWeightedAd(adsCache, { placement: 'feed' });
-    if (!ad) return;
+  const posts = Array.from(feedEl.children).filter(el => !el.classList.contains('ad-card-feed'));
+  if (posts.length < 3) return;
 
-    const posts = Array.from(feedEl.children).filter(el => !el.classList.contains('ad-card-feed'));
-    if (posts.length < 3) return;
+  // Build a pool of unique ads (shuffled so we don't show the same ad twice)
+  const adPool = adsCache.filter(a => {
+    const p = a.placements || [];
+    return Array.isArray(p) && p.includes('feed');
+  });
+  if (adPool.length === 0) return;
 
+  // How many ads to inject? One per 5–10 posts, capped at 5 total per feed
+  const maxAds = Math.min(
+    5,
+    Math.max(1, Math.floor(posts.length / FEED_MIN_GAP))
+  );
+
+  // Build a shuffled ad list — cycle through if fewer ads than slots
+  const shuffled = adPool.slice().sort(() => Math.random() - 0.5);
+
+  // Calculate insertion positions — walk the posts, count 5–10 posts between ads
+  const insertPositions = [];
+  let cursor = 0;
+  for (let i = 0; i < maxAds; i++) {
     const gap = Math.floor(Math.random() * (FEED_MAX_GAP - FEED_MIN_GAP + 1)) + FEED_MIN_GAP;
-    const insertAfter = Math.min(gap, posts.length - 1);
-    const target = posts[insertAfter];
-
-    const card = buildFeedAdCard(ad);
-    if (target && target.nextSibling) {
-      feedEl.insertBefore(card, target.nextSibling);
-    } else {
-      feedEl.appendChild(card);
-    }
-
-    observeImpression(card, ad.id);
+    cursor += gap;
+    if (cursor >= posts.length) break;
+    insertPositions.push(cursor);
+    cursor++; // reserve a slot for the ad itself
   }
+
+  if (insertPositions.length === 0) {
+    // Not enough posts for even one ad — fall back to single ad after post 3
+    if (posts.length >= 3) insertPositions.push(3);
+  }
+
+  // Insert ads from bottom to top so positions stay valid
+  insertPositions
+    .slice()
+    .sort((a, b) => b - a)
+    .forEach((pos, idx) => {
+      const ad = shuffled[(insertPositions.length - 1 - idx) % shuffled.length];
+      if (!ad) return;
+
+      const target = posts[pos];
+      if (!target) return;
+
+      const card = buildFeedAdCard(ad);
+      if (target.nextSibling) {
+        feedEl.insertBefore(card, target.nextSibling);
+      } else {
+        feedEl.appendChild(card);
+      }
+
+      observeImpression(card, ad.id);
+    });
+}
 
   function buildFeedAdCard(ad) {
     const card = document.createElement('div');

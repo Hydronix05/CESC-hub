@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>You're locked out — CESC Hub</title>
+
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<meta name="theme-color" content="#4a9eff">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="/shared.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/shared.js"></script>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+
+<link rel="stylesheet" href="/css/pages/timeout.css"/>
+</head>
+<body class="timeout-body">
+
+<!-- Background — frozen orbs (no animation on this page) -->
+<div class="bg-canvas timeout-bg">
+  <div class="orb orb1 frozen"></div>
+  <div class="orb orb2 frozen"></div>
+  <div class="orb orb3 frozen"></div>
+</div>
+
+<!-- Scanline overlay (prison/CCTV feel) -->
+<div class="timeout-scanlines"></div>
+
+<!-- Loading state — shown briefly while fetching timeout details -->
+<div class="timeout-loading" id="timeout-loading">
+  <div class="loading-spin-ring"></div>
+  <div class="loading-text">loading...</div>
+</div>
+
+<!-- Main prison card -->
+<div class="timeout-shell" id="timeout-shell" style="display:none">
+  <div class="timeout-logo">
+    <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+  </div>
+
+  <div class="timeout-card">
+    <div class="timeout-icon">
+      <i class="fas fa-lock"></i>
+    </div>
+
+    <h1 class="timeout-title">You're locked out</h1>
+    <p class="timeout-sub">Your access to CESC Hub is paused.</p>
+
+    <div class="timeout-reason">
+      <div class="timeout-reason-label">Reason</div>
+      <div class="timeout-reason-text" id="timeout-reason">—</div>
+    </div>
+
+    <div class="timeout-timer-wrap">
+      <div class="timeout-timer-label">Time remaining</div>
+      <div class="timeout-timer" id="timeout-timer">—</div>
+      <div class="timeout-timer-end" id="timeout-timer-end">—</div>
+    </div>
+
+    <div class="timeout-issued">
+      Issued by <strong id="timeout-admin">—</strong>
+    </div>
+
+    <!-- Boredom button game -->
+    <div class="timeout-game">
+      <button class="timeout-game-btn" id="timeout-game-btn">
+        <i class="fas fa-hand-pointer"></i> Bored? Tap me.
+      </button>
+      <div class="timeout-game-count" id="timeout-game-count">0 taps</div>
+      <div class="timeout-game-msg" id="timeout-game-msg"></div>
+    </div>
+
+    <button class="timeout-logout" onclick="logout()">
+      <i class="fas fa-right-from-bracket"></i> Logout
+    </button>
+
+    <div class="timeout-footnote">
+      <i class="fas fa-info-circle"></i>
+      Trying to load other pages won't help. This timeout runs everywhere.
+    </div>
+  </div>
+
+  <div class="timeout-footer">
+    CESC Hub · built by NAIX Studio
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── TIMEOUT PAGE LOGIC ──
+// ═══════════════════════════════════════════════════════════
+// No initPage() here — we run a minimal init to avoid loading screen / ads /
+// background tasks. We just need auth + timeout data.
+
+const CLICKS_KEY = 'cesc_timeout_clicks';
+const TIPS = [
+  { threshold: 10,  msg: "You're really bored, huh." },
+  { threshold: 25,  msg: "Go touch grass." },
+  { threshold: 50,  msg: "The timeout is still counting down." },
+  { threshold: 100, msg: "Why are you still here." },
+  { threshold: 250, msg: "This won't make the timer go faster." },
+  { threshold: 500, msg: "You've achieved nothing. Congratulations." },
+  { threshold: 1000, msg: "Legendary boredom." }
+];
+
+let timeoutData = null;
+let countdownInterval = null;
+let lastTipShown = 0;
+
+// ── INIT ──
+async function init() {
+  // Apply theme
+  try {
+    if (typeof window.initTheme === 'function') window.initTheme();
+  } catch (e) {}
+
+  // Check auth
+  const sess = await window.initAuth();
+  if (!sess) return; // initAuth redirects to login if not logged in
+
+  // Fetch active timeout via RPC
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_my_active_timeout');
+    if (error) {
+      console.error('get_my_active_timeout failed:', error);
+      showFallbackError('Could not load timeout details. Try reloading.');
+      return;
+    }
+
+    if (!data || !data.ok) {
+      // Fallback — something wrong with the RPC or not authenticated
+      showFallbackError('Could not verify timeout. Try reloading.');
+      return;
+    }
+
+    if (!data.has_timeout) {
+      // No active timeout — should not be here
+      window.location.replace('/');
+      return;
+    }
+
+    timeoutData = data;
+    renderTimeout();
+  } catch (e) {
+    console.error('Timeout init exception:', e);
+    showFallbackError('Something went wrong. Try reloading.');
+  }
+}
+
+// ── RENDER TIMEOUT DETAILS ──
+function renderTimeout() {
+  document.getElementById('timeout-loading').style.display = 'none';
+  document.getElementById('timeout-shell').style.display = 'block';
+
+  // Reason
+  document.getElementById('timeout-reason').textContent =
+    timeoutData.reason || 'No reason given.';
+
+  // Admin
+  document.getElementById('timeout-admin').textContent =
+    timeoutData.issued_by || 'an admin';
+
+  // Timer
+  if (timeoutData.expires_at) {
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+  } else {
+    // Permanent
+    const timer = document.getElementById('timeout-timer');
+    timer.textContent = '∞';
+    timer.classList.add('permanent');
+    document.getElementById('timeout-timer-end').textContent =
+      'No end date. Contact an admin to discuss.';
+  }
+
+  // Load clicks game state
+  initClicksGame();
+}
+
+// ── COUNTDOWN ──
+function updateCountdown() {
+  if (!timeoutData?.expires_at) return;
+
+  const now = Date.now();
+  const end = new Date(timeoutData.expires_at).getTime();
+  const remaining = Math.max(0, Math.floor((end - now) / 1000));
+
+  if (remaining <= 0) {
+    // Timeout expired — redirect back to app
+    clearInterval(countdownInterval);
+    window.location.replace('/');
+    return;
+  }
+
+  const hrs = Math.floor(remaining / 3600);
+  const mins = Math.floor((remaining % 3600) / 60);
+  const secs = remaining % 60;
+
+  let display = '';
+  if (hrs > 0) {
+    display = `${hrs}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  } else {
+    display = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  }
+
+  document.getElementById('timeout-timer').textContent = display;
+
+  // Absolute end date
+  const endDate = new Date(timeoutData.expires_at);
+  const formatted = endDate.toLocaleString([], {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  document.getElementById('timeout-timer-end').textContent = `Ends ${formatted}`;
+}
+
+// ── CLICKS GAME ──
+function initClicksGame() {
+  const btn = document.getElementById('timeout-game-btn');
+  const countEl = document.getElementById('timeout-game-count');
+  const msgEl = document.getElementById('timeout-game-msg');
+
+  let count = parseInt(localStorage.getItem(CLICKS_KEY) || '0', 10);
+
+  function updateDisplay() {
+    countEl.textContent = `${count} tap${count === 1 ? '' : 's'}`;
+    // Find latest tip for current count
+    let tip = '';
+    for (const t of TIPS) {
+      if (count >= t.threshold) tip = t.msg;
+    }
+    if (tip && count !== lastTipShown) {
+      msgEl.textContent = tip;
+      msgEl.classList.add('show');
+      lastTipShown = count;
+      // Pulse effect
+      msgEl.classList.remove('pulse');
+      void msgEl.offsetWidth;
+      msgEl.classList.add('pulse');
+    }
+  }
+
+  updateDisplay();
+
+  btn.addEventListener('click', () => {
+    count++;
+    localStorage.setItem(CLICKS_KEY, String(count));
+    updateDisplay();
+
+    // Button bounce
+    btn.classList.remove('bounce');
+    void btn.offsetWidth;
+    btn.classList.add('bounce');
+  });
+}
+
+// ── FALLBACK ERROR ──
+function showFallbackError(msg) {
+  document.getElementById('timeout-loading').innerHTML = `
+    <div style="text-align:center;padding:20px;">
+      <div style="font-size:2rem;color:var(--danger);margin-bottom:12px;">
+        <i class="fas fa-triangle-exclamation"></i>
+      </div>
+      <div style="font-family:Space Mono,monospace;font-size:0.85rem;color:var(--muted);line-height:1.5;">${msg}</div>
+      <button onclick="location.reload()" style="margin-top:20px;padding:10px 24px;border:none;border-radius:9px;background:linear-gradient(135deg,var(--neon),var(--neon2));color:#000;font-family:Syne,sans-serif;font-weight:800;font-size:0.85rem;cursor:pointer;">
+        Reload
+      </button>
+    </div>
+  `;
+}
+
+// ── START ──
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>

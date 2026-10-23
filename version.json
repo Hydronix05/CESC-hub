@@ -1,7 +1,12 @@
 {
-  "current": "3.6",
+  "current": "3.7",
   "versions": {
     "v3": [
+      {
+        "version": "3.7",
+        "date": "2026-10-23",
+        "changes": "Major polish release · Onboarding wizard (6 screens: welcome, about you, profile, theme, rules & privacy, getting started) · Full feedback system (bug/suggestion/design/performance/other, anonymous option, threaded replies, quick-report from posts/comments/chat/profiles) · Timeout system with countdown, boredom-click game, and cross-page enforcement · New About page (rules, privacy, terms, 8 feature guides, install instructions per device) · Games hub now DB-driven with dynamic iframe player at /games/play.html · Leaderboard redesign (All Games + per-game sub-tabs) · Inter font, refreshed header, focus ring fixes, unified card hovers · Chat: typing indicators, windowed message loading, read receipts, "Seen by" tracking for global + group chats · Message read watermark system · Sidebar scroll with left-edge scrollbar · Force update button in profile dropdown · Delete own comments · Improved ad frequency (multiple ads spread across feed) · Streak indicator in feed banner · Settings roles display · Service worker cache bumped to v3.7.0"
+      },
       {
         "version": "3.6",
         "date": "2026-10-17",

@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
 
 <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
 
@@ -36,7 +36,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 </head>
-<body>
+<body data-page-title="Leaderboard">
 <div id="loading-screen">
   <div class="bg-canvas">
     <div class="orb orb1"></div>
@@ -84,67 +84,10 @@ if ('serviceWorker' in navigator) {
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<header class="top-header">
-  <div class="header-left">
-    <a href="/" class="header-logo">
-      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
-    </a>
-    <span class="header-page-title">Leaderboard</span>
-  </div>
-  <div class="header-right">
-    <span class="header-online-status">
-      <span class="online-pulse-ring">
-        <span class="online-pulse-dot"></span>
-      </span>
-      <span class="online-count-number" id="online-count">...</span>
-      <span class="online-status-text">online now</span>
-    </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
-    
-    <a href="/notifications" class="hdr-btn" title="Notifications">
-      <i class="fas fa-bell"></i>
-      <span class="notif-badge" id="notif-badge">0</span>
-    </a>
-    <div class="profile-chip" id="profile-chip" onclick="window.toggleDropdown()">
-      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
-      <span class="chip-name" id="chip-name">loading</span>
-      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
-      <div class="profile-dropdown" id="profile-dropdown">
-        <div class="dd-header">
-          <div class="dd-name" id="dd-name">—</div>
-          <div class="dd-sub">CESC Hub member</div>
-        </div>
-        <a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
-        <a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
-        <a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
-        <div class="dd-div"></div>
-        <button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-      </div>
-    </div>
-  </div>
-</header>
+<div id="app-header"></div>
 
-<aside class="sidebar" id="sidebar">
-  <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
-  <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
-  <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
-  <a href="/games" class="nav-item"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
-  <a href="/leaderboard" class="nav-item active"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
-  <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
-  <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-  <a href="/notifications" class="nav-item" id="notif-nav">
-    <span class="nav-icon"><i class="fas fa-bell"></i></span>
-    <span class="nav-label-text">Notifications</span>
-    <span class="nav-badge-count" id="notif-nav-badge">0</span>
-  </a>
+<div id="app-sidebar"></div>
 
-  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
-    <i class="fas fa-chevron-right"></i>
-    <span class="toggle-label">Collapse</span>
-  </button>
-
-  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
-</aside>
 
 <main class="main">
   <div class="page-header">
@@ -159,9 +102,9 @@ if ('serviceWorker' in navigator) {
       <i class="fas fa-star"></i>
       <span>Overall</span>
     </button>
-    <button class="lb-tab" data-tab="bloxdio" onclick="window.switchTab('bloxdio')">
+    <button class="lb-tab" data-tab="games" onclick="window.switchTab('games')">
       <i class="fas fa-gamepad"></i>
-      <span>Bloxd.io</span>
+      <span>Games</span>
     </button>
     <button class="lb-tab" data-tab="streak" onclick="window.switchTab('streak')">
       <i class="fas fa-fire"></i>
@@ -173,48 +116,19 @@ if ('serviceWorker' in navigator) {
     </button>
   </div>
 
+  <div class="lb-subtabs" id="lb-subtabs" style="display:none;">
+    <!-- Rendered by JS when Games tab is active -->
+  </div>
+
   <div class="lb-list" id="lb-list">
     <!-- Rendered by JS -->
   </div>
 </main>
 
-<nav class="downbar" id="downbar">
-  <div class="downbar-inner">
-    <a href="/" class="downbar-item" id="downbar-home">
-      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
-    </a>
-    <a href="/chat" class="downbar-item" id="downbar-chat">
-      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
-    </a>
-    <a href="/profiles" class="downbar-item" id="downbar-profiles">
-      <span class="downbar-icon"><i class="fas fa-users"></i></span>
-    </a>
-    <a href="/games" class="downbar-item" id="downbar-games">
-      <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
-    </a>
-    <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
-      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
-    </button>
-  </div>
-</nav>
+<div id="app-downbar"></div>
 
-<div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
+<div id="app-downbar-more"></div>
 
-<div class="downbar-more" id="downbar-more">
-  <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
-  <div class="downbar-more-grid">
-    <a href="/" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span><span class="downbar-more-label">Feed</span></a>
-    <a href="/chat" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-comments"></i></span><span class="downbar-more-label">Chat</span></a>
-    <a href="/profiles" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-users"></i></span><span class="downbar-more-label">Profiles</span></a>
-    <a href="/games" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span><span class="downbar-more-label">Games</span></a>
-    <a href="/leaderboard" class="downbar-more-item active"><span class="downbar-more-icon"><i class="fas fa-trophy"></i></span><span class="downbar-more-label">Leaderboard</span></a>
-    <a href="/settings" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-cog"></i></span><span class="downbar-more-label">Settings</span></a>
-    <a href="/download" class="downbar-more-item"><span class="downbar-more-icon"><i class="fas fa-download"></i></span><span class="downbar-more-label">Downloads</span></a>
-    <a href="/notifications" class="downbar-more-item" id="downbar-more-notif"><span class="downbar-more-icon"><i class="fas fa-bell"></i></span><span class="downbar-more-label">Notifications</span><span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span></a>
-    <button class="downbar-more-item logout" onclick="window.logout()"><span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span><span class="downbar-more-label">Logout</span></button>
-  </div>
-  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
-</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -222,7 +136,10 @@ if ('serviceWorker' in navigator) {
 // ═══════════════════════════════════════════════════════════
 
 let currentTab = 'overall';
+let currentSubTab = 'allgames'; // when Games tab active: 'allgames' or a game slug
 let myUserId = null;
+let gamesCache = [];
+let gamesLoaded = false;
 
 function definePageSteps() {
   defineLoadingSteps([
@@ -251,7 +168,6 @@ function formatOverallValue(score) {
   return Math.round(score) + ' pts';
 }
 
-// ── TIME HELPER for "last online" ──
 function formatLastSeen(lastSeen) {
   if (!lastSeen) return 'never';
   const diff = Date.now() - new Date(lastSeen).getTime();
@@ -325,14 +241,31 @@ function buildOverallRow(rank, data, isMe) {
   return row;
 }
 
-function buildBloxdioRow(rank, data, isMe) {
+function buildAllGamesRow(rank, data, isMe) {
+  const row = buildRowBase(rank, data, isMe);
+
+  const total = data.total_seconds || 0;
+  const gameCount = data.game_count || 0;
+
+  const value = document.createElement('div');
+  value.className = 'lb-value';
+  value.innerHTML = `
+    <div class="lb-value-main">${formatPlaytimeShort(total)}</div>
+    <div class="lb-value-sub">${gameCount} game${gameCount === 1 ? '' : 's'}</div>
+  `;
+  row.appendChild(value);
+
+  return row;
+}
+
+function buildSingleGameRow(rank, data, isMe, gameTitle) {
   const row = buildRowBase(rank, data, isMe);
 
   const value = document.createElement('div');
   value.className = 'lb-value';
   value.innerHTML = `
     <div class="lb-value-main">${formatPlaytimeShort(data.total_seconds)}</div>
-    <div class="lb-value-sub">total playtime</div>
+    <div class="lb-value-sub">${window.escapeHTML(gameTitle || 'playtime')}</div>
   `;
   row.appendChild(value);
 
@@ -354,7 +287,6 @@ function buildStreakRow(rank, data, isMe) {
   return row;
 }
 
-// ── NEW: Last Online row ──
 function buildLastSeenRow(rank, data, isMe) {
   const row = buildRowBase(rank, data, isMe);
 
@@ -383,16 +315,76 @@ function renderEmpty(message, iconClass = 'fa-trophy') {
   `;
 }
 
-// ── FIXED: tie-break now includes last_seen ──
-async function loadOverallTab() {
+function renderSkeleton(count = 3) {
   const list = document.getElementById('lb-list');
-  list.innerHTML = `
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-  `;
+  list.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const skel = document.createElement('div');
+    skel.className = 'lb-skel-row';
+    list.appendChild(skel);
+  }
+}
+
+// ── LOAD GAMES LIST (only once) ──
+async function loadGamesList() {
+  if (gamesLoaded) return gamesCache;
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('games')
+      .select('id, slug, title, icon')
+      .eq('active', true)
+      .order('featured', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('loadGamesList:', error);
+      return [];
+    }
+    gamesCache = data || [];
+    gamesLoaded = true;
+    return gamesCache;
+  } catch (e) {
+    console.error('loadGamesList exception:', e);
+    return [];
+  }
+}
+
+// ── RENDER SUB-TABS ──
+async function renderSubTabs() {
+  const container = document.getElementById('lb-subtabs');
+  if (!container) return;
+
+  const games = await loadGamesList();
+
+  container.innerHTML = '';
+
+  // Always show "All Games" first
+  const allBtn = document.createElement('button');
+  allBtn.className = 'lb-subtab' + (currentSubTab === 'allgames' ? ' active' : '');
+  allBtn.innerHTML = '<i class="fas fa-layer-group"></i> <span>All Games</span>';
+  allBtn.onclick = () => switchSubTab('allgames');
+  container.appendChild(allBtn);
+
+  // One sub-tab per active game
+  games.forEach(game => {
+    const btn = document.createElement('button');
+    btn.className = 'lb-subtab' + (currentSubTab === game.slug ? ' active' : '');
+    const iconClass = game.icon || 'fa-gamepad';
+    btn.innerHTML = `<i class="fas ${iconClass}"></i> <span>${window.escapeHTML(game.title)}</span>`;
+    btn.onclick = () => switchSubTab(game.slug);
+    container.appendChild(btn);
+  });
+
+  container.style.display = 'flex';
+}
+
+function hideSubTabs() {
+  const container = document.getElementById('lb-subtabs');
+  if (container) container.style.display = 'none';
+}
+
+// ── OVERALL ──
+async function loadOverallTab() {
+  renderSkeleton(5);
 
   try {
     const [profilesRes, playtimeRes] = await Promise.all([
@@ -437,55 +429,114 @@ async function loadOverallTab() {
       };
     });
 
-    // Sort: score DESC → streak DESC → playtime DESC → last_seen DESC → created_at ASC
     rows.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (b.streak !== a.streak) return b.streak - a.streak;
       if (b.playtime_seconds !== a.playtime_seconds) return b.playtime_seconds - a.playtime_seconds;
-
-      // Last-seen tie-break: most recent first
       const aSeen = a.last_seen ? new Date(a.last_seen).getTime() : 0;
       const bSeen = b.last_seen ? new Date(b.last_seen).getTime() : 0;
       if (bSeen !== aSeen) return bSeen - aSeen;
-
       return new Date(a.created_at) - new Date(b.created_at);
     });
 
     const top = rows.slice(0, 50);
-
+    const list = document.getElementById('lb-list');
     list.innerHTML = '';
     top.forEach((row, i) => {
       const isMe = row.user_id === myUserId;
       list.appendChild(buildOverallRow(i + 1, row, isMe));
     });
 
-    if (top.length === 0) {
-      renderEmpty('No players yet', 'fa-users');
-    }
+    if (top.length === 0) renderEmpty('No players yet', 'fa-users');
   } catch (e) {
     console.error('loadOverallTab:', e);
     renderEmpty('Failed to load rankings', 'fa-triangle-exclamation');
   }
 }
 
-async function loadBloxdioTab() {
-  const list = document.getElementById('lb-list');
-  list.innerHTML = `
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-  `;
+// ── ALL GAMES ──
+async function loadAllGamesTab() {
+  renderSkeleton(3);
+
+  try {
+    const { data: playtimeRows, error: ptErr } = await window.supabaseClient
+      .from('game_playtime')
+      .select('user_id, username, display_name, pfp_url, total_seconds');
+
+    if (ptErr) {
+      console.error('allgames playtime:', ptErr);
+      renderEmpty('Failed to load leaderboard', 'fa-triangle-exclamation');
+      return;
+    }
+
+    if (!playtimeRows || playtimeRows.length === 0) {
+      renderEmpty('Nobody has played any games yet. Be the first!', 'fa-gamepad');
+      return;
+    }
+
+    const byUser = {};
+    playtimeRows.forEach(row => {
+      const uid = row.user_id;
+      if (!byUser[uid]) {
+        byUser[uid] = {
+          user_id: uid,
+          username: row.username,
+          display_name: row.display_name,
+          pfp_url: row.pfp_url,
+          total_seconds: 0,
+          games: new Set()
+        };
+      }
+      byUser[uid].total_seconds += Number(row.total_seconds || 0);
+      byUser[uid].games.add(row.game_id);
+      if (!byUser[uid].display_name && row.display_name) byUser[uid].display_name = row.display_name;
+      if (!byUser[uid].pfp_url && row.pfp_url) byUser[uid].pfp_url = row.pfp_url;
+    });
+
+    const rows = Object.values(byUser).map(u => ({
+      user_id: u.user_id,
+      username: u.username,
+      display_name: u.display_name,
+      pfp_url: u.pfp_url,
+      total_seconds: u.total_seconds,
+      game_count: u.games.size
+    }));
+
+    rows.sort((a, b) => {
+      if (b.total_seconds !== a.total_seconds) return b.total_seconds - a.total_seconds;
+      return (a.username || '').localeCompare(b.username || '');
+    });
+
+    const top = rows.slice(0, 50);
+    const list = document.getElementById('lb-list');
+    list.innerHTML = '';
+    top.forEach((row, i) => {
+      const isMe = row.user_id === myUserId;
+      list.appendChild(buildAllGamesRow(i + 1, row, isMe));
+    });
+  } catch (e) {
+    console.error('loadAllGamesTab:', e);
+    renderEmpty('Failed to load leaderboard', 'fa-triangle-exclamation');
+  }
+}
+
+// ── SINGLE GAME ──
+async function loadSingleGameTab(gameSlug) {
+  renderSkeleton(3);
+
+  const game = gamesCache.find(g => g.slug === gameSlug);
+  const gameTitle = game?.title || gameSlug;
 
   try {
     const { data, error } = await window.supabaseClient
       .from('game_playtime')
       .select('user_id, username, display_name, pfp_url, total_seconds')
-      .eq('game_id', 'bloxdio')
+      .eq('game_id', gameSlug)
       .order('total_seconds', { ascending: false })
       .limit(50);
 
     if (error) {
-      console.error('bloxdio:', error);
+      console.error('single game:', error);
       renderEmpty('Failed to load leaderboard', 'fa-triangle-exclamation');
       return;
     }
@@ -493,28 +544,25 @@ async function loadBloxdioTab() {
     const rows = data || [];
 
     if (rows.length === 0) {
-      renderEmpty('Nobody has played Bloxd.io yet. Be the first!', 'fa-gamepad');
+      renderEmpty(`Nobody has played ${gameTitle} yet. Be the first!`, 'fa-gamepad');
       return;
     }
 
+    const list = document.getElementById('lb-list');
     list.innerHTML = '';
     rows.forEach((row, i) => {
       const isMe = row.user_id === myUserId;
-      list.appendChild(buildBloxdioRow(i + 1, row, isMe));
+      list.appendChild(buildSingleGameRow(i + 1, row, isMe, gameTitle));
     });
   } catch (e) {
-    console.error('loadBloxdioTab:', e);
+    console.error('loadSingleGameTab:', e);
     renderEmpty('Failed to load leaderboard', 'fa-triangle-exclamation');
   }
 }
 
+// ── STREAK ──
 async function loadStreakTab() {
-  const list = document.getElementById('lb-list');
-  list.innerHTML = `
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-  `;
+  renderSkeleton(3);
 
   try {
     const { data, error } = await window.supabaseClient
@@ -537,6 +585,7 @@ async function loadStreakTab() {
       return;
     }
 
+    const list = document.getElementById('lb-list');
     list.innerHTML = '';
     rows.forEach((row, i) => {
       const isMe = row.id === myUserId;
@@ -548,14 +597,9 @@ async function loadStreakTab() {
   }
 }
 
-// ── NEW: Last Online tab ──
+// ── LAST ONLINE ──
 async function loadLastSeenTab() {
-  const list = document.getElementById('lb-list');
-  list.innerHTML = `
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-    <div class="lb-skel-row"></div>
-  `;
+  renderSkeleton(3);
 
   try {
     const { data, error } = await window.supabaseClient
@@ -578,6 +622,7 @@ async function loadLastSeenTab() {
       return;
     }
 
+    const list = document.getElementById('lb-list');
     list.innerHTML = '';
     rows.forEach((row, i) => {
       const isMe = row.id === myUserId;
@@ -589,7 +634,8 @@ async function loadLastSeenTab() {
   }
 }
 
-window.switchTab = function (tab) {
+// ── TAB SWITCHING ──
+window.switchTab = async function (tab) {
   if (tab === currentTab) return;
   currentTab = tab;
 
@@ -600,15 +646,53 @@ window.switchTab = function (tab) {
   const sub = document.getElementById('lb-subtitle');
   if (sub) {
     if (tab === 'overall') sub.textContent = 'ranked by (streak × 15) + (playtime × 0.5)';
-    else if (tab === 'bloxdio') sub.textContent = 'ranked by total playtime';
+    else if (tab === 'games') sub.textContent = 'ranked by game playtime';
     else if (tab === 'streak') sub.textContent = 'ranked by current daily streak';
     else if (tab === 'lastseen') sub.textContent = 'ranked by most recent activity';
   }
 
-  if (tab === 'overall') loadOverallTab();
-  else if (tab === 'bloxdio') loadBloxdioTab();
-  else if (tab === 'streak') loadStreakTab();
-  else if (tab === 'lastseen') loadLastSeenTab();
+  if (tab === 'overall') {
+    hideSubTabs();
+    loadOverallTab();
+  } else if (tab === 'games') {
+    await renderSubTabs();
+    if (currentSubTab === 'allgames') {
+      loadAllGamesTab();
+    } else {
+      loadSingleGameTab(currentSubTab);
+    }
+  } else if (tab === 'streak') {
+    hideSubTabs();
+    loadStreakTab();
+  } else if (tab === 'lastseen') {
+    hideSubTabs();
+    loadLastSeenTab();
+  }
+};
+
+window.switchSubTab = function (subTab) {
+  if (subTab === currentSubTab) return;
+  currentSubTab = subTab;
+
+  document.querySelectorAll('.lb-subtab').forEach(btn => {
+    // match by index: first is 'allgames', rest are games by order
+    if (subTab === 'allgames') {
+      btn.classList.toggle('active', btn === document.querySelectorAll('.lb-subtab')[0]);
+    } else {
+      const allBtns = document.querySelectorAll('.lb-subtab');
+      const games = gamesCache;
+      const gameIndex = games.findIndex(g => g.slug === subTab);
+      if (gameIndex >= 0) {
+        btn.classList.toggle('active', btn === allBtns[gameIndex + 1]);
+      }
+    }
+  });
+
+  if (subTab === 'allgames') {
+    loadAllGamesTab();
+  } else {
+    loadSingleGameTab(subTab);
+  }
 };
 
 async function pageInit() {

@@ -89,7 +89,7 @@
   border: none;
   outline: none;
   color: var(--text-bright);
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 0.88rem;
   padding: 0;
   min-width: 0;
@@ -114,7 +114,7 @@
    ═══════════════════════════════════════════════════════════ */
 .notes-row {
   display: flex;
-  gap: 14px;
+  gap: 18px;
   padding: 8px 16px 14px;
   overflow-x: auto;
   overflow-y: visible;
@@ -157,27 +157,28 @@
   background: var(--surface2, rgba(255,255,255,0.08));
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 6px 12px;
-  font-size: 0.72rem;
+  padding: 5px 8px;
+  font-size: 0.68rem;
   font-weight: 600;
   color: var(--text-bright);
-  font-family: 'Syne', sans-serif;
-  white-space: pre-wrap;      /* respect user's real newlines */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  white-space: pre-wrap;
   overflow: hidden;
-  max-width: 120px;
-  min-width: 70px;
+  max-width: 98px;
+  min-width: 76px;
   text-align: center;
   line-height: 1.35;
   z-index: 2;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   transition: background 0.2s;
   word-break: normal;
-  overflow-wrap: anywhere;    /* break only if a single word is too long */
-  /* reserve room for up to ~3 lines */
-  max-height: 66px;
+  overflow-wrap: break-word;
+  height: 54px;
+  max-height: 54px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
 }
 .note-card:hover .note-bubble {
   background: var(--neon-glow);
@@ -657,7 +658,7 @@
   display: flex;
   flex-direction: column;
   scroll-behavior: smooth;
-  /* Prevents scroll-anchoring jitter when we prepend older messages */
+  /* NEW: stops browser scroll-anchoring from fighting our prepend logic */
   overflow-anchor: none;
 }
 .messages::-webkit-scrollbar { width: 4px; }
@@ -1095,7 +1096,7 @@
   border: none;
   border-radius: 8px;
   color: var(--text);
-  font-family: 'Syne', sans-serif;
+  font-family: 'Space Mono', monospace;
   font-size: 0.86rem;
   font-weight: 600;
   cursor: pointer;
@@ -1186,7 +1187,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
   font-size: 0.78rem;
 }
@@ -1325,7 +1326,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
   font-size: 0.78rem;
 }
@@ -1344,7 +1345,7 @@
   border: none;
   outline: none;
   color: var(--text-bright);
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 0.92rem;
   resize: none;
   max-height: 160px;
@@ -1692,7 +1693,7 @@
   border-radius: 12px;
   padding: 12px 14px;
   color: var(--text-bright);
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 0.92rem;
   outline: none;
   resize: none;
@@ -1730,7 +1731,7 @@
   padding: 10px 20px;
   border-radius: 10px;
   border: none;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
@@ -1863,7 +1864,7 @@
 /* Read-all button */
 .chat-head-btn.read-all-btn {
   padding: 8px 12px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 600;
   font-size: 0.78rem;
   color: var(--muted);
@@ -1950,7 +1951,7 @@
   
   .inbox-header { padding: 12px 16px 8px; }
   .inbox-search { margin: 0 12px 10px; }
-  .notes-row { padding: 6px 14px 12px; gap: 12px; }
+  .notes-row { padding: 6px 14px 12px; gap: 20px; }
   .inbox-list { padding: 4px 6px 16px; }
   
   .chat-input-area { padding: 10px 12px 12px; }
@@ -2045,10 +2046,10 @@
   .inbox-row-time { font-size: 0.62rem; }
   .inbox-title { font-size: 1rem; }
   
-  .note-card { width: 70px; padding-top: 52px; }
+  .note-card { width: 68px; padding-top: 52px; }
   .note-card .note-avatar-wrap,
   .note-card .note-avatar { width: 56px; height: 56px; font-size: 1.2rem; }
-  .note-card .note-bubble { font-size: 0.62rem; max-width: 100px; padding: 5px 10px; max-height: 58px; }
+  .note-card .note-bubble { font-size: 0.6rem; max-width: 86px; min-width: 68px; padding: 4px 6px; height: 46px; max-height: 46px; line-height: 1.35; word-break: normal; overflow-wrap: break-word; -webkit-line-clamp: 3; }
   .note-card .note-name { font-size: 0.64rem; max-width: 70px; }
   
   .chat-head { padding: 10px 12px; gap: 8px; }
@@ -2083,9 +2084,8 @@
 
 /* ═══════════════════════════════════════════════════════════
    ── WINDOWED MESSAGE LOADING (new) ──
-   Shows a small pulse indicator at the top of the messages
-   container while the previous page of older messages is
-   being fetched. Kept lightweight so it doesn't jank scroll.
+   Indicator shown at the top of #messages while the next
+   page of older messages is fetched. Lightweight pulse.
    ═══════════════════════════════════════════════════════════ */
 .msg-loading-older {
   text-align: center;
@@ -2104,9 +2104,8 @@
 
 /* ═══════════════════════════════════════════════════════════
    ── TYPING INDICATOR (new) ──
-   The chat-head subtitle gets a subtle animated dot while
-   another user is actively typing. chat.js sets the text and
-   adds .active-now via renderTypingLine().
+   Optional animated dot next to the "X is typing…" subtitle.
+   chat.js sets the text + .active-now on #chat-head-sub.
    ═══════════════════════════════════════════════════════════ */
 #chat-head-sub.active-now.typing-active::after {
   content: '';
@@ -2122,4 +2121,167 @@
 @keyframes typing-bounce {
   0%, 60%, 100% { transform: translateY(0);     opacity: 0.5; }
   30%           { transform: translateY(-3px);  opacity: 1;   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SEEN BY — read receipts for GC + Global chat (7D)
+   ═══════════════════════════════════════════════════════════ */
+.msg-seen-by {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  padding: 4px 0 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  opacity: 0.85;
+  animation: seen-by-fade-in 0.3s ease both;
+  transition: opacity 0.15s;
+}
+
+.msg-seen-by:hover {
+  opacity: 1;
+  color: var(--text-bright);
+}
+
+.msg-seen-by::before {
+  content: '\f00c\f00c';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 0.6rem;
+  color: var(--neon);
+  letter-spacing: -2px;
+}
+
+@keyframes seen-by-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 0.85; transform: translateY(0); }
+}
+
+.discord-layout .msg-seen-by {
+  padding-left: 4px;
+}
+
+.meta-layout .msg-group.own .msg-seen-by {
+  text-align: right;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+@media (max-width: 480px) {
+  .msg-seen-by {
+    font-size: 0.58rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SEEN BY MODAL — full list when tapped
+   ═══════════════════════════════════════════════════════════ */
+.seen-by-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fade-in 0.25s ease;
+}
+.seen-by-modal-overlay.show { display: flex; }
+
+.seen-by-modal {
+  position: relative;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 340px;
+  max-width: 92vw;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  animation: zoom-in 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
+}
+
+.seen-by-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.seen-by-modal-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+
+.seen-by-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.seen-by-modal-close:hover {
+  color: var(--text-bright);
+  background: var(--surface);
+}
+
+.seen-by-modal-body {
+  padding: 12px 20px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seen-by-modal-body::-webkit-scrollbar { width: 4px; }
+.seen-by-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(74,158,255,0.3);
+  border-radius: 2px;
+}
+
+.seen-by-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  color: var(--text);
+  transition: background 0.15s;
+}
+.seen-by-row:hover { background: var(--surface); }
+.seen-by-row i {
+  color: var(--neon);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.seen-by-empty {
+  text-align: center;
+  padding: 24px 12px;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 480px) {
+  .seen-by-modal {
+    width: 90vw;
+    max-height: 60vh;
+  }
+  .seen-by-row {
+    font-size: 0.82rem;
+  }
 }

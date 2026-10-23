@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    CESC HUB — CHAT LOGIC (Phase 1.7)
    Inbox + Global + DMs + Groups + Notes + Receipts + Presence
-   + Windowed message loading + Typing indicator
+   + Windowed message loading (20/page) + Typing indicator
    ═══════════════════════════════════════════════════════════ */
 
 // ═══════════════════════════════════════════════════════════
@@ -95,7 +95,7 @@ let preAdActiveChat = null;
 let currentChatAdSlot = null;
 let currentChatAdSignature = null;
 
-// Message window (pagination)
+// ── Windowed message loading ──
 let msgWindow = {
   table: null,
   conversationId: null,
@@ -106,12 +106,16 @@ let msgWindow = {
 };
 let _scrollLoaderAttached = false;
 
-// Typing indicator
+// ── Typing indicator ──
 let typingTimeout = null;
 let lastTypingSent = 0;
 let typingChannel = null;
 let typingPruneInterval = null;
 const typingState = {};
+
+// ── Seen-by (message reads) ──
+let messageReadsCache = [];
+let readsChannel = null;
 
 // ═══════════════════════════════════════════════════════════
 // ── UTILITIES ──
@@ -271,7 +275,7 @@ function parseChatRoute() {
   return null;
 }
 function pushUrl(slug) {
-  const newPath = slug ? `/chat/${encodeURIComponent(slug)}` : '/chat';
+  const newPath = slug ? `/chat?c=${encodeURIComponent(slug)}` : '/chat';
   if (window.location.pathname + window.location.search !== newPath) {
     history.pushState({ slug }, '', newPath);
   }
@@ -295,6 +299,43 @@ async function loadProfilesIndex() {
   if (error) return;
   profilesIndex = {};
   data.forEach(p => { profilesIndex[p.username] = p; });
+}
+
+async function fillGlobalChatPreview(globalEntry) {
+  if (!globalEntry) return;
+  try {
+    const { data: globalLast } = await window.supabaseClient
+      .from('messages')
+      .select('content, username, display_name, image_url, created_at, user_id')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (globalLast && globalLast.length > 0) {
+      const last = globalLast[0];
+      globalEntry.lastMessage = {
+        content: last.content,
+        username: last.username,
+        display_name: last.display_name,
+        image_url: last.image_url,
+        created_at: last.created_at,
+      };
+      globalEntry.lastAt = last.created_at;
+
+      const { data: myMember } = await window.supabaseClient
+        .from('conversation_members')
+        .select('last_read_at')
+        .eq('conversation_id', globalEntry.id)
+        .eq('user_id', myUserId)
+        .maybeSingle();
+
+      const myLastRead = myMember?.last_read_at || '1970-01-01';
+      globalEntry.unread = globalLast.filter(m =>
+        m.user_id !== myUserId && m.created_at > myLastRead
+      ).length;
+    }
+  } catch (e) {
+    console.error('fillGlobalChatPreview:', e);
+  }
 }
 
 async function loadConversations() {
@@ -337,6 +378,9 @@ async function loadConversations() {
       displayName = otherProfile?.display_name || otherProfile?.username || otherUsername || 'Unknown';
       pfpUrl = otherProfile?.pfp_url || null;
       dmIds.push(c.id);
+    } else if (c.slug === 'global-chat') {
+      // Keep it in the cache but don't add to gcIds (its messages live in `messages` table, not gc_messages)
+      // We'll fill its lastMessage + unread separately below
     } else {
       gcIds.push(c.id);
     }
@@ -357,7 +401,18 @@ async function loadConversations() {
   }
 
   const allIds = [...dmIds, ...gcIds];
-  if (allIds.length === 0) { conversationsCache = convos; return; }
+  // Note: do NOT return early here — we still need to process global-chat below
+  // even if the user has no DMs/GCs. Otherwise the global-chat entry never gets
+  // its last message / unread count.
+  if (allIds.length === 0) {
+    // Still process global-chat, then bail
+    const globalEntry = convos.find(c => c.slug === 'global-chat');
+    if (globalEntry) {
+      await fillGlobalChatPreview(globalEntry);
+    }
+    conversationsCache = convos;
+    return;
+  }
 
   const convoMap = {};
   convos.forEach(c => { convoMap[c.id] = c; });
@@ -415,6 +470,12 @@ async function loadConversations() {
       m.user_id !== myUserId && m.created_at > lastRead
     ).length;
   });
+
+  // Fetch last message + unread for global-chat from the `messages` table
+  const globalEntry = convos.find(c => c.slug === 'global-chat');
+  if (globalEntry) {
+    await fillGlobalChatPreview(globalEntry);
+  }
 
   convos.sort((a, b) => {
     if (!a.lastAt && !b.lastAt) return 0;
@@ -775,7 +836,7 @@ function updateActiveStatusLine(uname) {
   if (!activeChat || activeChat.type !== 'dm') return;
   if (activeChat.otherUsername !== uname) return;
 
-  // If someone is typing, don't overwrite the typing line
+  // Don't overwrite an active typing line
   if (Object.keys(typingState).length > 0) {
     renderTypingLine();
     return;
@@ -837,13 +898,23 @@ function renderInbox() {
 
   list.innerHTML = '';
 
+  // Global chat gets its own row, with real unread/lastMessage from DB
+  const globalEntry = conversationsCache.find(c => c.slug === 'global-chat');
+  const globalLastMsg = globalEntry?.lastMessage;
+  const globalPreviewText = globalLastMsg
+    ? buildPreviewText(globalLastMsg)
+    : 'Everyone in CESC';
+
   list.appendChild(buildInboxRow({
     kind: 'global',
     name: 'Global Chat',
-    sub: 'Everyone in CESC',
+    sub: globalPreviewText,
     avatarType: 'global',
+    time: globalEntry?.lastAt || null,
+    unread: globalEntry?.unread || 0,
     active: activeChat && activeChat.type === 'global'
   }));
+
 
   if (conversationsCache.length > 0) {
     const label = document.createElement('div');
@@ -861,6 +932,9 @@ function renderInbox() {
   }
 
   conversationsCache.forEach(c => {
+    // Skip global-chat — it has its own dedicated row at the top
+    if (c.slug === 'global-chat') return;
+
     const previewText = buildPreviewText(c.lastMessage);
     const isGroup = c.type === 'group';
     const row = buildInboxRow({
@@ -1436,10 +1510,82 @@ async function openChatBySlug(slug, hintUsername) {
   }
 }
 
+async function ensureGlobalChatConversation() {
+  const { data: existing } = await window.supabaseClient
+    .from('conversations')
+    .select('id')
+    .eq('slug', 'global-chat')
+    .maybeSingle();
+
+  if (existing?.id) return existing.id;
+
+  // Create if missing
+  const { data: created } = await window.supabaseClient
+    .from('conversations')
+    .insert({
+      type: 'group',
+      slug: 'global-chat',
+      name: 'Global Chat',
+      member_count: 0,
+      message_count: 0
+    })
+    .select('id')
+    .single();
+
+  return created?.id || null;
+}
+
+async function ensureGlobalMembership(globalConvId) {
+  if (!globalConvId || !window.session?.user?.id) return false;
+
+  try {
+    const { data: existing } = await window.supabaseClient
+      .from('conversation_members')
+      .select('user_id')
+      .eq('conversation_id', globalConvId)
+      .eq('user_id', window.session.user.id)
+      .maybeSingle();
+
+    if (existing) return true;
+
+    const { error } = await window.supabaseClient
+      .from('conversation_members')
+      .insert({
+        conversation_id: globalConvId,
+        user_id: window.session.user.id,
+        role: 'member'
+      });
+
+    if (error) {
+      // Duplicate is fine — treat as success
+      if (error.code === '23505') return true;
+      console.error('ensureGlobalMembership:', error);
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    console.error('ensureGlobalMembership exception:', e);
+    return false;
+  }
+}
+
 async function openGlobalChat() {
   stopActiveStatusTicker();
   stopTyping();
-  activeChat = { type: 'global', slug: GLOBAL_CHAT_SLUG };
+
+  const globalConvId = await ensureGlobalChatConversation();
+  if (globalConvId) {
+    await ensureGlobalMembership(globalConvId);
+  }
+
+  activeChat = {
+    type: 'global',
+    slug: GLOBAL_CHAT_SLUG,
+    conversationId: globalConvId
+  };
+
+
   renderInbox();
   updateChatHeader({
     name: 'Global Chat',
@@ -1451,7 +1597,14 @@ async function openGlobalChat() {
   await loadMessagesForChat();
   setupRealtimeForChat();
   subscribeTyping();
+
+  if (globalConvId) {
+    await markConversationRead(globalConvId);
+    subscribeMessageReads(globalConvId);
+  }
 }
+
+
 
 async function openConversationBySlug(slug, hintUsername) {
   stopActiveStatusTicker();
@@ -1557,6 +1710,7 @@ function closeChat() {
     typingPruneInterval = null;
   }
   for (const k in typingState) delete typingState[k];
+  teardownMessageReads();
   activeChat = null;
   teardownRealtime();
   pushUrl(null);
@@ -1660,6 +1814,10 @@ async function loadMessagesForChat() {
   if (activeChat.type === 'global') {
     msgWindow.table = 'messages';
     await loadMessagesWindow({ initial: true });
+    if (activeChat.conversationId) {
+      await loadMessageReads(activeChat.conversationId);
+      renderSeenBy();
+    }
   } else if (activeChat.ephemeral) {
     container.innerHTML = '';
     const sys = document.createElement('div');
@@ -1677,6 +1835,8 @@ async function loadMessagesForChat() {
     msgWindow.table = 'gc_messages';
     msgWindow.conversationId = activeChat.conversationId;
     await loadMessagesWindow({ initial: true });
+    await loadMessageReads(activeChat.conversationId);
+    renderSeenBy();
   }
 
   installScrollLoader();
@@ -1797,11 +1957,20 @@ async function maybeLoadOlder() {
 
 async function markConversationRead(conversationId) {
   if (!conversationId) return;
-  await window.supabaseClient
+
+  // Existing: unread badge tracking
+  window.supabaseClient
     .from('conversation_members')
     .update({ last_read_at: new Date().toISOString() })
     .eq('conversation_id', conversationId)
-    .eq('user_id', myUserId);
+    .eq('user_id', myUserId)
+    .then(() => {}, () => {});
+
+  // NEW: seen-by watermark
+  window.supabaseClient
+    .rpc('mark_conversation_seen', { p_conversation_id: conversationId })
+    .then(() => {}, () => {});
+
   const c = conversationsCache.find(x => x.id === conversationId);
   if (c) c.unread = 0;
   renderInbox();
@@ -1809,17 +1978,160 @@ async function markConversationRead(conversationId) {
 
 async function markDMMessagesSeen(conversationId) {
   if (!conversationId) return;
-  const { data, error } = await window.supabaseClient
+  const { error } = await window.supabaseClient
     .from('dm_messages')
     .update({ seen_at: new Date().toISOString() })
     .eq('conversation_id', conversationId)
     .eq('receiver_username', username)
-    .is('seen_at', null)
-    .select('id');
+    .is('seen_at', null);
 
   if (error) {
     console.error('markDMMessagesSeen error:', error);
   }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// ── SEEN BY (GC + Global Chat) ──
+// ═══════════════════════════════════════════════════════════
+
+async function loadMessageReads(conversationId) {
+  if (!conversationId) { messageReadsCache = []; return; }
+  try {
+    const { data } = await window.supabaseClient
+      .from('message_reads')
+      .select('username, display_name, last_read_at')
+      .eq('conversation_id', conversationId);
+    messageReadsCache = data || [];
+  } catch (e) {
+    console.error('loadMessageReads:', e);
+    messageReadsCache = [];
+  }
+}
+
+function renderSeenBy() {
+  // Remove existing elements
+  document.querySelectorAll('.msg-seen-by').forEach(el => el.remove());
+
+  // Only show for GC + Global chat
+  if (!activeChat) return;
+  if (activeChat.type === 'dm') return;
+  if (activeChat.type !== 'group' && activeChat.type !== 'global') return;
+
+  // Find last message group
+  const groups = document.querySelectorAll('.msg-group');
+  if (groups.length === 0) return;
+  const lastGroup = groups[groups.length - 1];
+
+  const msgTime = new Date(lastGroup.dataset.created_at).getTime();
+  if (isNaN(msgTime)) return;
+
+  // Compute seen-by list (excluding self, only if they've read up to this message)
+  const seenBy = messageReadsCache
+    .filter(r =>
+      r.username !== username &&
+      new Date(r.last_read_at).getTime() >= msgTime
+    )
+    .map(r => r.display_name || r.username);
+
+  if (seenBy.length === 0) return;
+
+  // Build label
+  let label;
+  let isOverflow = false;
+  if (seenBy.length === 1) {
+    label = `Seen by ${seenBy[0]}`;
+  } else if (seenBy.length <= 3) {
+    label = `Seen by ${seenBy.join(', ')}`;
+  } else {
+    label = `Seen by ${seenBy.slice(0, 3).join(', ')} +${seenBy.length - 3}`;
+    isOverflow = true;
+  }
+
+  const el = document.createElement('div');
+  el.className = 'msg-seen-by';
+  el.textContent = label;
+  el.style.cursor = 'pointer';
+  el.title = 'Tap to see full list';
+  el.onclick = (e) => {
+    e.stopPropagation();
+    window.openSeenByModal(seenBy);
+  };
+  lastGroup.appendChild(el);
+}
+
+window.openSeenByModal = function(seenByList) {
+  const modal = document.getElementById('seen-by-modal');
+  const body = document.getElementById('seen-by-modal-body');
+  if (!modal || !body) return;
+
+  if (!seenByList || seenByList.length === 0) {
+    body.innerHTML = '<div class="seen-by-empty">No one has seen this message yet.</div>';
+  } else {
+    body.innerHTML = seenByList
+      .map(name => `
+        <div class="seen-by-row">
+          <i class="fas fa-check-double"></i>
+          <span>${window.escapeHTML(name)}</span>
+        </div>
+      `)
+      .join('');
+  }
+
+  modal.classList.add('show');
+};
+
+window.closeSeenByModal = function(e) {
+  if (e && e.target && e.target.id !== 'seen-by-modal') return;
+  const modal = document.getElementById('seen-by-modal');
+  if (modal) modal.classList.remove('show');
+};
+
+function subscribeMessageReads(conversationId) {
+  if (readsChannel) {
+    window.supabaseClient.removeChannel(readsChannel);
+    readsChannel = null;
+  }
+  if (!conversationId) return;
+
+  readsChannel = window.supabaseClient
+    .channel('reads-' + conversationId + '-' + Date.now())
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'message_reads',
+      filter: `conversation_id=eq.${conversationId}`
+    }, (payload) => {
+      const row = payload.new;
+      if (!row) return;
+
+      const idx = messageReadsCache.findIndex(r => r.username === row.username);
+      if (idx >= 0) {
+        messageReadsCache[idx] = {
+          username: row.username,
+          display_name: row.display_name,
+          last_read_at: row.last_read_at
+        };
+      } else {
+        messageReadsCache.push({
+          username: row.username,
+          display_name: row.display_name,
+          last_read_at: row.last_read_at
+        });
+      }
+
+      renderSeenBy();
+    })
+    .subscribe();
+}
+
+function teardownMessageReads() {
+  if (readsChannel) {
+    window.supabaseClient.removeChannel(readsChannel);
+    readsChannel = null;
+  }
+  messageReadsCache = [];
+  document.querySelectorAll('.msg-seen-by').forEach(el => el.remove());
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2098,7 +2410,7 @@ function handleIncoming(msg) {
   }
   appendMessage(msg);
 
-  // Someone else's message means they've stopped typing
+  // Their message means they stopped typing
   if (msg.username && msg.username !== username) {
     delete typingState[msg.username];
     renderTypingLine();
@@ -2106,6 +2418,11 @@ function handleIncoming(msg) {
 
   if (activeChat.type === 'dm' && msg.receiver_username === username && !msg.seen_at) {
     markDMMessagesSeen(activeChat.conversationId);
+  }
+
+  // Refresh seen-by line on new incoming message
+  if (activeChat.type === 'global' || activeChat.type === 'group') {
+    renderSeenBy();
   }
 }
 
@@ -2148,9 +2465,13 @@ function setupInboxRealtime() {
       payload => handleInboxMessage(payload.new, 'dm'))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gc_messages' },
       payload => handleInboxMessage(payload.new, 'gc'))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+      () => scheduleInboxRefresh())
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'dm_messages' },
       () => scheduleInboxRefresh())
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'gc_messages' },
+      () => scheduleInboxRefresh())
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' },
       () => scheduleInboxRefresh())
     .subscribe();
 }
@@ -3162,6 +3483,22 @@ function openContextMenu(msgId) {
     delBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
     delBtn.onclick = () => { closeContextMenu(); window.deleteMsg(msgId); };
     body.appendChild(delBtn);
+  } else {
+    // Not your message → Report option
+    const reportBtn = document.createElement('button');
+    reportBtn.className = 'ctx-item danger';
+    reportBtn.innerHTML = '<i class="fas fa-flag"></i> Report';
+    const msgPreview = (content || '').slice(0, 60);
+    reportBtn.onclick = () => {
+      closeContextMenu();
+      const targetType = activeChat.type === 'global'
+        ? 'dm_message'     // use valid enum — global chat uses "messages" table but the enum doesn't have a specific "chat_message" value
+        : activeChat.type === 'dm'
+          ? 'dm_message'
+          : 'gc_message';
+      window.openQuickReport(targetType, msgId, msgPreview);
+    };
+    body.appendChild(reportBtn);
   }
   menu.classList.add('open');
 }
@@ -3365,6 +3702,17 @@ async function pageInit() {
 
   await loadProfilesIndex();
 
+  // Ensure global-chat conversation exists and we're a member of it
+  // so it appears in the inbox as a real conversation
+  try {
+    const globalConvId = await ensureGlobalChatConversation();
+    if (globalConvId) {
+      await ensureGlobalMembership(globalConvId);
+    }
+  } catch (e) {
+    console.error('global chat membership init:', e);
+  }
+
   nextLoadingStep();
   await loadConversations();
   renderInbox();
@@ -3395,6 +3743,7 @@ async function pageInit() {
 // Cleanup on unload
 window.addEventListener('beforeunload', () => {
   teardownRealtime();
+  teardownMessageReads();
   stopActiveStatusTicker();
   stopChatAdRotation();
   stopTyping();

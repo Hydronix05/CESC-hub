@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
 
 <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
 
@@ -36,8 +36,8 @@ if ('serviceWorker' in navigator) {
 </script>
 
 </head>
-<body>
-<!-- ── LOADING SCREEN ── -->
+<body data-page-title="Profiles">
+  <!-- ── LOADING SCREEN ── -->
 <div id="loading-screen">
   <div class="bg-canvas">
     <div class="orb orb1"></div>
@@ -85,67 +85,10 @@ if ('serviceWorker' in navigator) {
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<header class="top-header">
-  <div class="header-left">
-    <a href="/" class="header-logo">
-      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
-    </a>
-    <span class="header-page-title">Profiles</span>
-  </div>
-  <div class="header-right">
-    <span class="header-online-status">
-      <span class="online-pulse-ring">
-        <span class="online-pulse-dot"></span>
-      </span>
-      <span class="online-count-number" id="online-count">...</span>
-      <span class="online-status-text">online now</span>
-    </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
-    
-    <a href="/notifications" class="hdr-btn" title="Notifications">
-      <i class="fas fa-bell"></i>
-      <span class="notif-badge" id="notif-badge">0</span>
-    </a>
-    <div class="profile-chip" id="profile-chip" onclick="window.toggleDropdown()">
-      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
-      <span class="chip-name" id="chip-name">loading</span>
-      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
-      <div class="profile-dropdown" id="profile-dropdown">
-        <div class="dd-header">
-          <div class="dd-name" id="dd-name">—</div>
-          <div class="dd-sub">CESC Hub member</div>
-        </div>
-        <a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
-        <a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
-        <a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
-        <div class="dd-div"></div>
-        <button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-      </div>
-    </div>
-  </div>
-</header>
+<div id="app-header"></div>
 
-<aside class="sidebar" id="sidebar">
-  <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
-  <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
-  <a href="/profiles" class="nav-item active"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
-  <a href="/games" class="nav-item"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
-  <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
-  <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
-  <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-  <a href="/notifications" class="nav-item" id="notif-nav">
-    <span class="nav-icon"><i class="fas fa-bell"></i></span>
-    <span class="nav-label-text">Notifications</span>
-    <span class="nav-badge-count" id="notif-nav-badge">0</span>
-  </a>
+<div id="app-sidebar"></div>
 
-  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
-    <i class="fas fa-chevron-right"></i>
-    <span class="toggle-label">Collapse</span>
-  </button>
-
-  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
-</aside>
 
 <main class="main">
   <div class="page-header">
@@ -195,76 +138,16 @@ if ('serviceWorker' in navigator) {
     <div class="modal-bio" id="modal-bio">No bio yet</div>
     <div class="modal-joined" id="modal-joined"></div>
     <div class="modal-last-seen" id="modal-last-seen"></div>
+    <button class="modal-report-btn" id="modal-report-btn" onclick="reportProfileFromModal()" style="display:none;">
+      <i class="fas fa-flag"></i> Report this profile
+    </button>
   </div>
 </div>
 
-<nav class="downbar" id="downbar">
-  <div class="downbar-inner">
-    <a href="/" class="downbar-item" id="downbar-home">
-      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
-    </a>
-    <a href="/chat" class="downbar-item" id="downbar-chat">
-      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
-    </a>
-    <a href="/profiles" class="downbar-item active" id="downbar-profiles">
-      <span class="downbar-icon"><i class="fas fa-users"></i></span>
-    </a>
-    <a href="/games" class="downbar-item" id="downbar-games">
-      <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
-    </a>
-    <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
-      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
-    </button>
-  </div>
-</nav>
+<div id="app-downbar"></div>
 
-<div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
+<div id="app-downbar-more"></div>
 
-<div class="downbar-more" id="downbar-more">
-  <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
-  
-  <div class="downbar-more-grid">
-    <a href="/" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span>
-      <span class="downbar-more-label">Feed</span>
-    </a>
-    <a href="/chat" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
-      <span class="downbar-more-label">Chat</span>
-    </a>
-    <a href="/profiles" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
-      <span class="downbar-more-label">Profiles</span>
-    </a>
-    <a href="/games" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
-      <span class="downbar-more-label">Games</span>
-    </a>
-    <a href="/leaderboard" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
-      <span class="downbar-more-label">Leaderboard</span>
-    </a>
-    <a href="/settings" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
-      <span class="downbar-more-label">Settings</span>
-    </a>
-    <a href="/download" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-download"></i></span>
-      <span class="downbar-more-label">Downloads</span>
-    </a>
-    <a href="/notifications" class="downbar-more-item" id="downbar-more-notif">
-      <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
-      <span class="downbar-more-label">Notifications</span>
-      <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
-    </a>
-    <button class="downbar-more-item logout" onclick="window.logout()">
-      <span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>
-      <span class="downbar-more-label">Logout</span>
-    </button>
-  </div>
-
-  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
-</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -273,7 +156,7 @@ if ('serviceWorker' in navigator) {
 
 const VIEW_KEY = 'cesc_profiles_view';
 const TARGET_CARDS = 20;
-const DISPLAYABLE_ROLES = ['advertiser', 'teacher', 'og', 'vip'];
+const DISPLAYABLE_ROLES = ['teacher', 'og', 'vip'];
 const ELEVATED_ROLES = ['owner', 'admin', 'moderator', 'teacher', 'vip', 'advertiser'];
 const ROLE_COLORS = {
   advertiser: 'var(--purple)',
@@ -727,6 +610,32 @@ window.openModal = function(p) {
     lastSeenEl.textContent = formatLastSeen(p.last_seen);
     lastSeenEl.style.color = 'var(--muted)';
   }
+
+  // Show "Report this profile" button only on other users' profiles
+  const reportBtn = document.getElementById('modal-report-btn');
+  const isOwnProfile = window.currentUser && p.username === window.currentUser.username;
+  if (reportBtn) {
+    if (isOwnProfile) {
+      reportBtn.style.display = 'none';
+    } else {
+      reportBtn.style.display = 'flex';
+      reportBtn.dataset.username = p.username;
+      reportBtn.dataset.userId = p.id || '';
+    }
+  }
+};
+
+// ── Report profile from modal ──
+window.reportProfileFromModal = function() {
+  const btn = document.getElementById('modal-report-btn');
+  if (!btn) return;
+  const userId = btn.dataset.userId;
+  const username = btn.dataset.username;
+  if (!userId) {
+    window.showToast('Cannot report this profile — missing ID', 'error');
+    return;
+  }
+  window.openQuickReport('user', userId, username);
 };
 
 window.closeModal = function(e) {
@@ -756,7 +665,7 @@ async function loadProfiles() {
   try {
     const { data, error } = await window.supabaseClient
       .from('profiles')
-      .select('username, display_name, bio, pfp_url, role, roles, created_at, last_seen')
+      .select('id, username, display_name, bio, pfp_url, role, roles, created_at, last_seen')
       .order('created_at', { ascending: false });
 
     if (error) {

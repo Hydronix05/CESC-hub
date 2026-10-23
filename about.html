@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Hub — About</title>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="shared.js"></script>
+<link rel="stylesheet" href="/css/pages/about.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed:', err));
+  });
+}
+</script>
+
+</head>
+<body data-page-title="About">
+  <div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<div id="app-header"></div>
+
+<div id="app-sidebar"></div>
+
+
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>About CESC Hub</h1>
+      <p>rules, privacy, guides — everything you need to know</p>
+    </div>
+  </div>
+
+  <!-- ── MAIN TABS ── -->
+  <div class="about-tabs" id="about-tabs">
+    <button class="about-tab" data-tab="rules" onclick="switchAboutTab('rules')">
+      <i class="fas fa-scroll"></i>
+      <span>Rules &amp; Privacy</span>
+    </button>
+    <button class="about-tab" data-tab="guides" onclick="switchAboutTab('guides')">
+      <i class="fas fa-book-open"></i>
+      <span>Guides</span>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB: RULES & PRIVACY
+       ═══════════════════════════════════════════════════════ -->
+  <section class="about-panel" id="panel-rules">
+    <div class="about-subtabs">
+      <button class="about-subtab active" data-subtab="rules" onclick="switchRulesSubtab('rules')">
+        <i class="fas fa-gavel"></i> Community Rules
+      </button>
+      <button class="about-subtab" data-subtab="privacy" onclick="switchRulesSubtab('privacy')">
+        <i class="fas fa-shield-halved"></i> Privacy Policy
+      </button>
+      <button class="about-subtab" data-subtab="terms" onclick="switchRulesSubtab('terms')">
+        <i class="fas fa-file-contract"></i> Terms of Service
+      </button>
+    </div>
+
+    <div class="about-content">
+
+      <!-- ── RULES ── -->
+      <div class="rules-section" id="rules-rules">
+        <div class="rules-header">
+          <div class="rules-header-icon"><i class="fas fa-gavel"></i></div>
+          <div>
+            <div class="rules-header-title">Community Rules</div>
+            <div class="rules-header-sub">last updated: October 2026</div>
+          </div>
+        </div>
+
+        <div class="rules-body" id="rules-rules-content">
+          <div class="rules-section-item">
+            <div class="rules-section-num">1</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Respect</div>
+              <div class="rules-section-text">
+                treat every member with basic respect. no bullying, harassment, hate speech, or targeted mockery. disagreements are fine — attacks are not.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">2</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Content</div>
+              <div class="rules-section-text">
+                no NSFW, gore, spam, or illegal content. this is a school community — keep it appropriate for all CESC students.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">3</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Accounts</div>
+              <div class="rules-section-text">
+                one account per person. no impersonation of other students, teachers, or admins. keep your login private.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">4</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Posts &amp; Chats</div>
+              <div class="rules-section-text">
+                you own your words. post in the right place. don't share links to scams or malware. don't screenshot DMs without permission.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">5</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Moderation</div>
+              <div class="rules-section-text">
+                breaking a rule gets you a warning. repeat offenses get you timed out. serious breaks — hate speech, doxxing, threats — lead to permanent bans.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">6</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Report Problems</div>
+              <div class="rules-section-text">
+                if something feels wrong, report it. admins would rather hear about small issues than find out about big ones too late.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="placeholder-note">
+          <i class="fas fa-pencil"></i>
+          <span>full detailed rules are being finalised by the CESC Hub team — this list is an overview for now</span>
+        </div>
+      </div>
+
+      <!-- ── PRIVACY ── -->
+      <div class="rules-section" id="rules-privacy" style="display:none">
+        <div class="rules-header">
+          <div class="rules-header-icon"><i class="fas fa-shield-halved"></i></div>
+          <div>
+            <div class="rules-header-title">Privacy Policy</div>
+            <div class="rules-header-sub">last updated: October 2026</div>
+          </div>
+        </div>
+
+        <div class="rules-body" id="rules-privacy-content">
+          <div class="rules-section-item">
+            <div class="rules-section-num"><i class="fas fa-database" style="font-size:0.85rem"></i></div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">What We Collect</div>
+              <div class="rules-section-text">
+                your username, email, display name, bio, profile picture, class, section, roll number, gender, posts, comments, messages, and game activity on CESC Hub.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num"><i class="fas fa-bullseye" style="font-size:0.85rem"></i></div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Why We Collect It</div>
+              <div class="rules-section-text">
+                to run CESC Hub. that's it. no advertising beyond CESC Hub's own ad system. no selling data to third parties. no tracking across other websites.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num"><i class="fas fa-users" style="font-size:0.85rem"></i></div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Who Can See Your Data</div>
+              <div class="rules-section-text">
+                your profile is visible to other CESC Hub members. your DMs are between you and the recipient. admins can only see your private data if a report requires investigation.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num"><i class="fas fa-lock" style="font-size:0.85rem"></i></div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">How It's Stored</div>
+              <div class="rules-section-text">
+                on Supabase — secured with row-level security and encryption. passwords are hashed, never stored in plain text.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num"><i class="fas fa-cookie-bite" style="font-size:0.85rem"></i></div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Cookies &amp; Local Storage</div>
+              <div class="rules-section-text">
+                we use localStorage for your theme, onboarding state, and short-lived post cooldown. no third-party cookies or tracking scripts.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num"><i class="fas fa-user-shield" style="font-size:0.85rem"></i></div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Your Rights</div>
+              <div class="rules-section-text">
+                you can edit or delete your profile at any time in Settings. to delete your account entirely, message an admin.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="placeholder-note">
+          <i class="fas fa-pencil"></i>
+          <span>a full legal-grade privacy policy is being prepared — this is the plain-language overview</span>
+        </div>
+      </div>
+
+      <!-- ── TERMS ── -->
+      <div class="rules-section" id="rules-terms" style="display:none">
+        <div class="rules-header">
+          <div class="rules-header-icon"><i class="fas fa-file-contract"></i></div>
+          <div>
+            <div class="rules-header-title">Terms of Service</div>
+            <div class="rules-header-sub">last updated: October 2026</div>
+          </div>
+        </div>
+
+        <div class="rules-body">
+          <div class="rules-section-item">
+            <div class="rules-section-num">1</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Who Can Use CESC Hub</div>
+              <div class="rules-section-text">
+                current CESC students, teachers, and approved advertisers. accounts are created by CESC Hub admins. shared accounts are not allowed.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">2</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Your Content</div>
+              <div class="rules-section-text">
+                you own what you post. by posting on CESC Hub, you grant CESC Hub permission to display your content within the app. you can delete your own content at any time.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">3</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Advertiser Content</div>
+              <div class="rules-section-text">
+                CESC Hub displays sponsored content from approved advertisers. sponsored content is clearly marked. advertisers are responsible for the accuracy of their own ads.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">4</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Admin Rights</div>
+              <div class="rules-section-text">
+                CESC Hub admins can remove any content, warn, time out, or ban any account that breaks the rules. admins can also update these terms — changes will be announced in the feed.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">5</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Service Availability</div>
+              <div class="rules-section-text">
+                CESC Hub is a student-built project. it's provided as-is, without guarantees of uptime. if something breaks, we'll fix it as fast as we can — usually the same day.
+              </div>
+            </div>
+          </div>
+
+          <div class="rules-section-item">
+            <div class="rules-section-num">6</div>
+            <div class="rules-section-content">
+              <div class="rules-section-title">Changes to Terms</div>
+              <div class="rules-section-text">
+                we may update these terms as CESC Hub grows. when we do, the change will be announced in the feed and the "last updated" date above will change.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="placeholder-note">
+          <i class="fas fa-pencil"></i>
+          <span>a complete Terms of Service is being prepared — this is the plain-language overview</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TAB: GUIDES
+       ═══════════════════════════════════════════════════════ -->
+  <section class="about-panel" id="panel-guides" style="display:none">
+
+    <div class="browser-tip">
+      <i class="fab fa-chrome"></i>
+      <div>
+        <strong>best experienced in Chrome</strong>
+        <span>CESC Hub works in every modern browser, but Chrome gives the smoothest experience — especially for games and notifications.</span>
+      </div>
+    </div>
+
+    <div class="about-subtabs about-subtabs-guides" id="guides-subtabs">
+      <button class="about-subtab active" data-guide="getting-started" onclick="switchGuideTab('getting-started')">
+        <i class="fas fa-rocket"></i> Getting Started
+      </button>
+      <button class="about-subtab" data-guide="feed" onclick="switchGuideTab('feed')">
+        <i class="fas fa-newspaper"></i> Feed
+      </button>
+      <button class="about-subtab" data-guide="chat" onclick="switchGuideTab('chat')">
+        <i class="fas fa-comments"></i> Chat
+      </button>
+      <button class="about-subtab" data-guide="profiles" onclick="switchGuideTab('profiles')">
+        <i class="fas fa-users"></i> Profiles
+      </button>
+      <button class="about-subtab" data-guide="games" onclick="switchGuideTab('games')">
+        <i class="fas fa-gamepad"></i> Games
+      </button>
+      <button class="about-subtab" data-guide="leaderboard" onclick="switchGuideTab('leaderboard')">
+        <i class="fas fa-trophy"></i> Leaderboard
+      </button>
+      <button class="about-subtab" data-guide="settings" onclick="switchGuideTab('settings')">
+        <i class="fas fa-cog"></i> Settings
+      </button>
+      <button class="about-subtab" data-guide="download" onclick="switchGuideTab('download')">
+        <i class="fas fa-download"></i> Install App
+      </button>
+    </div>
+
+    <div class="about-content">
+
+      <!-- ═══ GUIDE: GETTING STARTED ═══ -->
+      <div class="guide-content" id="guide-getting-started">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-rocket"></i></div>
+          <div>
+            <div class="guide-header-title">Getting Started</div>
+            <div class="guide-header-sub">your first 5 minutes on CESC Hub</div>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Set up your profile</div>
+              <div class="guide-step-text">go to <a href="/settings">Settings</a> → add a profile picture, write a short bio, choose a display name. this is how other CESC students will recognise you.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Say hi in the feed</div>
+              <div class="guide-step-text">open the <a href="/">Feed</a> and tap <strong>Create Post</strong>. write something short — a hello, a thought, a meme. it'll show up for everyone.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Join the chat</div>
+              <div class="guide-step-text">click <a href="/chat">Chat</a>. you'll land in the Global Chat — everyone in CESC. type a message and press Enter. that's it.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Try a game</div>
+              <div class="guide-step-text">visit <a href="/games">Games</a>. play Bloxd.io on the CESC Hub server — playtime counts toward the <a href="/leaderboard">Leaderboard</a>.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">5</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Install the app</div>
+              <div class="guide-step-text">add CESC Hub to your home screen. open the <a href="/download">Downloads page</a> for step-by-step instructions for your device.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>a 3-minute walkthrough of CESC Hub is being recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GUIDE: FEED ═══ -->
+      <div class="guide-content" id="guide-feed" style="display:none">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-newspaper"></i></div>
+          <div>
+            <div class="guide-header-title">The Feed</div>
+            <div class="guide-header-sub">where everyone posts</div>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Make a post</div>
+              <div class="guide-step-text">tap <strong>Create Post</strong> (top right of the feed). write what's on your mind, add an image if you want. no character limit.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Format your text</div>
+              <div class="guide-step-text">
+                use the toolbar to make text <strong>bold</strong>, <em>italic</em>, <u>underlined</u>, or pick a size (small / normal / large / huge). you can also add links with the 🔗 button.
+              </div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Like and comment</div>
+              <div class="guide-step-text">tap the ❤️ to like a post. tap 💬 to open comments. you'll get a notification when someone likes or comments on your posts.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Delete your own posts</div>
+              <div class="guide-step-text">on your own posts, tap the ⋯ menu → Delete. this removes the post and all its comments.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>feed walkthrough is being recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GUIDE: CHAT ═══ -->
+      <div class="guide-content" id="guide-chat" style="display:none">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-comments"></i></div>
+          <div>
+            <div class="guide-header-title">Chat</div>
+            <div class="guide-header-sub">global chat, DMs, and how to reach people</div>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Send a message in Global Chat</div>
+              <div class="guide-step-text">open <a href="/chat">Chat</a>. Global Chat is open by default — everyone sees your messages. type and press Enter.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Start a direct message (DM)</div>
+              <div class="guide-step-text">
+                use the <strong>search bar</strong> at the top of the chat inbox. type a name, tap the person, and start typing. your conversation is private — only you and they can see it.
+              </div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Reply to a message</div>
+              <div class="guide-step-text">hover a message (or long-press on mobile) and tap ↩. you'll see a preview of what you're replying to.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Edit or delete your message</div>
+              <div class="guide-step-text">hover your own message and tap ✏️ to edit (within 15 minutes), or 🗑️ to delete. deleting hides it from everyone except the owner.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">5</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Post a note</div>
+              <div class="guide-step-text">notes appear at the top of the chat inbox. tap your own avatar to post a 24-hour note, like an Instagram story.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>chat &amp; DM walkthrough is being recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GUIDE: PROFILES ═══ -->
+      <div class="guide-content" id="guide-profiles" style="display:none">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-users"></i></div>
+          <div>
+            <div class="guide-header-title">Profiles</div>
+            <div class="guide-header-sub">browse and find CESC members</div>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Browse members</div>
+              <div class="guide-step-text">open <a href="/profiles">Profiles</a>. every member appears as a card — name, avatar, roles, and last-seen. order is shuffled so everyone gets seen.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Switch views</div>
+              <div class="guide-step-text">use the toggle top-right to switch between <strong>cards</strong> and <strong>rows</strong>. whichever feels better to you.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Search for someone</div>
+              <div class="guide-step-text">type a username or display name in the search bar. matches appear instantly.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">View a profile</div>
+              <div class="guide-step-text">tap any card to see their bio, role badges, join date, and last active time.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>profiles walkthrough is being recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GUIDE: GAMES ═══ -->
+      <div class="guide-content" id="guide-games" style="display:none">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-gamepad"></i></div>
+          <div>
+            <div class="guide-header-title">Games</div>
+            <div class="guide-header-sub">play, compete, climb the leaderboard</div>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Open the Games hub</div>
+              <div class="guide-step-text">click <a href="/games">Games</a> in the sidebar. pick a game — currently just Bloxd.io.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Play Bloxd.io</div>
+              <div class="guide-step-text">
+                tap <strong>Play</strong>. on mobile you'll go full-screen. on desktop the game loads in an iframe below the toolbar. play on the CESC Hub server for it to count.
+              </div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">How playtime works</div>
+              <div class="guide-step-text">
+                your session is tracked only while the game tab is active and you're clicking/moving. switch tabs or walk away and the timer pauses — that's fair for everyone.
+              </div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Check your rank</div>
+              <div class="guide-step-text">visit the <a href="/leaderboard">Leaderboard</a>. playtime feeds into the <strong>Overall</strong> score alongside your login streak.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>games &amp; playtime walkthrough is being recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GUIDE: LEADERBOARD ═══ -->
+      <div class="guide-content" id="guide-leaderboard" style="display:none">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-trophy"></i></div>
+          <div>
+            <div class="guide-header-title">Leaderboard</div>
+            <div class="guide-header-sub">4 ways to see who's on top</div>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Overall score</div>
+              <div class="guide-step-text">
+                combines your <strong>login streak</strong> (×15 per day) and your <strong>gameplay time</strong> (×0.5 per minute). streak is weighted more — consistency beats grinding.
+              </div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Bloxd.io tab</div>
+              <div class="guide-step-text">pure playtime ranking. whoever played the most wins. no streak involved.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Streak tab</div>
+              <div class="guide-step-text">login streak leaderboard. log in every day and you climb. miss a day and you start over.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Last Online tab</div>
+              <div class="guide-step-text">not a competition — just who's been active most recently. good for seeing who's around.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>leaderboard walkthrough is being recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GUIDE: SETTINGS ═══ -->
+      <div class="guide-content" id="guide-settings" style="display:none">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-cog"></i></div>
+          <div>
+            <div class="guide-header-title">Settings</div>
+            <div class="guide-header-sub">make CESC Hub feel like yours</div>
+          </div>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Choose a theme</div>
+              <div class="guide-step-text">7 theme families, each with a dark and light variant. pick your vibe. the moon/sun button in the header toggles dark ↔ light for whichever family you picked.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Set your chat layout</div>
+              <div class="guide-step-text">two layouts: <strong>Meta</strong> (WhatsApp-style, your messages on the right) or <strong>Discord</strong> (all messages left-aligned). pick whichever feels natural.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Change your profile</div>
+              <div class="guide-step-text">update your display name, bio, or profile picture. display name changes are limited to 2 per week — pick carefully.</div>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">Change your password</div>
+              <div class="guide-step-text">under Security, enter a new password twice. keep it at least 6 characters — longer is better.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>settings walkthrough is being recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GUIDE: DOWNLOAD / INSTALL ═══ -->
+      <div class="guide-content" id="guide-download" style="display:none">
+        <div class="guide-header">
+          <div class="guide-header-icon"><i class="fas fa-download"></i></div>
+          <div>
+            <div class="guide-header-title">Install the App</div>
+            <div class="guide-header-sub">CESC Hub on your home screen, no app store needed</div>
+          </div>
+        </div>
+
+        <div class="install-intro">
+          CESC Hub is a <strong>Progressive Web App (PWA)</strong> — that means you can install it to your home screen like a native app, without any app store. it works on every modern phone, tablet, and computer. <strong>chrome is recommended</strong> for the smoothest install and experience.
+        </div>
+
+        <div class="install-platforms">
+
+          <div class="install-platform">
+            <div class="install-platform-header">
+              <div class="install-platform-icon android"><i class="fab fa-android"></i></div>
+              <div>
+                <div class="install-platform-title">Android</div>
+                <div class="install-platform-sub">Chrome · Edge · Samsung Internet</div>
+              </div>
+            </div>
+            <ol class="install-platform-steps">
+              <li>open <a href="https://cesc-hub.vercel.app">cesc-hub.vercel.app</a> in <strong>Chrome</strong></li>
+              <li>tap the <strong>⋮ menu</strong> (three dots, top right)</li>
+              <li>tap <strong>"Install app"</strong> or <strong>"Add to Home Screen"</strong></li>
+              <li>confirm — the CESC Hub icon appears on your home screen</li>
+            </ol>
+          </div>
+
+          <div class="install-platform">
+            <div class="install-platform-header">
+              <div class="install-platform-icon apple"><i class="fab fa-apple"></i></div>
+              <div>
+                <div class="install-platform-title">iPhone / iPad</div>
+                <div class="install-platform-sub">Safari · Chrome (Safari recommended)</div>
+              </div>
+            </div>
+            <ol class="install-platform-steps">
+              <li>open <a href="https://cesc-hub.vercel.app">cesc-hub.vercel.app</a> in <strong>Safari</strong> (or Chrome)</li>
+              <li>tap the <strong>Share button</strong> (square with arrow, bottom of screen)</li>
+              <li>scroll down and tap <strong>"Add to Home Screen"</strong></li>
+              <li>tap <strong>Add</strong> — the icon appears on your home screen</li>
+            </ol>
+          </div>
+
+          <div class="install-platform">
+            <div class="install-platform-header">
+              <div class="install-platform-icon windows"><i class="fab fa-windows"></i></div>
+              <div>
+                <div class="install-platform-title">Windows</div>
+                <div class="install-platform-sub">Chrome · Edge</div>
+              </div>
+            </div>
+            <ol class="install-platform-steps">
+              <li>open <a href="https://cesc-hub.vercel.app">cesc-hub.vercel.app</a> in <strong>Chrome</strong></li>
+              <li>look for the <strong>install icon</strong> (small monitor with arrow) in the address bar</li>
+              <li>click <strong>Install</strong></li>
+              <li>CESC Hub opens as its own window and appears in your start menu</li>
+            </ol>
+          </div>
+
+          <div class="install-platform">
+            <div class="install-platform-header">
+              <div class="install-platform-icon mac"><i class="fab fa-apple"></i></div>
+              <div>
+                <div class="install-platform-title">macOS</div>
+                <div class="install-platform-sub">Chrome · Safari</div>
+              </div>
+            </div>
+            <ol class="install-platform-steps">
+              <li>open <a href="https://cesc-hub.vercel.app">cesc-hub.vercel.app</a> in <strong>Chrome</strong> or <strong>Safari</strong></li>
+              <li>in Chrome: look for the install icon in the address bar</li>
+              <li>in Safari: <strong>File → Add to Dock</strong></li>
+              <li>CESC Hub opens as its own app</li>
+            </ol>
+          </div>
+
+        </div>
+
+        <div class="guide-video-placeholder">
+          <i class="fas fa-video"></i>
+          <div class="guide-video-text">
+            <strong>Video coming soon</strong>
+            <span>install walkthrough is being recorded for each device</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<div id="app-downbar"></div>
+
+<div id="app-downbar-more"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── ABOUT PAGE LOGIC ──
+// ═══════════════════════════════════════════════════════════
+
+const LAST_TAB_KEY = 'cesc_about_last_tab';
+const LAST_SUBTAB_KEY = 'cesc_about_last_subtab';
+const LAST_GUIDE_KEY = 'cesc_about_last_guide';
+
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'about', label: 'Loading about...', technical: 'Preparing content' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'About ready' }
+  ]);
+}
+
+// ── SWITCH MAIN TAB ──
+window.switchAboutTab = function(tab) {
+  document.querySelectorAll('.about-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  document.getElementById('panel-rules').style.display = tab === 'rules' ? '' : 'none';
+  document.getElementById('panel-guides').style.display = tab === 'guides' ? '' : 'none';
+  try { localStorage.setItem(LAST_TAB_KEY, tab); } catch (e) {}
+  history.replaceState(null, '', `#${tab}`);
+};
+
+// ── SWITCH RULES SUBTAB ──
+window.switchRulesSubtab = function(subtab) {
+  document.querySelectorAll('.about-subtab[data-subtab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.subtab === subtab);
+  });
+  document.getElementById('rules-rules').style.display = subtab === 'rules' ? '' : 'none';
+  document.getElementById('rules-privacy').style.display = subtab === 'privacy' ? '' : 'none';
+  document.getElementById('rules-terms').style.display = subtab === 'terms' ? '' : 'none';
+  try { localStorage.setItem(LAST_SUBTAB_KEY, subtab); } catch (e) {}
+  history.replaceState(null, '', `#rules-${subtab}`);
+};
+
+// ── SWITCH GUIDE TAB ──
+window.switchGuideTab = function(guide) {
+  document.querySelectorAll('.about-subtab[data-guide]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.guide === guide);
+  });
+  document.querySelectorAll('.guide-content').forEach(el => {
+    el.style.display = 'none';
+  });
+  const target = document.getElementById('guide-' + guide);
+  if (target) target.style.display = '';
+  try { localStorage.setItem(LAST_GUIDE_KEY, guide); } catch (e) {}
+  history.replaceState(null, '', `#guides-${guide}`);
+};
+
+// ── RESTORE FROM HASH OR LOCALSTORAGE ──
+function restoreState() {
+  const hash = window.location.hash.replace('#', '');
+
+  // Format: #rules, #guides, #rules-privacy, #guides-feed
+  if (hash.startsWith('rules-')) {
+    switchAboutTab('rules');
+    const sub = hash.slice(6);
+    if (['rules', 'privacy', 'terms'].includes(sub)) switchRulesSubtab(sub);
+    else switchRulesSubtab('rules');
+    return;
+  }
+
+  if (hash.startsWith('guides-')) {
+    switchAboutTab('guides');
+    const guide = hash.slice(7);
+    const validGuides = ['getting-started', 'feed', 'chat', 'profiles', 'games', 'leaderboard', 'settings', 'download'];
+    if (validGuides.includes(guide)) switchGuideTab(guide);
+    else switchGuideTab('getting-started');
+    return;
+  }
+
+  if (hash === 'rules' || hash === 'guides') {
+    switchAboutTab(hash);
+    if (hash === 'rules') switchRulesSubtab('rules');
+    if (hash === 'guides') switchGuideTab('getting-started');
+    return;
+  }
+
+  // No hash — restore from localStorage
+  const lastTab = localStorage.getItem(LAST_TAB_KEY) || 'rules';
+  switchAboutTab(lastTab);
+
+  if (lastTab === 'rules') {
+    const lastSub = localStorage.getItem(LAST_SUBTAB_KEY) || 'rules';
+    switchRulesSubtab(lastSub);
+  } else {
+    const lastGuide = localStorage.getItem(LAST_GUIDE_KEY) || 'getting-started';
+    switchGuideTab(lastGuide);
+  }
+}
+
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep(); // theme
+
+  nextLoadingStep(); // about
+  restoreState();
+
+  nextLoadingStep();
+  nextLoadingStep();
+  nextLoadingStep(); // ready
+}
+
+// ── START ──
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
+} else {
+  initPage(pageInit);
+}
+</script>
+</body>
+</html>

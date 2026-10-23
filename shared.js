@@ -21,6 +21,211 @@ let _loadingInProgress = false;
 let _loadingRetryCallback = null;
 let _loadingEscapeDisabled = false;
 
+// ═══════════════════════════════════════════════════════════
+// ── NAV TEMPLATES (single source of truth) ──
+// ═══════════════════════════════════════════════════════════
+// These functions render the header, sidebar, downbar, and downbar-more.
+// Every page has placeholder divs that get replaced with this HTML on
+// DOMContentLoaded — BEFORE the page's own initPage() runs.
+//
+// Edit the nav ONCE here and it updates everywhere.
+// ═══════════════════════════════════════════════════════════
+
+function getActivePageKey() {
+  const path = window.location.pathname;
+  if (path === '/' || path === '/index.html') return 'home';
+  if (path.startsWith('/chat')) return 'chat';
+  if (path.startsWith('/profiles')) return 'profiles';
+  if (path.startsWith('/games/bloxdio')) return 'bloxdio';
+  if (path.startsWith('/games')) return 'games';
+  if (path.startsWith('/leaderboard')) return 'leaderboard';
+  if (path.startsWith('/settings')) return 'settings';
+  if (path.startsWith('/download')) return 'download';
+  if (path.startsWith('/notifications')) return 'notifications';
+  if (path.startsWith('/about')) return 'about';
+  if (path.startsWith('/feedback')) return 'feedback';
+  if (path.startsWith('/onboarding')) return 'onboarding';
+  return '';
+}
+
+function navItem(href, icon, label, opts) {
+  opts = opts || {};
+  const active = opts.active ? ' active' : '';
+  const id = opts.id ? ' id="' + opts.id + '"' : '';
+  const badge = opts.badge
+    ? '<span class="nav-badge-count' + (opts.badgeShow ? ' show' : '') + '" id="' + opts.badge + '">0</span>'
+    : '';
+  return '<a href="' + href + '" class="nav-item' + active + '"' + id + '>'
+    + '<span class="nav-icon"><i class="fas ' + icon + '"></i></span> '
+    + '<span class="nav-label-text">' + label + '</span>'
+    + badge
+    + '</a>';
+}
+
+function downbarItem(href, icon, opts) {
+  opts = opts || {};
+  const active = opts.active ? ' active' : '';
+  const id = opts.id ? ' id="' + opts.id + '"' : '';
+  return '<a href="' + href + '" class="downbar-item' + active + '"' + id + '>'
+    + '<span class="downbar-icon"><i class="fas ' + icon + '"></i></span>'
+    + '</a>';
+}
+
+function downbarMoreItem(href, icon, label, opts) {
+  opts = opts || {};
+  const active = opts.active ? ' active' : '';
+  return '<a href="' + href + '" class="downbar-more-item' + active + '">'
+    + '<span class="downbar-more-icon"><i class="fas ' + icon + '"></i></span>'
+    + '<span class="downbar-more-label">' + label + '</span>'
+    + '</a>';
+}
+
+// ── HEADER ──
+function renderHeaderNav() {
+  const title = document.body.dataset.pageTitle || 'CESC Hub';
+  return ''
+    + '<header class="top-header">'
+    +   '<div class="header-left">'
+    +     '<a href="/" class="header-logo">'
+    +       '<img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>'
+    +     '</a>'
+    +     '<span class="header-page-title">' + title + '</span>'
+    +   '</div>'
+    +   '<div class="header-right">'
+    +     '<span class="header-online-status">'
+    +       '<span class="online-pulse-ring"><span class="online-pulse-dot"></span></span>'
+    +       '<span class="online-count-number" id="online-count">...</span>'
+    +       '<span class="online-status-text">online now</span>'
+    +     '</span>'
+    +     '<button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>'
+    +     '<a href="/notifications" class="hdr-btn" title="Notifications">'
+    +       '<i class="fas fa-bell"></i>'
+    +       '<span class="notif-badge" id="notif-badge">0</span>'
+    +     '</a>'
+    +     '<div class="profile-chip" id="profile-chip" onclick="window.toggleDropdown()">'
+    +       '<div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>'
+    +       '<span class="chip-name" id="chip-name">loading</span>'
+    +       '<span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>'
+    +       '<div class="profile-dropdown" id="profile-dropdown">'
+    +         '<div class="dd-header">'
+    +           '<div class="dd-name" id="dd-name">—</div>'
+    +           '<div class="dd-sub">CESC Hub member</div>'
+    +         '</div>'
+    +         '<a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>'
+    +         '<a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>'
+    +         '<a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>'
+    +         '<a href="/about" class="dd-item"><span class="di-icon"><i class="fas fa-info-circle"></i></span> About</a>'
++         '<a href="/feedback" class="dd-item"><span class="di-icon"><i class="fas fa-comment-dots"></i></span> Feedback</a>'
++         '<button class="dd-item" onclick="window.forceUpdate()"><span class="di-icon"><i class="fas fa-rotate"></i></span> Force Update</button>'
++         '<div class="dd-div"></div>'
++         '<button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
+    + '</header>';
+}
+
+// ── SIDEBAR ──
+function renderSidebarNav() {
+  const p = getActivePageKey();
+  return ''
+    + '<aside class="sidebar" id="sidebar">'
+    +   '<div class="sidebar-nav-scroll">'
+    +     navItem('/',           'fa-newspaper',   'Feed',          { active: p === 'home' })
+    +     navItem('/chat',       'fa-comments',    'Chat Room',     { active: p === 'chat' })
+    +     navItem('/profiles',   'fa-users',       'Profiles',      { active: p === 'profiles' })
+    +     navItem('/games',      'fa-gamepad',     'Games',         { active: p === 'games' || p === 'bloxdio' })
+    +     navItem('/leaderboard','fa-trophy',      'Leaderboard',   { active: p === 'leaderboard' })
+    +     navItem('/settings',   'fa-cog',         'Settings',      { active: p === 'settings' })
+    +     navItem('/download',   'fa-download',    'Downloads',     { active: p === 'download' })
+    +     navItem('/notifications','fa-bell',      'Notifications', { active: p === 'notifications', id: 'notif-nav', badge: 'notif-nav-badge' })
+    +     navItem('/about',      'fa-info-circle', 'About',         { active: p === 'about' })
+    +     navItem('/feedback',   'fa-comment-dots','Feedback',      { active: p === 'feedback' })
+    +   '</div>'
+    +   '<div class="sidebar-bottom-fixed">'
+    +     '<button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">'
+    +       '<i class="fas fa-chevron-right"></i>'
+    +       '<span class="toggle-label">Collapse</span>'
+    +     '</button>'
+    +     '<div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>'
+    +   '</div>'
+    + '</aside>';
+}
+
+// ── DOWNBAR (mobile, 5 icons) ──
+function renderDownbarNav() {
+  const p = getActivePageKey();
+  return ''
+    + '<nav class="downbar" id="downbar">'
+    +   '<div class="downbar-inner">'
+    +     downbarItem('/',        'fa-newspaper', { active: p === 'home',     id: 'downbar-home' })
+    +     downbarItem('/chat',    'fa-comments',  { active: p === 'chat',     id: 'downbar-chat' })
+    +     downbarItem('/profiles','fa-users',     { active: p === 'profiles', id: 'downbar-profiles' })
+    +     downbarItem('/games',   'fa-gamepad',   { active: p === 'games' || p === 'bloxdio', id: 'downbar-games' })
+    +     '<button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">'
+    +       '<span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>'
+    +     '</button>'
+    +   '</div>'
+    + '</nav>';
+}
+
+// ── DOWNBAR MORE (drawer + overlay) ──
+function renderDownbarMoreNav() {
+  const p = getActivePageKey();
+  return ''
+    + '<div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>'
+    + '<div class="downbar-more" id="downbar-more">'
+    +   '<div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>'
+    +   '<div class="downbar-more-grid">'
+    +     downbarMoreItem('/',            'fa-newspaper',   'Feed',          { active: p === 'home' })
+    +     downbarMoreItem('/chat',        'fa-comments',    'Chat',          { active: p === 'chat' })
+    +     downbarMoreItem('/profiles',    'fa-users',       'Profiles',      { active: p === 'profiles' })
+    +     downbarMoreItem('/games',       'fa-gamepad',     'Games',         { active: p === 'games' || p === 'bloxdio' })
+    +     downbarMoreItem('/leaderboard', 'fa-trophy',      'Leaderboard',   { active: p === 'leaderboard' })
+    +     downbarMoreItem('/settings',    'fa-cog',         'Settings',      { active: p === 'settings' })
+    +     downbarMoreItem('/download',    'fa-download',    'Downloads',     { active: p === 'download' })
+    +     downbarMoreItem('/about',       'fa-info-circle', 'About',         { active: p === 'about' })
+    +     downbarMoreItem('/feedback',    'fa-comment-dots','Feedback',      { active: p === 'feedback' })
+    +     '<a href="/notifications" class="downbar-more-item' + (p === 'notifications' ? ' active' : '') + '" id="downbar-more-notif">'
+    +       '<span class="downbar-more-icon"><i class="fas fa-bell"></i></span>'
+    +       '<span class="downbar-more-label">Notifications</span>'
+    +       '<span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>'
+    +     '</a>'
+    +     '<button class="downbar-more-item logout" onclick="window.logout()">'
+    +       '<span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>'
+    +       '<span class="downbar-more-label">Logout</span>'
+    +     '</button>'
+    +   '</div>'
+    +   '<div class="downbar-ad-slot" id="downbar-ad-slot"></div>'
+    + '</div>';
+}
+
+// ── INJECT ALL NAV SECTIONS ──
+// Called on DOMContentLoaded, BEFORE the page's initPage() runs.
+// Replaces the 4 placeholder divs with the rendered nav.
+function injectNav() {
+  const headerMount     = document.getElementById('app-header');
+  const sidebarMount    = document.getElementById('app-sidebar');
+  const downbarMount    = document.getElementById('app-downbar');
+  const downbarMoreMount = document.getElementById('app-downbar-more');
+
+  if (headerMount)      headerMount.outerHTML      = renderHeaderNav();
+  if (sidebarMount)     sidebarMount.outerHTML     = renderSidebarNav();
+  if (downbarMount)     downbarMount.outerHTML     = renderDownbarNav();
+  if (downbarMoreMount) downbarMoreMount.outerHTML = renderDownbarMoreNav();
+}
+
+// ── QUICK REPORT (from any page) ──
+// Redirects to /feedback with query params that pre-fill the target.
+function openQuickReport(targetType, targetId, preview) {
+  const params = new URLSearchParams({
+    report_type: targetType,
+    report_id: targetId,
+    preview: preview || ''
+  });
+  window.location.href = '/feedback?' + params.toString();
+}
+
 // ── LOADING SCREEN ──
 
 // Show loading screen
@@ -239,6 +444,32 @@ async function logout() {
   await supabaseClient.auth.signOut();
   localStorage.removeItem('cesc_last_post_time');
   window.location.href = 'login.html';
+}
+
+// ── FORCE UPDATE ──
+// Clears SW caches + reloads the page with fresh assets.
+async function forceUpdate() {
+  try {
+    // Unregister all service workers
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+
+    // Clear all caches
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+
+    showToast('Cleared cache. Reloading…', 'success');
+    setTimeout(() => {
+      window.location.reload(true);
+    }, 600);
+  } catch (e) {
+    console.error('Force update failed:', e);
+    showToast('Update failed — try reloading manually', 'error');
+  }
 }
 
 // ── SIDEBAR TOGGLE (MOBILE ONLY) ──
@@ -477,7 +708,7 @@ async function loadUserProfile() {
   try {
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('username, display_name, pfp_url, bio, streak, last_active_date')
+      .select('username, display_name, pfp_url, bio, streak, last_active_date, is_timed_out, timeout_until, roles, onboarding_completed_at')
       .eq('id', session.user.id)
       .single();
     if (profile) currentUser = profile;
@@ -662,6 +893,41 @@ async function initPage(pageInitFn) {
       updateUserUI(profile);
       // Streak — runs on every page, once per day, silently
       try { await updateStreak(); } catch (e) { console.error('updateStreak failed:', e); }
+
+      // ── TIMEOUT ENFORCEMENT ──
+      // Skip the check on /timeout itself to avoid redirect loop
+      const isTimeoutPage = window.location.pathname.startsWith('/timeout');
+      if (!isTimeoutPage) {
+        // Auto-clear expired timeouts (RPC handles both state + timeouts table)
+        try {
+          await supabaseClient.rpc('check_and_clear_my_timeout');
+        } catch (e) {
+          console.error('check_and_clear_my_timeout failed:', e);
+        }
+
+        // Re-fetch profile (state may have changed)
+        const rechecked = await loadUserProfile();
+
+        if (rechecked && rechecked.is_timed_out) {
+          // Still timed out → redirect to prison
+          _loadingInProgress = false;
+          window.location.replace('/timeout');
+          return;
+        }
+
+        // ── ONBOARDING ENFORCEMENT ──
+        // Skip on /onboarding itself (no loop). Skip for owners.
+        // Everyone else with onboarding_completed_at = null gets redirected.
+        const isOnboardingPage = window.location.pathname.startsWith('/onboarding');
+        const userRoles = Array.isArray(rechecked?.roles) ? rechecked.roles : [];
+        const isOwnerRole = userRoles.includes('owner');
+
+        if (!isOnboardingPage && !isOwnerRole && !rechecked?.onboarding_completed_at) {
+          _loadingInProgress = false;
+          window.location.replace('/onboarding');
+          return;
+        }
+      }
     }
     
     // Step 4: PFP Cache
@@ -833,9 +1099,11 @@ window.formatDate = formatDate;
 window.escapeHTML = escapeHTML;
 window.toggleDropdown = toggleDropdown;
 window.logout = logout;
+window.forceUpdate = forceUpdate;
 window.toggleSidebar = toggleSidebar;
 window.toggleSidebarExpand = toggleSidebarExpand;
-window.initSidebarExpand = initSidebarExpand;
+window.injectNav = injectNav;
+window.getActivePageKey = getActivePageKey;
 window.toggleDownbarMore = toggleDownbarMore;
 window.closeDownbarMore = closeDownbarMore;
 window.loadOnlineCount = loadOnlineCount;
@@ -863,16 +1131,21 @@ window.hideLoadingError = hideLoadingError;
 window.setLoadingRetry = setLoadingRetry;
 window.retryLoading = retryLoading;
 window.setLoadingEscapeEnabled = setLoadingEscapeEnabled;
+window.openQuickReport = openQuickReport;
 
-// ── AUTO-INIT SIDEBAR EXPANSION ──
+// ── AUTO-INIT: INJECT NAV + SIDEBAR EXPANSION ──
 // Runs on every page load since shared.js is loaded everywhere.
-// Restores the desktop sidebar expanded/collapsed preference.
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof initSidebarExpand === 'function') initSidebarExpand();
-  });
-} else {
+// Injection MUST happen before any page initPage() call so nav elements
+// (profile-chip, notif-badge, online-count, sidebar-ad-slot, etc.) exist.
+function _autoInitOnReady() {
+  if (typeof injectNav === 'function') injectNav();
   if (typeof initSidebarExpand === 'function') initSidebarExpand();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _autoInitOnReady);
+} else {
+  _autoInitOnReady();
 }
 
 console.log('✅ shared.js loaded successfully!');

@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
 
 <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -23,706 +23,6 @@
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
 <script src="/js/ads.js"></script>
-
-<style>
-/* ═══════════════════════════════════════════════════════════
-   RICH TEXT POST — STYLES (inline, page-specific)
-   ═══════════════════════════════════════════════════════════ */
-
-/* ── POST TEXT — renders parsed content ── */
-.post-text.rich {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.post-text.rich a {
-  color: var(--neon);
-  text-decoration: underline;
-  text-decoration-color: rgba(74,158,255,0.4);
-  text-underline-offset: 2px;
-  word-break: break-all;
-}
-.post-text.rich a:hover {
-  color: var(--neon2);
-}
-.post-text.rich strong { font-weight: 800; color: var(--text-bright); }
-.post-text.rich em { font-style: italic; }
-.post-text.rich u { text-decoration: underline; text-underline-offset: 2px; }
-.post-text.rich s { text-decoration: line-through; opacity: 0.7; }
-
-.post-text.rich .sz-small { font-size: 0.85em; }
-.post-text.rich .sz-large { font-size: 1.15em; line-height: 1.6; }
-.post-text.rich .sz-huge { font-size: 1.35em; line-height: 1.5; font-weight: 600; }
-
-/* ── LINK PREVIEW CARD (when no image) ── */
-.post-link-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-  padding: 12px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s;
-  max-width: 100%;
-  overflow: hidden;
-}
-.post-link-card:hover {
-  border-color: rgba(74,158,255,0.35);
-  background: rgba(74,158,255,0.04);
-  transform: translateY(-1px);
-}
-.post-link-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--neon), var(--neon2));
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-.post-link-body {
-  flex: 1;
-  min-width: 0;
-}
-.post-link-label {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text-bright);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.post-link-domain {
-  font-size: 0.72rem;
-  color: var(--muted);
-  font-family: 'Space Mono', monospace;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-}
-.post-link-arrow {
-  color: var(--muted);
-  font-size: 0.85rem;
-  flex-shrink: 0;
-}
-.post-link-card:hover .post-link-arrow {
-  color: var(--neon);
-  transform: translateX(3px);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CREATE POST MODAL
-   ═══════════════════════════════════════════════════════════ */
-.post-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: post-modal-fade 0.25s ease both;
-}
-.post-modal-overlay.show {
-  display: flex;
-}
-@keyframes post-modal-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.post-modal {
-  width: 100%;
-  max-width: 620px;
-  max-height: 92vh;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: post-modal-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-}
-@keyframes post-modal-pop {
-  from { transform: scale(0.94) translateY(10px); opacity: 0; }
-  to   { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-.post-modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.post-modal-title {
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--text-bright);
-}
-.post-modal-close {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  border: none;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-.post-modal-close:hover {
-  background: rgba(255,77,109,0.12);
-  color: var(--danger);
-}
-
-.post-modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 18px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.post-modal-body::-webkit-scrollbar { width: 4px; }
-.post-modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-/* Author row */
-.post-modal-author {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.post-modal-av {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--neon), var(--neon2));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #000;
-  overflow: hidden;
-  position: relative;
-  flex-shrink: 0;
-}
-.post-modal-av img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: none;
-  border-radius: 50%;
-}
-.post-modal-av img.loaded { display: block; }
-.post-modal-av span { position: relative; z-index: 1; }
-.post-modal-name {
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: var(--text-bright);
-}
-
-/* Toolbar */
-.post-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  flex-wrap: wrap;
-}
-.pt-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  transition: all 0.15s;
-  flex-shrink: 0;
-  position: relative;
-}
-.pt-btn:hover {
-  background: var(--surface2);
-  color: var(--text-bright);
-}
-.pt-btn:active {
-  transform: scale(0.94);
-}
-.pt-btn.bold { font-weight: 900; }
-.pt-btn.italic { font-style: italic; font-family: Georgia, serif; font-weight: 700; }
-.pt-btn.underline { text-decoration: underline; text-underline-offset: 2px; }
-.pt-btn.strike { text-decoration: line-through; }
-
-.pt-divider {
-  width: 1px;
-  height: 22px;
-  background: var(--border);
-  margin: 0 4px;
-  flex-shrink: 0;
-}
-
-/* Size dropdown */
-.pt-size-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
-.pt-size-btn {
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.78rem;
-  transition: all 0.15s;
-}
-.pt-size-btn:hover {
-  background: var(--surface2);
-  color: var(--text-bright);
-}
-.pt-size-btn i {
-  font-size: 0.6rem;
-}
-.pt-size-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 4px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  min-width: 130px;
-  display: none;
-  z-index: 10;
-  animation: post-modal-pop 0.2s ease both;
-}
-.pt-size-menu.open {
-  display: block;
-}
-.pt-size-option {
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  font-family: 'Syne', sans-serif;
-  font-weight: 600;
-  font-size: 0.82rem;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.pt-size-option:hover {
-  background: var(--surface);
-  color: var(--text-bright);
-}
-.pt-size-option .preview {
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-family: 'Space Mono', monospace;
-}
-
-/* Link input panel (appears when link button clicked) */
-.pt-link-panel {
-  display: none;
-  gap: 8px;
-  align-items: center;
-  padding: 8px;
-  background: rgba(74,158,255,0.06);
-  border: 1px solid rgba(74,158,255,0.2);
-  border-radius: 10px;
-  animation: post-modal-pop 0.2s ease both;
-}
-.pt-link-panel.open {
-  display: flex;
-}
-.pt-link-input {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-bright);
-  font-family: 'Space Mono', monospace;
-  font-size: 0.8rem;
-  outline: none;
-  min-width: 0;
-}
-.pt-link-input:focus {
-  border-color: rgba(74,158,255,0.4);
-}
-.pt-link-add {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: none;
-  background: linear-gradient(135deg, var(--neon), var(--neon2));
-  color: #000;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 0.78rem;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s;
-}
-.pt-link-add:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(74,158,255,0.35);
-}
-.pt-link-cancel {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
-  font-family: 'Syne', sans-serif;
-  font-weight: 600;
-  font-size: 0.78rem;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.pt-link-cancel:hover {
-  color: var(--text-bright);
-}
-
-/* Textarea */
-.post-modal-ta {
-  width: 100%;
-  min-height: 160px;
-  max-height: 320px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  color: var(--text-bright);
-  font-family: 'Syne', sans-serif;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.post-modal-ta:focus {
-  border-color: rgba(74,158,255,0.4);
-  background: rgba(255,255,255,0.05);
-}
-.post-modal-ta::placeholder {
-  color: var(--muted);
-}
-
-/* Hint */
-.post-modal-hint {
-  font-size: 0.72rem;
-  font-family: 'Space Mono', monospace;
-  color: var(--muted);
-  opacity: 0.85;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.post-modal-hint i {
-  color: var(--neon);
-  font-size: 0.7rem;
-}
-
-/* Preview */
-.post-preview-wrap {
-  display: none;
-  flex-direction: column;
-  gap: 6px;
-}
-.post-preview-wrap.show {
-  display: flex;
-}
-.post-preview-label {
-  font-size: 0.68rem;
-  font-family: 'Space Mono', monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--muted);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.post-preview-label i {
-  color: var(--neon);
-  font-size: 0.65rem;
-}
-.post-preview {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px;
-  min-height: 40px;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--text);
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-/* Image preview */
-.post-img-preview {
-  position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  display: none;
-}
-.post-img-preview.show {
-  display: block;
-}
-.post-img-preview img {
-  width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-  display: block;
-  background: rgba(0,0,0,0.2);
-}
-.post-img-remove {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.7);
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  transition: all 0.2s;
-}
-.post-img-remove:hover {
-  background: var(--danger);
-  transform: scale(1.1);
-}
-.post-img-size {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  padding: 3px 8px;
-  border-radius: 5px;
-  font-size: 0.65rem;
-  font-family: 'Space Mono', monospace;
-}
-
-/* Link preview (auto in modal, before posting) */
-.post-link-preview-modal {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 0.82rem;
-}
-.post-link-preview-modal.show {
-  display: flex;
-}
-.post-link-preview-modal i {
-  color: var(--neon);
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-.post-link-preview-modal-body {
-  flex: 1;
-  min-width: 0;
-}
-.post-link-preview-modal-label {
-  font-weight: 700;
-  color: var(--text-bright);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.post-link-preview-modal-domain {
-  font-size: 0.7rem;
-  color: var(--muted);
-  font-family: 'Space Mono', monospace;
-  margin-top: 1px;
-}
-
-/* Footer */
-.post-modal-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 22px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.post-modal-foot-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.post-modal-foot-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.post-modal-cancel {
-  padding: 10px 18px;
-  border-radius: 9px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.post-modal-cancel:hover {
-  background: var(--surface);
-  color: var(--text-bright);
-}
-.post-modal-submit {
-  padding: 10px 24px;
-  border-radius: 9px;
-  border: none;
-  background: linear-gradient(135deg, var(--neon), var(--neon2));
-  color: #000;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 0.9rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.25s;
-  min-width: 90px;
-  justify-content: center;
-}
-.post-modal-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(74,158,255,0.4);
-}
-.post-modal-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.post-modal-submit i {
-  font-size: 0.8rem;
-}
-
-/* Create Post button in page header */
-.create-post-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 18px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, var(--neon), var(--neon2));
-  color: #000;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  flex-shrink: 0;
-}
-.create-post-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(74,158,255,0.4);
-}
-.create-post-btn:active {
-  transform: scale(0.97);
-}
-.create-post-btn i {
-  font-size: 0.8rem;
-}
-
-/* Responsive */
-@media (max-width: 600px) {
-  .post-modal {
-    max-height: 100vh;
-    border-radius: 0;
-    max-width: 100%;
-  }
-  .post-modal-overlay {
-    padding: 0;
-  }
-  .post-modal-body {
-    padding: 14px 16px;
-  }
-  .post-modal-head,
-  .post-modal-foot {
-    padding: 14px 16px;
-  }
-  .post-toolbar {
-    padding: 6px;
-  }
-  .pt-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 0.8rem;
-  }
-  .pt-size-btn {
-    padding: 0 8px;
-    font-size: 0.75rem;
-  }
-  .post-modal-ta {
-    min-height: 140px;
-  }
-  .post-modal-hint {
-    font-size: 0.68rem;
-  }
-  .create-post-btn span {
-    display: none;
-  }
-  .create-post-btn {
-    padding: 10px 12px;
-  }
-}
-</style>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -744,8 +44,8 @@ window.addEventListener('appinstalled', () => {
 </script>
 
 </head>
-<body>
-<div id="loading-screen">
+<body data-page-title="Feed">
+  <div id="loading-screen">
 <div class="bg-canvas">
   <div class="orb orb1"></div>
   <div class="orb orb2"></div>
@@ -792,75 +92,24 @@ window.addEventListener('appinstalled', () => {
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<header class="top-header">
-  <div class="header-left">
-    <a href="/" class="header-logo">
-      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
-    </a>
-    <span class="header-page-title">Feed</span>
-  </div>
-  <div class="header-right">
-    <span class="header-online-status">
-      <span class="online-pulse-ring">
-        <span class="online-pulse-dot"></span>
-      </span>
-      <span class="online-count-number" id="online-count">...</span>
-      <span class="online-status-text">online now</span>
-    </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
-    
-    <a href="/notifications" class="hdr-btn" title="Notifications">
-      <i class="fas fa-bell"></i>
-      <span class="notif-badge" id="notif-badge">0</span>
-    </a>
-    <div class="profile-chip" id="profile-chip" onclick="toggleDropdown()">
-      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
-      <span class="chip-name" id="chip-name">loading</span>
-      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
-      <div class="profile-dropdown" id="profile-dropdown">
-        <div class="dd-header">
-          <div class="dd-name" id="dd-name">—</div>
-          <div class="dd-sub">CESC Hub member</div>
-        </div>
-        <a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
-        <a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
-        <a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
-        <div class="dd-div"></div>
-        <button class="dd-item logout" onclick="logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-      </div>
-    </div>
-  </div>
-</header>
+<div id="app-header"></div>
 
-<aside class="sidebar" id="sidebar">
-  <a href="/" class="nav-item active"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
-  <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
-  <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
-  <a href="/games" class="nav-item"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
-  <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
-  <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
-  <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-    <a href="/notifications" class="nav-item" id="notif-nav">
-    <span class="nav-icon"><i class="fas fa-bell"></i></span>
-    <span class="nav-label-text">Notifications</span>
-    <span class="nav-badge-count" id="notif-nav-badge">0</span>
-  </a>
-
-  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
-    <i class="fas fa-chevron-right"></i>
-    <span class="toggle-label">Collapse</span>
-  </button>
-
-  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
-</aside>
+<div id="app-sidebar"></div>
 
 <main class="main">
   <div class="welcome-banner">
     <div>
       <h2>Hey, <span id="welcome-name">fam</span> <i class="fas fa-hand-peace" style="color:var(--neon)"></i></h2>
-      <p>CESC Hub is live — what's on your mind?</p>
+      <p>CESC Hub is here — Go connect with others.</p>
     </div>
-    <a href="/chat" class="banner-btn">Open Chat <i class="fas fa-arrow-right"></i></a>
+    <div class="banner-actions">
+      <div class="banner-streak" id="banner-streak" title="Your daily login streak">
+        <i class="fas fa-fire"></i>
+        <span id="banner-streak-count">0</span>
+        <span class="banner-streak-label">day streak</span>
+      </div>
+      <a href="/chat" class="banner-btn">Open Chat <i class="fas fa-arrow-right"></i></a>
+    </div>
   </div>
 
   <div class="page-header">
@@ -878,9 +127,6 @@ window.addEventListener('appinstalled', () => {
     </div>
   </div>
 
-  <div class="emoji-picker" id="emoji-picker">
-    <div class="emoji-picker-grid" id="emoji-grid"></div>
-  </div>
 
   <div class="feed" id="feed">
     <div class="skel-card">
@@ -912,6 +158,11 @@ window.addEventListener('appinstalled', () => {
     <span class="spinner"><i class="fas fa-spinner"></i></span> Loading more posts...
   </div>
 </main>
+
+<!-- Emoji picker — must be outside .main so it can appear above the modal -->
+<div class="emoji-picker" id="emoji-picker">
+  <div class="emoji-picker-grid" id="emoji-grid"></div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      CREATE POST MODAL
@@ -1028,73 +279,10 @@ window.addEventListener('appinstalled', () => {
   <button onclick="closeImageModal()" style="position:fixed;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1000;"><i class="fas fa-times"></i></button>
 </div>
 
-<nav class="downbar" id="downbar">
-  <div class="downbar-inner">
-    <a href="/" class="downbar-item active" id="downbar-home">
-      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
-    </a>
-    <a href="/chat" class="downbar-item" id="downbar-chat">
-      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
-    </a>
-    <a href="/profiles" class="downbar-item" id="downbar-profiles">
-      <span class="downbar-icon"><i class="fas fa-users"></i></span>
-    </a>
-    <a href="/games" class="downbar-item" id="downbar-games">
-      <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
-    </a>
-    <button class="downbar-item more-btn" onclick="toggleDownbarMore()" id="downbar-more-btn">
-      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
-    </button>
-  </div>
-</nav>
+<div id="app-downbar"></div>
 
-<div class="downbar-overlay" id="downbar-overlay" onclick="closeDownbarMore()"></div>
 
-<div class="downbar-more" id="downbar-more">
-  <div class="downbar-more-handle" onclick="closeDownbarMore()"></div>
-  
-  <div class="downbar-more-grid">
-    <a href="/" class="downbar-more-item active">
-      <span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span>
-      <span class="downbar-more-label">Feed</span>
-    </a>
-    <a href="/chat" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
-      <span class="downbar-more-label">Chat</span>
-    </a>
-    <a href="/profiles" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
-      <span class="downbar-more-label">Profiles</span>
-    </a>
-    <a href="/games" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
-      <span class="downbar-more-label">Games</span>
-    </a>
-    <a href="/leaderboard" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
-      <span class="downbar-more-label">Leaderboard</span>
-    </a>
-    <a href="/settings" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
-      <span class="downbar-more-label">Settings</span>
-    </a>
-    <a href="/download" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-download"></i></span>
-      <span class="downbar-more-label">Downloads</span>
-    </a>
-    <a href="/notifications" class="downbar-more-item" id="downbar-more-notif">
-      <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
-      <span class="downbar-more-label">Notifications</span>
-      <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
-    </a>
-    <button class="downbar-more-item logout" onclick="window.logout()">
-      <span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>
-      <span class="downbar-more-label">Logout</span>
-    </button>
-  </div>
-
-  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
-</div>
+<div id="app-downbar-more"></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -1262,6 +450,7 @@ function closePostModal() {
   document.body.style.overflow = '';
   document.getElementById('pt-size-menu').classList.remove('open');
   document.getElementById('pt-link-panel').classList.remove('open');
+  document.getElementById('emoji-picker').classList.remove('open');
 }
 
 function postModalBgClick(e) {
@@ -1600,16 +789,31 @@ function positionEmojiPicker() {
   const picker = document.getElementById('emoji-picker');
   const toolbar = document.getElementById('post-toolbar');
   if (!picker || !toolbar) return;
+
   const rect = toolbar.getBoundingClientRect();
-  picker.style.top = (rect.bottom + 8) + 'px';
+
+  // Position above the toolbar
+  picker.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+  picker.style.top = 'auto';
   picker.style.left = rect.left + 'px';
   picker.style.width = Math.min(rect.width, 400) + 'px';
+
+  // Clamp height strictly to whatever room is above (min 60px so it's usable)
+  const availableAbove = rect.top - 16; // 8px top margin + 8px gap above toolbar
+  const clampedHeight = Math.max(60, Math.min(240, availableAbove));
+  picker.style.maxHeight = clampedHeight + 'px';
 }
 
 function toggleEmojiPicker(e) {
   if (e) e.stopPropagation();
   const picker = document.getElementById('emoji-picker');
   if (!picker) return;
+
+  // Ensure picker is a direct child of <body> (escapes all stacking contexts)
+  if (picker.parentElement !== document.body) {
+    document.body.appendChild(picker);
+  }
+
   if (!emojiPickerInitialized) initEmojiPicker();
   const isOpen = picker.classList.contains('open');
   if (isOpen) {
@@ -1630,14 +834,7 @@ function insertEmoji(emoji) {
   onPostInput();
 }
 
-document.addEventListener('click', (e) => {
-  const picker = document.getElementById('emoji-picker');
-  if (!picker || !picker.classList.contains('open')) return;
-  if (picker.contains(e.target)) return;
-  if (e.target.closest('.tool-btn')) return;
-  if (e.target.closest('.pt-btn')) return;
-  picker.classList.remove('open');
-});
+
 
 // ═══════════════════════════════════════════════════════════
 // ── FEED LOADING ──
@@ -1747,6 +944,13 @@ async function loadMorePosts() {
   feedEl.appendChild(frag);
   
   await Promise.all([attachCommentCounts(batchPosts), attachLikeData(batchPosts)]);
+  
+  // Re-run ad injection now that more posts exist in the DOM
+  try {
+    if (window.Ads && typeof window.Ads.mountFeedInjection === 'function') {
+      window.Ads.mountFeedInjection(feedEl);
+    }
+  } catch (e) {}
   
   isLoadingMore = false;
   
@@ -1905,20 +1109,35 @@ function buildPostCard(post) {
   `;
   top.appendChild(meta);
   
-  if (window.currentUser && post.username === window.currentUser.username) {
-    const wrap = document.createElement('div');
-    wrap.style.position = 'relative';
-    const ob = document.createElement('button');
-    ob.className = 'post-opts-btn';
-    ob.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
-    ob.onclick = e => { e.stopPropagation(); toggleOpts(wrap); };
-    const menu = document.createElement('div');
-    menu.className = 'opts-menu';
-    menu.innerHTML = `<button class="del" onclick="deletePost('${post.id}')"><i class="fas fa-trash"></i> Delete</button>`;
-    wrap.appendChild(ob);
-    wrap.appendChild(menu);
-    top.appendChild(wrap);
+  // Options menu — always visible now (own posts get Delete, others get Report)
+  const isOwnPost = window.currentUser && post.username === window.currentUser.username;
+  const wrap = document.createElement('div');
+  wrap.style.position = 'relative';
+  const ob = document.createElement('button');
+  ob.className = 'post-opts-btn';
+  ob.innerHTML = '<i class="fas fa-ellipsis-h"></i>';
+  ob.onclick = e => { e.stopPropagation(); toggleOpts(wrap); };
+  const menu = document.createElement('div');
+  menu.className = 'opts-menu';
+  if (isOwnPost) {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del';
+    delBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+    delBtn.onclick = (e) => { e.stopPropagation(); deletePost(post.id); };
+    menu.appendChild(delBtn);
+  } else {
+    const reportBtn = document.createElement('button');
+    reportBtn.innerHTML = '<i class="fas fa-flag"></i> Report';
+    reportBtn.onclick = (e) => {
+      e.stopPropagation();
+      const preview = (post.content || '').slice(0, 60);
+      window.reportPost(post.id, preview);
+    };
+    menu.appendChild(reportBtn);
   }
+  wrap.appendChild(ob);
+  wrap.appendChild(menu);
+  top.appendChild(wrap);
   card.appendChild(top);
   
   // ── POST BODY: rich parsed content ──
@@ -2093,21 +1312,98 @@ async function loadComments(postId) {
   
   const frag = document.createDocumentFragment();
   comments.forEach((c) => {
+    const isOwnComment = window.currentUser && c.username === window.currentUser.username;
     const item = document.createElement('div');
     item.className = 'comment-item';
     item.appendChild(window.buildAvatar(c.username, window.pfpCache[c.username] || null, 28, 'comment-av'));
     const body = document.createElement('div');
     body.className = 'comment-body';
     const displayName = c.display_name || c.username;
-    body.innerHTML = `
-      <div class="comment-who">${window.escapeHTML(displayName)}</div>
-      <div class="comment-text">${window.escapeHTML(c.content)}</div>
-      <div class="comment-time">${window.timeAgo(c.created_at)}</div>
-    `;
+
+    // Head row: author name + optional report button
+    const head = document.createElement('div');
+    head.className = 'comment-head';
+
+    const whoEl = document.createElement('div');
+    whoEl.className = 'comment-who';
+    whoEl.textContent = displayName;
+    head.appendChild(whoEl);
+
+    if (!isOwnComment) {
+      const reportBtn = document.createElement('button');
+      reportBtn.className = 'comment-report-btn';
+      reportBtn.title = 'Report comment';
+      reportBtn.innerHTML = '<i class="fas fa-flag"></i>';
+      reportBtn.onclick = (e) => {
+        e.stopPropagation();
+        const preview = (c.content || '').slice(0, 60);
+        window.reportComment(c.id, preview);
+      };
+      head.appendChild(reportBtn);
+    } else {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'comment-delete-btn';
+      delBtn.title = 'Delete comment';
+      delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteComment(c.id, postId);
+      };
+      head.appendChild(delBtn);
+    }
+    body.appendChild(head);
+
+    // Text
+    const textEl = document.createElement('div');
+    textEl.className = 'comment-text';
+    textEl.textContent = c.content || '';
+    body.appendChild(textEl);
+
+    // Time
+    const timeEl = document.createElement('div');
+    timeEl.className = 'comment-time';
+    timeEl.textContent = window.timeAgo(c.created_at);
+    body.appendChild(timeEl);
+
     item.appendChild(body);
     frag.appendChild(item);
   });
   list.appendChild(frag);
+}
+
+async function deleteComment(commentId, postId) {
+  if (!confirm('Delete this comment?')) return;
+
+  const { error } = await window.supabaseClient
+    .from('comments')
+    .delete()
+    .eq('id', commentId)
+    .eq('user_id', window.session.user.id);
+
+  if (error) {
+    window.showToast('Delete failed: ' + error.message, 'error');
+    return;
+  }
+
+  // Remove the comment DOM element
+  const section = document.getElementById('cl-' + postId);
+  if (section) {
+    // Find the comment item containing this comment id — but we don't have
+    // data-id on the item, so just reload all comments for this post
+    await loadComments(postId);
+  }
+
+  // Decrement the post's comment counter
+  const postCard = document.querySelector(`.post-card[data-id="${postId}"]`);
+  if (postCard) {
+    const span = postCard.querySelector('.comment-count');
+    if (span) {
+      const current = parseInt(span.textContent || '0');
+      span.textContent = Math.max(0, current - 1);
+    }
+  }
+
+  window.showToast('Comment deleted', 'success');
 }
 
 async function submitComment(postId) {
@@ -2172,6 +1468,8 @@ function closeImageModal() {
   document.getElementById('img-modal').classList.remove('show');
 }
 
+
+
 // ── EXPOSE ──
 window.openPostModal = openPostModal;
 window.closePostModal = closePostModal;
@@ -2191,9 +1489,39 @@ window.deletePost = deletePost;
 window.toggleLike = toggleLike;
 window.toggleComments = toggleComments;
 window.submitComment = submitComment;
+window.deleteComment = deleteComment;
 window.openImageModal = openImageModal;
 window.closeImageModal = closeImageModal;
 window.toggleEmojiPicker = toggleEmojiPicker;
+
+
+// ── QUICK REPORT ──
+window.reportPost = function(postId, preview) {
+  window.openQuickReport('post', postId, preview);
+};
+
+window.reportComment = function(commentId, preview) {
+  window.openQuickReport('comment', commentId, preview);
+};
+
+// ── BANNER STREAK ──
+function updateBannerStreak() {
+  const el = document.getElementById('banner-streak-count');
+  if (!el) return;
+
+  const streak = window.currentUser?.streak || 0;
+  el.textContent = streak;
+
+  // Optional visual flourish: fire icon pulses if streak >= 3
+  const wrap = document.getElementById('banner-streak');
+  if (wrap) {
+    if (streak >= 3) {
+      wrap.classList.add('hot');
+    } else {
+      wrap.classList.remove('hot');
+    }
+  }
+}
 
 // ── PAGE INIT ──
 async function pageInit() {
@@ -2204,6 +1532,9 @@ async function pageInit() {
   
   nextLoadingStep();
   await loadFeed();
+
+  // Populate streak in welcome banner
+  updateBannerStreak();
   
   try {
     const tryMountFeedAd = (attempt = 0) => {

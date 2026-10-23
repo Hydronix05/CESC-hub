@@ -1,7 +1,7 @@
 // ── CESC HUB SERVICE WORKER ──
 // No terminal needed - just copy this file!
 
-const CACHE_NAME = 'cesc-hub-v3.6'; 
+const CACHE_NAME = 'cesc-hub-v3.7.0'; // Bumped for V3.7 release
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -13,7 +13,11 @@ const STATIC_ASSETS = [
   '/download.html',
   '/games.html',
   '/leaderboard.html',
-  '/games/bloxdio.html',
+  '/games/play.html',
+  '/about.html',
+  '/feedback.html',
+  '/timeout.html',
+  '/onboarding.html',
   '/offline.html',
   '/shared.js',
   '/shared.css',
@@ -31,8 +35,12 @@ const STATIC_ASSETS = [
   '/css/pages/login.css',
   '/css/pages/download.css',
   '/css/pages/games.css',
-  '/css/pages/bloxdio.css',
+  '/css/pages/play.css',
   '/css/pages/leaderboard.css',
+  '/css/pages/about.css',
+  '/css/pages/feedback.css',
+  '/css/pages/timeout.css',
+  '/css/pages/onboarding.css',
   '/css/ads.css',
   '/manifest.json',
   '/icons/icon-512x512.png',
@@ -45,7 +53,6 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('[SW] Caching assets...');
-        // Use allSettled so a single missing asset doesn't kill the whole cache
         return Promise.allSettled(
           STATIC_ASSETS.map(url =>
             cache.add(url).catch(err => console.warn('[SW] Failed to cache:', url, err))
@@ -74,7 +81,6 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
   // Skip Supabase, CDNs, and external game hosts
@@ -108,7 +114,6 @@ self.addEventListener('fetch', event => {
             return networkResponse;
           })
           .catch(() => {
-            // For navigation requests, fall back to offline page
             const accept = event.request.headers.get('accept') || '';
             if (event.request.mode === 'navigate' || accept.includes('text/html')) {
               return caches.match('/offline.html').then(cached => {
@@ -129,7 +134,7 @@ self.addEventListener('message', event => {
 });
 
 // ── VERSION INFO ──
-const APP_VERSION = '3.6.0';
+const APP_VERSION = '3.7.0';
 const UPDATE_DATE = new Date().toISOString();
 
 console.log(`✅ CESC Hub v${APP_VERSION} - ${UPDATE_DATE}`);

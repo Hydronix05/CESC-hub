@@ -1,8 +1,47 @@
 /* ── RESET & BODY ── */
 * { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior:smooth; }
+
+/* ── Focus reset for non-interactive images ── */
+img, img:focus, img:focus-visible, img:active {
+  outline: none !important;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Pfp images everywhere: no focus ring, no highlight */
+.chip-av img,
+.post-av img,
+.comment-av img,
+.msg-avatar img,
+.inbox-row-avatar img,
+.chat-head-avatar img,
+.note-avatar img,
+.note-view-avatar img,
+.notif-av img,
+.profile-avatar img,
+.profile-row-avatar img,
+.modal-avatar img,
+.lb-avatar img,
+.pfp-preview img,
+.mention-avatar img {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-drag: none;
+}
+
+/* Also kill focus ring on the containers (they get focus on some clicks) */
+.chip-av:focus,
+.post-av:focus,
+.comment-av:focus,
+.inbox-row-avatar:focus,
+.chat-head-avatar:focus,
+.note-avatar:focus {
+  outline: none !important;
+}
+
 body {
-  font-family:'Syne',sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   background:var(--bg);
   color:var(--text);
   min-height:100vh;
@@ -14,15 +53,59 @@ body {
 }
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar { width:4px; height:4px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { 
-  background:rgba(74, 158, 255, 0.3); 
-  border-radius:4px; 
-  transition:background 0.3s;
+::-webkit-scrollbar { 
+  width: 6px; 
+  height: 6px; 
 }
-::-webkit-scrollbar-thumb:hover { background:rgba(74, 158, 255, 0.5); }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { 
+  background: rgba(74, 158, 255, 0.35); 
+  border-radius: 6px; 
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.3s;
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: rgba(74, 158, 255, 0.6);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner { 
+  background: transparent;
+}
 
+/* Firefox — thin, matches theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74,158,255,0.35) transparent;
+}
+
+/* Hide the page-level scrollbar entirely on desktop (content still scrolls) */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 158, 255, 0.15) transparent;
+}
+
+/* Firefox: hide on html for a cleaner look */
+@supports (scrollbar-width: none) {
+  html {
+    scrollbar-width: none;
+  }
+  body {
+    scrollbar-width: none;
+  }
+}
+
+/* Webkit (Chrome/Edge/Safari): hide on html to eliminate the outer line */
+html::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* But keep scrollbars INSIDE scrollable containers (like the sidebar nav) */
+.sidebar-nav-scroll::-webkit-scrollbar {
+  width: 3px;
+}
 /* ── ANIMATED BG ── */
 .bg-canvas {
   position:fixed;
@@ -93,7 +176,7 @@ body {
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:0 20px;
+  padding:0 24px;
   box-shadow:0 4px 24px rgba(0,0,0,0.3);
   transition:background 0.3s, border-color 0.3s, padding 0.3s;
 }
@@ -140,11 +223,11 @@ body {
   align-items:center;
   gap:8px;
   font-family:'Space Mono',monospace;
-  font-size:0.65rem;
+  font-size:0.68rem;
   color:var(--muted);
   transition:color 0.3s;
-  padding:4px 10px;
-  border-radius:20px;
+  padding:6px 14px;
+  border-radius:999px;
   background:var(--surface);
   border:1px solid var(--border);
 }
@@ -162,8 +245,8 @@ body {
   width:6px;
   height:6px;
   border-radius:50%;
-  background:var(--neon);
-  box-shadow: 0 0 8px var(--neon-glow);
+  background:#22c55e;
+  box-shadow: 0 0 8px rgba(34,197,94,0.5);
   animation: breathe-dot 2s ease-in-out infinite;
   position:relative;
   z-index:2;
@@ -174,7 +257,7 @@ body {
   position:absolute;
   inset:-4px;
   border-radius:50%;
-  border:2px solid var(--neon-glow);
+  border:2px solid rgba(34,197,94,0.4);
   animation: breathe-ring 2s ease-in-out infinite;
 }
 
@@ -183,18 +266,18 @@ body {
   position:absolute;
   inset:-8px;
   border-radius:50%;
-  border:2px solid var(--neon-glow);
+  border:2px solid rgba(34,197,94,0.4);
   animation: breathe-ring 2s ease-in-out infinite 0.3s;
 }
 
 @keyframes breathe-dot {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 8px var(--neon-glow);
+    box-shadow: 0 0 8px rgba(34,197,94,0.5);
   }
   50% {
     transform: scale(0.85);
-    box-shadow: 0 0 16px var(--neon-glow);
+    box-shadow: 0 0 16px rgba(34,197,94,0.7);
   }
 }
 
@@ -212,7 +295,7 @@ body {
 .online-count-number {
   display:inline-block;
   font-weight:700;
-  color:var(--neon);
+  color:#22c55e;
   transition:color 0.3s;
   min-width:16px;
   text-align:center;
@@ -390,7 +473,7 @@ body {
   background:none;
   border:none;
   width:100%;
-  font-family:'Syne',sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   text-align:left;
 }
 .dd-item:hover {
@@ -432,8 +515,52 @@ body {
   backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px);
   transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s, padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
-  overflow-y:auto;
-  overflow-x:hidden;
+  overflow:hidden;
+}
+
+/* ── SIDEBAR NAV SCROLL AREA ── */
+.sidebar-nav-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Flip to RTL so the scrollbar renders on the LEFT */
+  direction: rtl;
+  padding-left: 2px;
+  margin-left: -2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Flip content back to normal LTR */
+.sidebar-nav-scroll > * {
+  direction: ltr;
+}
+
+.sidebar-nav-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(74,158,255,0.25);
+  border-radius: 3px;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(74,158,255,0.45);
+}
+
+/* ── SIDEBAR BOTTOM FIXED (toggle + ad) ── */
+.sidebar-bottom-fixed {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 10px;
+  margin-top: 6px;
+  border-top: 1px solid var(--border);
+  background: transparent;
 }
 
 /* ── SIDEBAR EXPANDED STATE (class-based, not hover) ── */
@@ -471,6 +598,10 @@ body {
 .sidebar.expanded .nav-icon {
   font-size:1rem;
   width:20px;
+}
+
+.sidebar.expanded .nav-item.active {
+  box-shadow: 0 0 0 1px var(--neon-glow);
 }
 
 /* ── SIDEBAR DEFAULT (COLLAPSED) ── */
@@ -512,7 +643,33 @@ body {
   border-color:var(--neon-glow);
   background:var(--surface);
 }
+
+.nav-item.active .nav-label-text {
+  color: var(--neon);
+  font-weight: 700;
+}
 .nav-item.active::before { opacity:0; }
+
+/* Left accent bar for active nav item */
+.nav-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 70%;
+  background: var(--neon);
+  border-radius: 0 3px 3px 0;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 3;
+  pointer-events: none;
+  box-shadow: 0 0 10px var(--neon-glow);
+}
+
+.nav-item.active::after {
+  transform: translateY(-50%) scaleY(1);
+}
 .nav-icon {
   font-size:1.2rem;
   width:24px;
@@ -567,7 +724,7 @@ body {
   border-radius:10px;
   color:var(--muted);
   cursor:pointer;
-  font-family:'Syne',sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   font-weight:600;
   font-size:0.82rem;
   transition:all 0.2s var(--transition-smooth);
@@ -724,7 +881,7 @@ body {
   border:1px solid var(--border);
   background:var(--surface);
   color:var(--text);
-  font-family:'Syne',sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   font-weight:700;
   font-size:0.83rem;
   cursor:pointer;
@@ -868,7 +1025,7 @@ body {
   position:relative;
   border:none;
   background:transparent;
-  font-family:'Syne',sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   width:100%;
   height:100%;
   -webkit-tap-highlight-color:transparent;
@@ -976,7 +1133,7 @@ body {
   cursor:pointer;
   border:none;
   background:transparent;
-  font-family:'Syne',sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   position:relative;
   min-height:70px;
   -webkit-tap-highlight-color:transparent;
@@ -1083,6 +1240,11 @@ body {
 
 /* ── MOBILE (max 768px) ── */
 @media(max-width:768px) {
+  .top-header {
+    height: 64px;
+    padding: 0 16px;
+  }
+  
   .sidebar {
     display:none !important;
     width:280px !important;
@@ -1122,9 +1284,8 @@ body {
     margin-left:auto !important;
   }
   
-  .sidebar.open .nav-icon {
-    font-size:1rem !important;
-    width:20px !important;
+  .sidebar.open .nav-item.active {
+    box-shadow: none !important;
   }
   
   /* Hide the toggle button on mobile — off-canvas is used instead */
@@ -1135,10 +1296,6 @@ body {
   .sidebar-overlay.show {
     display:block;
     opacity:1;
-  }
-  
-  .top-header {
-    padding:0 14px;
   }
   
   .header-page-title {
@@ -1381,7 +1538,7 @@ body {
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 700;
   font-size: 0.9rem;
   background: linear-gradient(135deg, var(--neon), var(--neon2));

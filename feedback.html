@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Hub — Feedback</title>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="shared.js"></script>
+<link rel="stylesheet" href="/css/pages/feedback.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed:', err));
+  });
+}
+</script>
+
+</head>
+<body data-page-title="Feedback">
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  
+  <div class="loading-debug-hint">[ESC] force show</div>
+
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<div id="app-header"></div>
+<div id="app-sidebar"></div>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Feedback</h1>
+      <p id="feedback-subtitle">report bugs, suggest features, tell us what's up</p>
+    </div>
+    <button class="feedback-new-btn" onclick="openFeedbackForm()">
+      <i class="fas fa-plus"></i> <span>New Feedback</span>
+    </button>
+  </div>
+
+  <!-- FILTER TABS -->
+  <div class="feedback-tabs" id="feedback-tabs">
+    <button class="feedback-tab active" data-filter="all" onclick="switchFilter('all')">
+      <i class="fas fa-inbox"></i> All
+    </button>
+    <button class="feedback-tab" data-filter="pending" onclick="switchFilter('pending')">
+      <i class="fas fa-hourglass-half"></i> Pending
+    </button>
+    <button class="feedback-tab" data-filter="done" onclick="switchFilter('done')">
+      <i class="fas fa-circle-check"></i> Done
+    </button>
+  </div>
+
+  <!-- LIST -->
+  <div class="feedback-list" id="feedback-list">
+    <div class="feedback-skel"></div>
+    <div class="feedback-skel"></div>
+    <div class="feedback-skel"></div>
+  </div>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FEEDBACK FORM MODAL
+     ═══════════════════════════════════════════════════════════ -->
+<div class="feedback-modal-overlay" id="feedback-form-modal" onclick="closeFeedbackModal(event, 'feedback-form-modal')">
+  <div class="feedback-modal">
+    <div class="feedback-modal-head">
+      <div class="feedback-modal-title">Send feedback</div>
+      <button class="feedback-modal-close" onclick="closeFeedbackModal(event, 'feedback-form-modal')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="feedback-modal-body">
+      <!-- Type selector -->
+      <div class="fb-field">
+        <label>What kind of feedback?</label>
+        <div class="fb-type-grid" id="fb-type-grid">
+          <button class="fb-type-card" data-type="bug" onclick="selectFeedbackType('bug')">
+            <i class="fas fa-bug"></i>
+            <span>Bug</span>
+            <small>something is broken</small>
+          </button>
+          <button class="fb-type-card" data-type="suggestion" onclick="selectFeedbackType('suggestion')">
+            <i class="fas fa-lightbulb"></i>
+            <span>Suggestion</span>
+            <small>a new feature idea</small>
+          </button>
+          <button class="fb-type-card" data-type="design" onclick="selectFeedbackType('design')">
+            <i class="fas fa-palette"></i>
+            <span>Design</span>
+            <small>something looks off</small>
+          </button>
+          <button class="fb-type-card" data-type="performance" onclick="selectFeedbackType('performance')">
+            <i class="fas fa-bolt"></i>
+            <span>Performance</span>
+            <small>something is slow</small>
+          </button>
+          <button class="fb-type-card" data-type="other" onclick="selectFeedbackType('other')">
+            <i class="fas fa-question"></i>
+            <span>Other</span>
+            <small>anything else</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <div class="fb-field">
+        <label for="fb-title">Title</label>
+        <input type="text" id="fb-title" class="fb-input" placeholder="one-line summary" maxlength="100"/>
+      </div>
+
+      <!-- Details -->
+      <div class="fb-field">
+        <label for="fb-details">Details</label>
+        <textarea id="fb-details" class="fb-input fb-textarea" placeholder="describe what happened or what you want to see" rows="5"></textarea>
+      </div>
+
+      <!-- Anonymous toggle -->
+      <div class="fb-anon-row">
+        <label class="fb-anon-label">
+          <input type="checkbox" id="fb-anonymous"/>
+          <span>Submit anonymously (admins won't see who reported)</span>
+        </label>
+      </div>
+
+      <!-- Target notice (auto-filled from quick-report) -->
+      <div class="fb-target-notice" id="fb-target-notice" style="display:none">
+        <i class="fas fa-link"></i>
+        <span>Reporting a specific <strong id="fb-target-type">post</strong></span>
+        <button class="fb-target-clear" onclick="clearFeedbackTarget()"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+
+    <div class="feedback-modal-foot">
+      <button class="fb-btn fb-btn-cancel" onclick="closeFeedbackModal(event, 'feedback-form-modal')">Cancel</button>
+      <button class="fb-btn fb-btn-primary" id="fb-submit-btn" onclick="submitFeedback()">
+        <span>Submit</span> <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FEEDBACK DETAIL MODAL (view one item + replies)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="feedback-modal-overlay" id="feedback-detail-modal" onclick="closeFeedbackModal(event, 'feedback-detail-modal')">
+  <div class="feedback-modal feedback-modal-wide">
+    <div class="feedback-modal-head">
+      <div class="feedback-modal-title" id="fd-title">Loading...</div>
+      <button class="feedback-modal-close" onclick="closeFeedbackModal(event, 'feedback-detail-modal')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="feedback-modal-body" id="fd-body">
+      <div class="feedback-loading">
+        <div class="loading-spin-ring"></div>
+      </div>
+    </div>
+
+    <div class="feedback-modal-foot">
+      <div class="fd-reply-label"><i class="fas fa-reply"></i> Reply</div>
+      <div class="fd-reply-row">
+        <input type="text" id="fd-reply-input" class="fb-input" placeholder="write a reply..." onkeydown="if(event.key==='Enter'){event.preventDefault();submitReply();}"/>
+        <button class="fb-btn fb-btn-primary" id="fd-reply-btn" onclick="submitReply()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-downbar"></div>
+<div id="app-downbar-more"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── FEEDBACK PAGE ──
+// ═══════════════════════════════════════════════════════════
+
+let currentFilter = 'all';
+let myFeedback = [];
+let currentFeedbackId = null;
+let pendingTarget = null; // { type, id, preview } from quick-report
+let selectedType = null;
+
+const FEEDBACK_TYPE_META = {
+  bug:         { icon: 'fa-bug',          label: 'Bug',          color: '#ff4d6d' },
+  suggestion:  { icon: 'fa-lightbulb',    label: 'Suggestion',   color: '#f5c400' },
+  design:      { icon: 'fa-palette',      label: 'Design',       color: '#c084fc' },
+  performance: { icon: 'fa-bolt',         label: 'Performance',  color: '#4a9eff' },
+  other:       { icon: 'fa-question',     label: 'Other',        color: '#6b6b80' }
+};
+
+const STATUS_META = {
+  open:      { label: 'Open',      color: 'var(--neon)',    icon: 'fa-circle-dot' },
+  reviewing: { label: 'Reviewing', color: 'var(--yellow)',  icon: 'fa-hourglass-half' },
+  resolved:  { label: 'Resolved',  color: '#22c55e',        icon: 'fa-circle-check' },
+  dismissed: { label: 'Dismissed', color: 'var(--muted)',   icon: 'fa-circle-xmark' }
+};
+
+// ── LOADING STEPS ──
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'feedback', label: 'Loading feedback...', technical: 'Fetching your submissions' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'Feedback ready' }
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── LOAD MY FEEDBACK ──
+// ═══════════════════════════════════════════════════════════
+
+async function loadMyFeedback() {
+  const list = document.getElementById('feedback-list');
+  list.innerHTML = `
+    <div class="feedback-skel"></div>
+    <div class="feedback-skel"></div>
+    <div class="feedback-skel"></div>
+  `;
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_my_feedback', { p_limit: 100 });
+    if (error) {
+      console.error('get_my_feedback error:', error);
+      list.innerHTML = `
+        <div class="feedback-empty">
+          <div class="feedback-empty-icon"><i class="fas fa-triangle-exclamation"></i></div>
+          <div>Could not load feedback. Try refreshing.</div>
+        </div>
+      `;
+      return;
+    }
+
+    myFeedback = data || [];
+    renderList();
+  } catch (e) {
+    console.error('loadMyFeedback exception:', e);
+  }
+}
+
+function renderList() {
+  const list = document.getElementById('feedback-list');
+  const subtitle = document.getElementById('feedback-subtitle');
+
+  let filtered = myFeedback;
+  if (currentFilter === 'pending') {
+    filtered = myFeedback.filter(f => f.status === 'open' || f.status === 'reviewing');
+  } else if (currentFilter === 'done') {
+    filtered = myFeedback.filter(f => f.status === 'resolved' || f.status === 'dismissed');
+  }
+
+  if (filtered.length === 0) {
+    const emptyMsg = currentFilter === 'all'
+      ? 'No feedback yet. Tap "New Feedback" to send one.'
+      : currentFilter === 'pending'
+        ? 'Nothing pending — all caught up.'
+        : 'Nothing resolved yet.';
+    list.innerHTML = `
+      <div class="feedback-empty">
+        <div class="feedback-empty-icon"><i class="fas fa-inbox"></i></div>
+        <div>${emptyMsg}</div>
+      </div>
+    `;
+    subtitle.textContent = myFeedback.length === 0
+      ? 'no submissions yet'
+      : `${filtered.length} of ${myFeedback.length} shown`;
+    return;
+  }
+
+  subtitle.textContent = currentFilter === 'all'
+    ? `${myFeedback.length} submission${myFeedback.length === 1 ? '' : 's'}`
+    : `${filtered.length} of ${myFeedback.length} shown`;
+
+  list.innerHTML = '';
+  filtered.forEach(item => {
+    list.appendChild(buildFeedbackRow(item));
+  });
+}
+
+function buildFeedbackRow(item) {
+  const row = document.createElement('div');
+  row.className = 'feedback-row';
+  row.onclick = () => openFeedbackDetail(item.id);
+
+  const typeMeta = FEEDBACK_TYPE_META[item.feedback_type] || FEEDBACK_TYPE_META.other;
+  const statusMeta = STATUS_META[item.status] || STATUS_META.open;
+
+  const hasReply = item.reply_count > 0;
+
+  row.innerHTML = `
+    <div class="fr-left">
+      <div class="fr-type-icon" style="background: ${typeMeta.color}20; color: ${typeMeta.color};">
+        <i class="fas ${typeMeta.icon}"></i>
+      </div>
+    </div>
+    <div class="fr-main">
+      <div class="fr-title-row">
+        <div class="fr-title">${window.escapeHTML(item.title || 'Untitled feedback')}</div>
+        <div class="fr-status" style="color: ${statusMeta.color}; border-color: ${statusMeta.color}40; background: ${statusMeta.color}14;">
+          <i class="fas ${statusMeta.icon}"></i> ${statusMeta.label}
+        </div>
+      </div>
+      <div class="fr-details">${window.escapeHTML(item.details || '').slice(0, 120)}${(item.details || '').length > 120 ? '…' : ''}</div>
+      <div class="fr-meta">
+        <span class="fr-type-label">${typeMeta.label}</span>
+        ${hasReply ? `<span class="fr-replies"><i class="fas fa-comments"></i> ${item.reply_count} ${item.reply_count === 1 ? 'reply' : 'replies'}</span>` : ''}
+        <span class="fr-time"><i class="fas fa-clock"></i> ${window.timeAgo(item.created_at)}</span>
+      </div>
+    </div>
+  `;
+
+  return row;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── FILTER TABS ──
+// ═══════════════════════════════════════════════════════════
+
+window.switchFilter = function(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.feedback-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderList();
+};
+
+// ═══════════════════════════════════════════════════════════
+// ── NEW FEEDBACK FORM ──
+// ═══════════════════════════════════════════════════════════
+
+window.openFeedbackForm = function(target) {
+  pendingTarget = target || null;
+  selectedType = null;
+
+  document.getElementById('fb-title').value = '';
+  document.getElementById('fb-details').value = '';
+  document.getElementById('fb-anonymous').checked = false;
+
+  document.querySelectorAll('.fb-type-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+
+  // Show target notice if from quick-report
+  const notice = document.getElementById('fb-target-notice');
+  if (pendingTarget) {
+    notice.style.display = 'flex';
+    document.getElementById('fb-target-type').textContent = pendingTarget.type.replace('_', ' ');
+  } else {
+    notice.style.display = 'none';
+  }
+
+  document.getElementById('feedback-form-modal').classList.add('show');
+};
+
+window.closeFeedbackModal = function(e, id) {
+  if (e) {
+    const isOverlayClick = e.target.id === id;
+    const isCloseBtn = e.target.closest('.feedback-modal-close');
+    if (!isOverlayClick && !isCloseBtn) return;
+  }
+  document.getElementById(id).classList.remove('show');
+  if (id === 'feedback-form-modal') {
+    pendingTarget = null;
+    selectedType = null;
+  }
+  if (id === 'feedback-detail-modal') {
+    currentFeedbackId = null;
+  }
+};
+
+window.selectFeedbackType = function(type) {
+  selectedType = type;
+  document.querySelectorAll('.fb-type-card').forEach(card => {
+    card.classList.toggle('selected', card.dataset.type === type);
+  });
+};
+
+window.clearFeedbackTarget = function() {
+  pendingTarget = null;
+  document.getElementById('fb-target-notice').style.display = 'none';
+};
+
+window.submitFeedback = async function() {
+  const title = document.getElementById('fb-title').value.trim();
+  const details = document.getElementById('fb-details').value.trim();
+  const isAnonymous = document.getElementById('fb-anonymous').checked;
+
+  if (!selectedType) {
+    window.showToast('Pick a feedback type', 'error');
+    return;
+  }
+  if (title.length < 3) {
+    window.showToast('Title must be at least 3 characters', 'error');
+    return;
+  }
+  if (details.length < 10) {
+    window.showToast('Details must be at least 10 characters', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('fb-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  try {
+    const params = {
+      p_title: title,
+      p_details: details,
+      p_feedback_type: selectedType,
+      p_is_anonymous: isAnonymous
+    };
+    if (pendingTarget) {
+      params.p_target_type = pendingTarget.type;
+      params.p_target_id = pendingTarget.id;
+    }
+
+    const { data, error } = await window.supabaseClient.rpc('submit_feedback', params);
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>Submit</span> <i class="fas fa-paper-plane"></i>';
+
+    if (error) {
+      console.error('submit_feedback error:', error);
+      window.showToast('Could not submit: ' + error.message, 'error');
+      return;
+    }
+
+    if (!data || !data.ok) {
+      window.showToast('Submission failed: ' + (data?.reason || 'unknown'), 'error');
+      return;
+    }
+
+    window.showToast('Feedback submitted — thank you!', 'success');
+    closeFeedbackModal(null, 'feedback-form-modal');
+    await loadMyFeedback();
+  } catch (e) {
+    console.error('submitFeedback exception:', e);
+    btn.disabled = false;
+    btn.innerHTML = '<span>Submit</span> <i class="fas fa-paper-plane"></i>';
+    window.showToast('Something went wrong', 'error');
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// ── FEEDBACK DETAIL (view + reply) ──
+// ═══════════════════════════════════════════════════════════
+
+window.openFeedbackDetail = async function(feedbackId) {
+  currentFeedbackId = feedbackId;
+  const modal = document.getElementById('feedback-detail-modal');
+  const titleEl = document.getElementById('fd-title');
+  const bodyEl = document.getElementById('fd-body');
+
+  titleEl.textContent = 'Loading...';
+  bodyEl.innerHTML = '<div class="feedback-loading"><div class="loading-spin-ring"></div></div>';
+  modal.classList.add('show');
+
+  try {
+    // Fetch feedback item + replies in parallel
+    const [feedbackRes, repliesRes] = await Promise.all([
+      window.supabaseClient
+        .from('feedback')
+        .select('id, title, reason_text, feedback_type, status, created_at, target_type')
+        .eq('id', feedbackId)
+        .eq('reporter_id', window.session.user.id)
+        .maybeSingle(),
+      window.supabaseClient.rpc('get_feedback_replies', { p_feedback_id: feedbackId })
+    ]);
+
+    if (feedbackRes.error || !feedbackRes.data) {
+      bodyEl.innerHTML = '<div class="feedback-empty"><div>Feedback not found.</div></div>';
+      return;
+    }
+
+    const feedback = feedbackRes.data;
+    const replies = repliesRes.data || [];
+
+    const typeMeta = FEEDBACK_TYPE_META[feedback.feedback_type] || FEEDBACK_TYPE_META.other;
+    const statusMeta = STATUS_META[feedback.status] || STATUS_META.open;
+
+    titleEl.textContent = feedback.title || 'Feedback';
+
+    bodyEl.innerHTML = `
+      <div class="fd-header">
+        <div class="fd-type" style="color: ${typeMeta.color}; background: ${typeMeta.color}15; border-color: ${typeMeta.color}30;">
+          <i class="fas ${typeMeta.icon}"></i> ${typeMeta.label}
+        </div>
+        <div class="fd-status" style="color: ${statusMeta.color}; border-color: ${statusMeta.color}40; background: ${statusMeta.color}14;">
+          <i class="fas ${statusMeta.icon}"></i> ${statusMeta.label}
+        </div>
+        <div class="fd-time">${window.timeAgo(feedback.created_at)}</div>
+      </div>
+
+      <div class="fd-details">
+        ${window.escapeHTML(feedback.reason_text || '').replace(/\n/g, '<br>')}
+      </div>
+
+      <div class="fd-replies-section">
+        <div class="fd-replies-title">
+          <i class="fas fa-comments"></i>
+          Replies ${replies.length > 0 ? `(${replies.length})` : ''}
+        </div>
+        <div class="fd-replies-list" id="fd-replies-list">
+          ${replies.length === 0
+            ? `<div class="fd-no-replies"><i class="fas fa-hourglass-half"></i> No replies yet — an admin will respond soon.</div>`
+            : replies.map(buildReplyItem).join('')
+          }
+        </div>
+      </div>
+    `;
+
+    // Hide reply input if closed
+    const replyRow = document.querySelector('.fd-reply-row');
+    const replyLabel = document.querySelector('.fd-reply-label');
+    if (feedback.status === 'resolved' || feedback.status === 'dismissed') {
+      if (replyRow) replyRow.style.display = 'none';
+      if (replyLabel) replyLabel.innerHTML = '<i class="fas fa-lock"></i> This feedback is closed';
+    } else {
+      if (replyRow) replyRow.style.display = 'flex';
+      if (replyLabel) replyLabel.innerHTML = '<i class="fas fa-reply"></i> Reply';
+    }
+  } catch (e) {
+    console.error('openFeedbackDetail error:', e);
+    bodyEl.innerHTML = '<div class="feedback-empty"><div>Something went wrong.</div></div>';
+  }
+};
+
+function buildReplyItem(reply) {
+  const isStaff = reply.is_staff_reply;
+  const badge = isStaff
+    ? '<span class="fd-reply-badge staff">staff</span>'
+    : '';
+  return `
+    <div class="fd-reply ${isStaff ? 'staff' : ''}">
+      <div class="fd-reply-head">
+        <div class="fd-reply-author">
+          <i class="fas ${isStaff ? 'fa-shield-halved' : 'fa-user'}"></i>
+          ${window.escapeHTML(reply.author_display_name || reply.author_username)}${badge}
+        </div>
+        <div class="fd-reply-time">${window.timeAgo(reply.created_at)}</div>
+      </div>
+      <div class="fd-reply-text">${window.escapeHTML(reply.content || '').replace(/\n/g, '<br>')}</div>
+    </div>
+  `;
+}
+
+window.submitReply = async function() {
+  if (!currentFeedbackId) return;
+  const input = document.getElementById('fd-reply-input');
+  const content = input.value.trim();
+  if (!content) return;
+
+  const btn = document.getElementById('fd-reply-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc('reply_to_feedback', {
+      p_feedback_id: currentFeedbackId,
+      p_content: content
+    });
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+
+    if (error || !data || !data.ok) {
+      window.showToast('Could not reply: ' + (error?.message || data?.reason || 'unknown'), 'error');
+      return;
+    }
+
+    input.value = '';
+    // Reload the detail modal to show the new reply
+    await openFeedbackDetail(currentFeedbackId);
+  } catch (e) {
+    console.error('submitReply exception:', e);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    window.showToast('Something went wrong', 'error');
+  }
+};
+
+
+
+// ── Handle quick-report from query string ──
+function checkQueryForQuickReport() {
+  const params = new URLSearchParams(window.location.search);
+  const targetType = params.get('report_type');
+  const targetId = params.get('report_id');
+  if (targetType && targetId) {
+    openFeedbackForm({ type: targetType, id: targetId, preview: params.get('preview') || '' });
+    // Clean URL
+    history.replaceState(null, '', '/feedback');
+  }
+}
+
+// ── ESC closes modals ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('feedback-form-modal')?.classList.remove('show');
+    document.getElementById('feedback-detail-modal')?.classList.remove('show');
+  }
+});
+
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep(); // theme
+
+  nextLoadingStep(); // feedback
+  await loadMyFeedback();
+
+  nextLoadingStep();
+  nextLoadingStep();
+  nextLoadingStep(); // ready
+
+  // Check for quick-report query params
+  checkQueryForQuickReport();
+}
+
+// ── START ──
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
+} else {
+  initPage(pageInit);
+}
+</script>
+</body>
+</html>

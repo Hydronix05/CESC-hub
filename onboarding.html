@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Welcome — CESC Hub</title>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+<link rel="stylesheet" href="/css/pages/onboarding.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+<script src="shared.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</head>
+<body class="onboarding-body" data-page-title="Welcome">
+
+<div class="bg-canvas onboarding-bg">
+  <div class="orb orb1 frozen"></div>
+  <div class="orb orb2 frozen"></div>
+  <div class="orb orb3 frozen"></div>
+</div>
+
+<header class="onb-header" id="onb-header">
+  <div class="header-left">
+    <a href="#" class="header-logo" onclick="return false;">
+      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+    </a>
+    <span class="header-page-title">Welcome</span>
+  </div>
+  <div class="header-right">
+    <span class="header-online-status">
+      <span class="online-pulse-ring"><span class="online-pulse-dot"></span></span>
+      <span class="online-count-number" id="online-count">...</span>
+      <span class="online-status-text">online now</span>
+    </span>
+    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+    <div class="profile-chip" id="profile-chip" onclick="window.toggleDropdown()">
+      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
+      <span class="chip-name" id="chip-name">loading</span>
+      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
+      <div class="profile-dropdown" id="profile-dropdown">
+        <div class="dd-header">
+          <div class="dd-name" id="dd-name">—</div>
+          <div class="dd-sub">CESC Hub member</div>
+        </div>
+        <div class="dd-info-note">
+          <i class="fas fa-lock"></i> Finish onboarding to unlock the rest
+        </div>
+        <div class="dd-div"></div>
+        <button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="onb-loading" id="onb-loading">
+  <div class="onb-spinner"></div>
+  <div class="onb-loading-text" id="onb-loading-text">getting things ready...</div>
+</div>
+
+<main class="onb-shell" id="onb-shell" style="display:none">
+
+  <div class="onb-progress-wrap" id="onb-progress-wrap">
+    <div class="onb-progress-bar">
+      <div class="onb-progress-fill" id="onb-progress-fill"></div>
+    </div>
+    <div class="onb-progress-label">
+      <span id="onb-progress-text">1 / 6</span>
+      <span id="onb-progress-name">Welcome</span>
+    </div>
+  </div>
+
+  <section class="onb-screen" data-screen="1">
+    <div class="onb-screen-inner onb-screen-center">
+      <div class="onb-hero-logo">
+        <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+      </div>
+      <div class="onb-hero-badge" id="onb-hero-badge">Welcome</div>
+      <h1 class="onb-hero-title" id="onb-hero-title">Hey, <span id="onb-hero-name">there</span></h1>
+      <p class="onb-hero-sub" id="onb-hero-sub">
+        You're about to join CESC Hub — the private community space built for CESC students.
+      </p>
+
+      <div class="onb-whats-new" id="onb-whats-new" style="display:none">
+        <div class="onb-whats-new-title">
+          <i class="fas fa-sparkles"></i> What's new in V3.7
+        </div>
+        <ul class="onb-whats-new-list">
+          <li><i class="fas fa-check"></i> <span>Feedback system — report bugs, suggest features, talk to admins directly</span></li>
+          <li><i class="fas fa-check"></i> <span>Timeout system — with a real countdown and a boredom game</span></li>
+          <li><i class="fas fa-check"></i> <span>New About page — full rules, privacy, terms, and guides for every feature</span></li>
+          <li><i class="fas fa-check"></i> <span>Faster navigation, smoother animations, cleaner UI</span></li>
+        </ul>
+      </div>
+
+      <p class="onb-hero-hint" id="onb-hero-hint">
+        This takes about 2 minutes. You can't leave until you're done.
+      </p>
+    </div>
+  </section>
+
+  <section class="onb-screen" data-screen="2" style="display:none">
+    <div class="onb-screen-inner">
+      <div class="onb-screen-head">
+        <div class="onb-screen-step">Step 2 of 6</div>
+        <h2 class="onb-screen-title">About you</h2>
+        <p class="onb-screen-sub">This is how the community knows who you are. Required to continue.</p>
+      </div>
+
+      <div class="onb-field-group" id="onb-student-fields">
+        <div class="onb-field">
+          <label>Class</label>
+          <div class="onb-chip-row" id="onb-class-options">
+            <button class="onb-chip" data-class="6">Class VI</button>
+            <button class="onb-chip" data-class="7">Class VII</button>
+            <button class="onb-chip" data-class="8">Class VIII</button>
+            <button class="onb-chip" data-class="9">Class IX</button>
+            <button class="onb-chip" data-class="10">Class X</button>
+            <button class="onb-chip" data-class="11">Class XI</button>
+            <button class="onb-chip" data-class="12">Class XII</button>
+          </div>
+        </div>
+
+        <div class="onb-field">
+          <label>Section</label>
+          <div class="onb-chip-row" id="onb-section-options">
+            <button class="onb-chip" data-section="A">A</button>
+            <button class="onb-chip" data-section="B">B</button>
+            <button class="onb-chip" data-section="C">C</button>
+            <button class="onb-chip" data-section="D">D</button>
+            <button class="onb-chip" data-section="E">E</button>
+            <button class="onb-chip" data-section="F">F</button>
+          </div>
+        </div>
+
+        <div class="onb-field">
+          <label>Roll number</label>
+          <input type="number" class="onb-input" id="onb-roll" placeholder="1 – 999" min="1" max="999"/>
+          <div class="onb-field-hint">Must match your official class roll number.</div>
+        </div>
+      </div>
+
+      <div class="onb-field-group" id="onb-teacher-fields" style="display:none">
+        <div class="onb-field">
+          <label>Level</label>
+          <div class="onb-chip-row" id="onb-level-options">
+            <button class="onb-chip" data-level="primary">Primary</button>
+            <button class="onb-chip" data-level="high">High School</button>
+            <button class="onb-chip" data-level="college">College</button>
+          </div>
+        </div>
+
+        <div class="onb-field">
+          <label>Subjects you teach</label>
+          <div class="onb-field-hint" style="margin-bottom:10px;">
+            <i class="fas fa-circle-info"></i>
+            Science and its 3 parts (Physics / Biology / Chemistry) are mutually exclusive.
+          </div>
+          <div class="onb-subject-grid" id="onb-subject-grid"></div>
+        </div>
+      </div>
+
+      <div class="onb-lock-notice">
+        <i class="fas fa-lock"></i>
+        <div>
+          <strong>These fields are permanent.</strong>
+          To change your class, section, or roll later, contact an admin.
+        </div>
+      </div>
+
+      <div class="onb-error" id="onb-error-2" style="display:none"></div>
+    </div>
+  </section>
+
+  <section class="onb-screen" data-screen="3" style="display:none">
+    <div class="onb-screen-inner">
+      <div class="onb-screen-head">
+        <div class="onb-screen-step">Step 3 of 6</div>
+        <h2 class="onb-screen-title">Set up your profile</h2>
+        <p class="onb-screen-sub">Optional — you can skip this and change it later in Settings.</p>
+      </div>
+
+      <div class="onb-field">
+        <label>Display name</label>
+        <input type="text" class="onb-input" id="onb-display-name" placeholder="Your name" maxlength="30"/>
+        <div class="onb-field-hint">Leave blank to use your username.</div>
+      </div>
+
+      <div class="onb-field">
+        <label>Bio</label>
+        <textarea class="onb-input onb-textarea" id="onb-bio" placeholder="Say something about yourself..." maxlength="200"></textarea>
+        <div class="onb-field-hint"><span id="onb-bio-count">0</span> / 200</div>
+      </div>
+
+      <div class="onb-field">
+        <label>Profile picture</label>
+        <div class="onb-pfp-row">
+          <div class="onb-pfp-preview" id="onb-pfp-preview">
+            <img id="onb-pfp-img" src="" alt="" style="display:none"/>
+            <span id="onb-pfp-initial">?</span>
+          </div>
+          <div class="onb-pfp-actions">
+            <label class="onb-upload-btn" for="onb-pfp-file">
+              <i class="fas fa-camera"></i> Choose image
+            </label>
+            <input type="file" id="onb-pfp-file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none"/>
+            <button class="onb-pfp-remove" id="onb-pfp-remove" style="display:none" onclick="window.onbRemovePfp()">
+              <i class="fas fa-times"></i> Remove
+            </button>
+            <div class="onb-field-hint">jpg · png · gif · webp · max 2MB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="onb-screen" data-screen="4" style="display:none">
+    <div class="onb-screen-inner">
+      <div class="onb-screen-head">
+        <div class="onb-screen-step">Step 4 of 6</div>
+        <h2 class="onb-screen-title">Pick your vibe</h2>
+        <p class="onb-screen-sub">7 theme families, each with dark and light. Change anytime in Settings.</p>
+      </div>
+
+      <div class="onb-theme-grid" id="onb-theme-grid"></div>
+
+      <div class="onb-theme-current">
+        <i class="fas fa-circle-info"></i>
+        Currently using: <strong id="onb-theme-current-name">Nebula · dark</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="onb-screen" data-screen="5" style="display:none">
+    <div class="onb-screen-inner">
+      <div class="onb-screen-head">
+        <div class="onb-screen-step">Step 5 of 6</div>
+        <h2 class="onb-screen-title">Rules &amp; Privacy</h2>
+        <p class="onb-screen-sub">Please read these. You must agree before you can join.</p>
+      </div>
+
+      <div class="onb-rules-tabs">
+        <button class="onb-rules-tab active" data-tab="rules" onclick="window.onbSwitchRulesTab('rules')">
+          <i class="fas fa-gavel"></i> Community Rules
+        </button>
+        <button class="onb-rules-tab" data-tab="privacy" onclick="window.onbSwitchRulesTab('privacy')">
+          <i class="fas fa-shield-halved"></i> Privacy Policy
+        </button>
+      </div>
+
+      <div class="onb-rules-content" id="onb-rules-panel-rules">
+        <div class="onb-rules-loading"><div class="onb-spinner-sm"></div> loading...</div>
+      </div>
+      <div class="onb-rules-content" id="onb-rules-panel-privacy" style="display:none">
+        <div class="onb-rules-loading"><div class="onb-spinner-sm"></div> loading...</div>
+      </div>
+
+      <label class="onb-agree">
+        <input type="checkbox" id="onb-agree-checkbox" onchange="window.onbUpdateAgree()"/>
+        <span>I've read and agree to the Community Rules and Privacy Policy.</span>
+      </label>
+
+      <div class="onb-error" id="onb-error-5" style="display:none"></div>
+    </div>
+  </section>
+
+  <section class="onb-screen" data-screen="6" style="display:none">
+    <div class="onb-screen-inner">
+      <div class="onb-screen-head">
+        <div class="onb-screen-step">Step 6 of 6</div>
+        <h2 class="onb-screen-title">You're all set</h2>
+        <p class="onb-screen-sub">Here's where everything lives. Tap any card to learn more.</p>
+      </div>
+
+      <div class="onb-guide-grid">
+        <a href="/about#guides-feed" target="_blank" rel="noopener" class="onb-guide-card">
+          <div class="onb-guide-icon"><i class="fas fa-newspaper"></i></div>
+          <div class="onb-guide-title">Feed</div>
+          <div class="onb-guide-desc">Post, like, comment</div>
+        </a>
+        <a href="/about#guides-chat" target="_blank" rel="noopener" class="onb-guide-card">
+          <div class="onb-guide-icon"><i class="fas fa-comments"></i></div>
+          <div class="onb-guide-title">Chat</div>
+          <div class="onb-guide-desc">Global, DMs, notes</div>
+        </a>
+        <a href="/about#guides-profiles" target="_blank" rel="noopener" class="onb-guide-card">
+          <div class="onb-guide-icon"><i class="fas fa-users"></i></div>
+          <div class="onb-guide-title">Profiles</div>
+          <div class="onb-guide-desc">Browse members</div>
+        </a>
+        <a href="/about#guides-games" target="_blank" rel="noopener" class="onb-guide-card">
+          <div class="onb-guide-icon"><i class="fas fa-gamepad"></i></div>
+          <div class="onb-guide-title">Games</div>
+          <div class="onb-guide-desc">Play Bloxd.io</div>
+        </a>
+        <a href="/about#guides-leaderboard" target="_blank" rel="noopener" class="onb-guide-card">
+          <div class="onb-guide-icon"><i class="fas fa-trophy"></i></div>
+          <div class="onb-guide-title">Leaderboard</div>
+          <div class="onb-guide-desc">See who's on top</div>
+        </a>
+        <a href="/about#guides-download" target="_blank" rel="noopener" class="onb-guide-card">
+          <div class="onb-guide-icon"><i class="fas fa-download"></i></div>
+          <div class="onb-guide-title">Install App</div>
+          <div class="onb-guide-desc">Home screen in 30s</div>
+        </a>
+      </div>
+
+      <div class="onb-finish-hint">
+        <i class="fas fa-hand-peace"></i>
+        Ready when you are.
+      </div>
+    </div>
+  </section>
+
+  <div class="onb-footer" id="onb-footer">
+    <button class="onb-btn-back" id="onb-back-btn" onclick="window.onbBack()">
+      <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <div class="onb-footer-spacer"></div>
+    <button class="onb-btn-skip" id="onb-skip-btn" onclick="window.onbSkip()" style="display:none">
+      Skip
+    </button>
+    <button class="onb-btn-next" id="onb-next-btn" onclick="window.onbNext()">
+      <span id="onb-next-label">Continue</span> <i class="fas fa-arrow-right"></i>
+    </button>
+  </div>
+
+</main>
+
+<div class="onb-finish-overlay" id="onb-finish-overlay" style="display:none">
+  <div class="onb-finish-orbs">
+    <div class="onb-finish-orb"></div>
+    <div class="onb-finish-orb"></div>
+    <div class="onb-finish-orb"></div>
+  </div>
+  <div class="onb-finish-content">
+    <div class="onb-finish-icon">
+      <i class="fas fa-check"></i>
+    </div>
+    <div class="onb-finish-title">You're in.</div>
+    <div class="onb-finish-sub">Welcome to CESC Hub</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── ONBOARDING PAGE LOGIC ──
+// ═══════════════════════════════════════════════════════════
+// NOTE: `session` is a top-level `let` in shared.js. We use
+// `onbSession` here to avoid the "already declared" syntax error.
+
+const ONB_STATE_KEY = 'cesc_onboarding_state';
+const ONB_TOTAL_SCREENS = 6;
+
+const SCREEN_NAMES = [
+  'Welcome',
+  'About you',
+  'Profile',
+  'Theme',
+  'Rules & Privacy',
+  'Getting started'
+];
+
+const SUBJECTS = [
+  { id: 'bangla_1',  label: 'Bangla 1st' },
+  { id: 'bangla_2',  label: 'Bangla 2nd' },
+  { id: 'english_1', label: 'English 1st' },
+  { id: 'english_2', label: 'English 2nd' },
+  { id: 'maths',     label: 'Mathematics' },
+  { id: 'physics',   label: 'Physics' },
+  { id: 'biology',   label: 'Biology' },
+  { id: 'chemistry', label: 'Chemistry' },
+  { id: 'science',   label: 'Science (combined)' },
+  { id: 'bgs',       label: 'BGS' },
+  { id: 'religion',  label: 'Religion' },
+  { id: 'agriculture', label: 'Agriculture' },
+  { id: 'home_science', label: 'Home Science' },
+  { id: 'arts',      label: 'Arts & Crafts' },
+  { id: 'games',     label: 'Games' },
+  { id: 'business',  label: 'Business Studies' }
+];
+
+const SCIENCE_GROUP = ['science', 'physics', 'biology', 'chemistry'];
+
+let onbSession = null;
+let profile = null;
+let currentScreen = 1;
+let isTeacher = false;
+let isExistingUser = false;
+let isSubmitting = false;
+
+let formData = {
+  class_number: null,
+  section: null,
+  roll_number: null,
+  level: null,
+  subjects: [],
+  display_name: '',
+  bio: '',
+  theme_id: null,
+  agreed: false
+};
+
+let pendingPfpFile = null;
+let rulesLoaded = false;
+
+// ═══════════════════════════════════════════════════════════
+// ── DEBUG HELPER ──
+// ═══════════════════════════════════════════════════════════
+function setLoadingStep(text) {
+  const el = document.getElementById('onb-loading-text');
+  if (el) el.textContent = text;
+  console.log('[ONB]', text);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── INIT ──
+// ═══════════════════════════════════════════════════════════
+async function onbInit() {
+  setLoadingStep('step 1: starting...');
+
+  if (typeof window.supabaseClient === 'undefined') {
+    setLoadingStep('❌ supabaseClient missing — shared.js failed to load');
+    return;
+  }
+  if (typeof window.initAuth !== 'function') {
+    setLoadingStep('❌ initAuth missing — shared.js failed to load');
+    return;
+  }
+
+  setLoadingStep('step 2: applying theme');
+  try {
+    if (typeof window.initTheme === 'function') window.initTheme();
+  } catch (e) {
+    console.error('initTheme error:', e);
+  }
+
+  setLoadingStep('step 3: default nebula dark');
+  try {
+    if (!localStorage.getItem('cesc_theme_id')) {
+      if (typeof window.applyTheme === 'function') {
+        window.applyTheme('nebula', 'dark');
+      }
+    }
+  } catch (e) {
+    console.error('applyTheme error:', e);
+  }
+
+  setLoadingStep('step 4: checking auth...');
+  try {
+    const sess = await window.initAuth();
+    if (!sess) {
+      setLoadingStep('❌ auth returned null — check login');
+      return;
+    }
+    onbSession = sess;
+  } catch (e) {
+    setLoadingStep('❌ auth error: ' + e.message);
+    return;
+  }
+
+  setLoadingStep('step 5: fetching your profile...');
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', onbSession.user.id)
+      .single();
+    if (error) {
+      setLoadingStep('❌ profile error: ' + error.message);
+      return;
+    }
+    if (!data) {
+      setLoadingStep('❌ profile not found');
+      return;
+    }
+    profile = data;
+  } catch (e) {
+    setLoadingStep('❌ profile exception: ' + e.message);
+    return;
+  }
+
+  setLoadingStep('step 6: already onboarded?');
+  if (profile.onboarding_completed_at) {
+    setLoadingStep('✓ onboarded → redirecting home');
+    window.location.replace('/');
+    return;
+  }
+
+  setLoadingStep('step 7: owner check');
+  const roles = Array.isArray(profile.roles) ? profile.roles : [];
+  if (roles.includes('owner')) {
+    setLoadingStep('✓ owner → redirecting home');
+    window.location.replace('/');
+    return;
+  }
+
+  setLoadingStep('step 8: teacher detection');
+  isTeacher = roles.includes('teacher');
+
+  setLoadingStep('step 9: existing user detection');
+  const SHIP_DATE = new Date('2026-10-21T00:00:00Z');
+  const createdAt = profile.created_at ? new Date(profile.created_at) : new Date(0);
+  isExistingUser = createdAt < SHIP_DATE && !!profile.last_seen;
+
+  setLoadingStep('step 10: header chip');
+  updateHeaderChip();
+
+  setLoadingStep('step 11: setting welcome text');
+  const heroName = document.getElementById('onb-hero-name');
+  if (heroName) {
+    heroName.textContent = profile.display_name || profile.username || 'friend';
+  }
+
+  const heroBadge = document.getElementById('onb-hero-badge');
+  const heroTitle = document.getElementById('onb-hero-title');
+  const heroSub = document.getElementById('onb-hero-sub');
+  const whatsNew = document.getElementById('onb-whats-new');
+
+  if (isExistingUser) {
+    if (heroBadge) heroBadge.textContent = "What's new";
+    if (heroTitle) heroTitle.innerHTML = 'Welcome back, <span id="onb-hero-name">' + escapeHTML(profile.display_name || profile.username || 'friend') + '</span>';
+    if (heroSub) heroSub.textContent = "A lot has changed. Let's walk you through it.";
+    if (whatsNew) whatsNew.style.display = 'block';
+  } else {
+    if (heroBadge) heroBadge.textContent = 'Welcome';
+    if (heroTitle) heroTitle.innerHTML = 'Hey, <span id="onb-hero-name">' + escapeHTML(profile.display_name || profile.username || 'there') + '</span>';
+    if (heroSub) heroSub.textContent = "You're about to join CESC Hub — the private community space built for CESC students.";
+  }
+
+  setLoadingStep('step 12: restoring progress');
+  try {
+    const saved = localStorage.getItem(ONB_STATE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') {
+        formData = { ...formData, ...parsed };
+        if (parsed.screen && parsed.screen >= 1 && parsed.screen <= ONB_TOTAL_SCREENS) {
+          currentScreen = parsed.screen;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('restore progress error:', e);
+  }
+
+  if (profile.display_name && !formData.display_name) formData.display_name = profile.display_name;
+  if (profile.bio && !formData.bio) formData.bio = profile.bio;
+
+  setLoadingStep('step 13: setup chips');
+  setupStudentChips();
+  setupSectionChips();
+  setupLevelChips();
+
+  setLoadingStep('step 14: setup subjects');
+  setupSubjects();
+
+  setLoadingStep('step 15: setup bio + pfp');
+  setupBioCounter();
+  setupPfpUpload();
+
+  setLoadingStep('step 16: theme grid');
+  renderThemeGrid();
+
+  setLoadingStep('step 17: restore form');
+  restoreFormToUI();
+
+  setLoadingStep('step 18: showing shell');
+  document.getElementById('onb-loading').style.display = 'none';
+  document.getElementById('onb-shell').style.display = 'flex';
+
+  setLoadingStep('step 19: navigate to screen ' + currentScreen);
+  showScreen(currentScreen);
+
+  setLoadingStep('step 20: online count');
+  if (typeof window.loadOnlineCount === 'function') {
+    window.loadOnlineCount();
+    setInterval(() => window.loadOnlineCount(), 15000);
+  }
+
+  setLoadingStep('step 21: preload rules');
+  loadRulesContent();
+
+  setLoadingStep('✅ ready');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── HEADER CHIP ──
+// ═══════════════════════════════════════════════════════════
+function updateHeaderChip() {
+  if (!profile) return;
+  const displayName = profile.display_name || profile.username || 'you';
+  const raw = profile.username || 'you';
+
+  const chipName = document.getElementById('chip-name');
+  const chipInitial = document.getElementById('chip-initial');
+  const ddName = document.getElementById('dd-name');
+  if (chipName) chipName.textContent = displayName;
+  if (chipInitial) chipInitial.textContent = (raw[0] || '?').toUpperCase();
+  if (ddName) ddName.textContent = displayName;
+
+  if (profile.pfp_url) {
+    const av = document.getElementById('chip-av');
+    if (av) {
+      const span = av.querySelector('span');
+      const img = document.createElement('img');
+      img.src = profile.pfp_url;
+      img.loading = 'lazy';
+      img.onload = () => { img.style.display = 'block'; img.classList.add('loaded'); if (span) span.style.display = 'none'; };
+      img.onerror = () => img.remove();
+      av.appendChild(img);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── SCREEN NAVIGATION ──
+// ═══════════════════════════════════════════════════════════
+function showScreen(n) {
+  if (n < 1) n = 1;
+  if (n > ONB_TOTAL_SCREENS) n = ONB_TOTAL_SCREENS;
+  currentScreen = n;
+
+  document.querySelectorAll('.onb-screen').forEach(el => {
+    const screen = parseInt(el.dataset.screen, 10);
+    el.style.display = screen === n ? 'block' : 'none';
+  });
+
+  const pct = (n / ONB_TOTAL_SCREENS) * 100;
+  const fill = document.getElementById('onb-progress-fill');
+  if (fill) fill.style.width = pct + '%';
+  const progressText = document.getElementById('onb-progress-text');
+  if (progressText) progressText.textContent = n + ' / ' + ONB_TOTAL_SCREENS;
+  const progressName = document.getElementById('onb-progress-name');
+  if (progressName) progressName.textContent = SCREEN_NAMES[n - 1] || '';
+
+  const backBtn = document.getElementById('onb-back-btn');
+  if (backBtn) {
+    backBtn.style.display = (n === 3 || n === 4 || n === 5) ? 'inline-flex' : 'none';
+  }
+
+  const skipBtn = document.getElementById('onb-skip-btn');
+  if (skipBtn) {
+    skipBtn.style.display = (n === 3 || n === 4) ? 'inline-flex' : 'none';
+  }
+
+  const nextLabel = document.getElementById('onb-next-label');
+  if (nextLabel) {
+    if (n === 6) nextLabel.textContent = "Let's go";
+    else nextLabel.textContent = 'Continue';
+  }
+
+  updateNextButtonState();
+
+  if (n === 2) {
+    const studentFields = document.getElementById('onb-student-fields');
+    const teacherFields = document.getElementById('onb-teacher-fields');
+    if (studentFields) studentFields.style.display = isTeacher ? 'none' : 'block';
+    if (teacherFields) teacherFields.style.display = isTeacher ? 'block' : 'none';
+  }
+  if (n === 4) {
+    updateThemeCurrentLabel();
+  }
+  if (n === 5) {
+    if (!rulesLoaded) loadRulesContent();
+  }
+
+  saveProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem(ONB_STATE_KEY, JSON.stringify({
+      ...formData,
+      screen: currentScreen
+    }));
+  } catch (e) {}
+}
+
+function clearProgress() {
+  try { localStorage.removeItem(ONB_STATE_KEY); } catch (e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── NEXT / BACK / SKIP ──
+// ═══════════════════════════════════════════════════════════
+window.onbNext = async function() {
+  if (isSubmitting) return;
+
+  if (currentScreen === 2) {
+    const err = validateScreen2();
+    if (err) { showOnbError(2, err); return; }
+    clearOnbError(2);
+  }
+  if (currentScreen === 5) {
+    if (!formData.agreed) {
+      showOnbError(5, 'Please check the box to agree before continuing.');
+      return;
+    }
+    clearOnbError(5);
+  }
+
+  if (currentScreen === 6) {
+    await finishOnboarding();
+    return;
+  }
+
+  if (currentScreen === 2) {
+    const ok = await saveScreen2ToDb();
+    if (!ok) return;
+  }
+
+  if (currentScreen === 4) {
+    if (formData.theme_id) {
+      try { window.switchTheme(formData.theme_id); } catch (e) {}
+    }
+  }
+
+  showScreen(currentScreen + 1);
+};
+
+window.onbBack = function() {
+  if (currentScreen > 1) {
+    showScreen(currentScreen - 1);
+  }
+};
+
+window.onbSkip = function() {
+  if (currentScreen === 3 || currentScreen === 4) {
+    showScreen(currentScreen + 1);
+  }
+};
+
+function updateNextButtonState() {
+  const btn = document.getElementById('onb-next-btn');
+  if (!btn) return;
+
+  let canProceed = true;
+
+  if (currentScreen === 2) {
+    if (isTeacher) {
+      canProceed = !!formData.level && formData.subjects.length > 0;
+    } else {
+      canProceed = !!formData.class_number && !!formData.section && !!formData.roll_number;
+    }
+  } else if (currentScreen === 5) {
+    canProceed = formData.agreed === true;
+  }
+
+  btn.disabled = !canProceed || isSubmitting;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── SCREEN 2 — VALIDATION + SAVE ──
+// ═══════════════════════════════════════════════════════════
+function validateScreen2() {
+  if (isTeacher) {
+    if (!formData.level) return 'Please pick your level.';
+    if (!formData.subjects || formData.subjects.length === 0) return 'Please pick at least one subject you teach.';
+    return null;
+  }
+  if (!formData.class_number) return 'Please pick your class.';
+  if (!formData.section) return 'Please pick your section.';
+  if (!formData.roll_number) return 'Please enter your roll number.';
+  if (formData.roll_number < 1 || formData.roll_number > 999) return 'Roll number must be between 1 and 999.';
+  return null;
+}
+
+async function saveScreen2ToDb() {
+  const updates = {};
+  if (isTeacher) {
+    updates.level = formData.level;
+    updates.subjects = formData.subjects;
+    updates.class_number = null;
+    updates.section = null;
+    updates.roll_number = null;
+  } else {
+    updates.class_number = formData.class_number;
+    updates.section = formData.section;
+    updates.roll_number = formData.roll_number;
+    updates.level = null;
+    updates.subjects = [];
+  }
+
+  try {
+    const { error } = await window.supabaseClient
+      .from('profiles')
+      .update(updates)
+      .eq('id', onbSession.user.id);
+
+    if (error) {
+      if (error.code === '23505' || (error.message && error.message.toLowerCase().includes('duplicate'))) {
+        showOnbError(2, 'Someone already registered with that class, section, and roll number. If that\'s not you, contact an admin.');
+      } else {
+        showOnbError(2, 'Could not save: ' + error.message);
+      }
+      return false;
+    }
+    return true;
+  } catch (e) {
+    showOnbError(2, 'Something went wrong saving your details.');
+    return false;
+  }
+}
+
+function showOnbError(screen, msg) {
+  const el = document.getElementById('onb-error-' + screen);
+  if (!el) return;
+  el.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + escapeHTML(msg);
+  el.style.display = 'flex';
+}
+function clearOnbError(screen) {
+  const el = document.getElementById('onb-error-' + screen);
+  if (el) el.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── SCREEN 2 — STUDENT CHIPS ──
+// ═══════════════════════════════════════════════════════════
+function setupStudentChips() {
+  document.querySelectorAll('#onb-class-options .onb-chip').forEach(btn => {
+    btn.onclick = () => {
+      const val = parseInt(btn.dataset.class, 10);
+      formData.class_number = (formData.class_number === val) ? null : val;
+      updateChipSelection('#onb-class-options', 'class_number', formData.class_number);
+      saveProgress();
+      updateNextButtonState();
+    };
+  });
+}
+
+function setupSectionChips() {
+  document.querySelectorAll('#onb-section-options .onb-chip').forEach(btn => {
+    btn.onclick = () => {
+      const val = btn.dataset.section;
+      formData.section = (formData.section === val) ? null : val;
+      updateChipSelection('#onb-section-options', 'section', formData.section);
+      saveProgress();
+      updateNextButtonState();
+    };
+  });
+}
+
+function setupLevelChips() {
+  document.querySelectorAll('#onb-level-options .onb-chip').forEach(btn => {
+    btn.onclick = () => {
+      const val = btn.dataset.level;
+      formData.level = (formData.level === val) ? null : val;
+      updateChipSelection('#onb-level-options', 'level', formData.level);
+      saveProgress();
+      updateNextButtonState();
+    };
+  });
+}
+
+function updateChipSelection(containerSel, dataKey, value) {
+  document.querySelectorAll(containerSel + ' .onb-chip').forEach(btn => {
+    const chipVal = btn.dataset[dataKey === 'class_number' ? 'class' : dataKey];
+    const isSelected = (dataKey === 'class_number')
+      ? (parseInt(chipVal, 10) === value)
+      : (chipVal === value);
+    btn.classList.toggle('selected', !!isSelected);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const rollInput = document.getElementById('onb-roll');
+  if (rollInput) {
+    rollInput.addEventListener('input', () => {
+      const v = rollInput.value.trim();
+      if (!v) { formData.roll_number = null; updateNextButtonState(); return; }
+      const n = parseInt(v, 10);
+      if (isNaN(n) || n < 1 || n > 999) { formData.roll_number = null; }
+      else { formData.roll_number = n; }
+      saveProgress();
+      updateNextButtonState();
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// ── SCREEN 2 — TEACHER SUBJECTS ──
+// ═══════════════════════════════════════════════════════════
+function setupSubjects() {
+  const grid = document.getElementById('onb-subject-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  SUBJECTS.forEach(subj => {
+    const btn = document.createElement('button');
+    btn.className = 'onb-subject-chip';
+    btn.dataset.subject = subj.id;
+    btn.textContent = subj.label;
+    btn.onclick = () => toggleSubject(subj.id);
+    grid.appendChild(btn);
+  });
+
+  updateSubjectSelection();
+}
+
+function toggleSubject(id) {
+  const isOn = formData.subjects.includes(id);
+  if (isOn) {
+    formData.subjects = formData.subjects.filter(s => s !== id);
+  } else {
+    if (id === 'science') {
+      formData.subjects = formData.subjects.filter(s => !SCIENCE_GROUP.includes(s) || s === 'science');
+    }
+    else if (SCIENCE_GROUP.includes(id) && id !== 'science') {
+      formData.subjects = formData.subjects.filter(s => s !== 'science');
+    }
+    formData.subjects.push(id);
+  }
+  updateSubjectSelection();
+  saveProgress();
+  updateNextButtonState();
+}
+
+function updateSubjectSelection() {
+  const grid = document.getElementById('onb-subject-grid');
+  if (!grid) return;
+  const hasScience = formData.subjects.includes('science');
+  const hasPart = formData.subjects.some(s => s === 'physics' || s === 'biology' || s === 'chemistry');
+
+  grid.querySelectorAll('.onb-subject-chip').forEach(btn => {
+    const id = btn.dataset.subject;
+    const isSelected = formData.subjects.includes(id);
+    btn.classList.toggle('selected', isSelected);
+
+    if (id === 'science' && hasPart && !isSelected) {
+      btn.classList.add('locked');
+    } else if ((id === 'physics' || id === 'biology' || id === 'chemistry') && hasScience && !isSelected) {
+      btn.classList.add('locked');
+    } else {
+      btn.classList.remove('locked');
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── SCREEN 3 — PROFILE / BIO COUNTER / PFP ──
+// ═══════════════════════════════════════════════════════════
+function setupBioCounter() {
+  const bio = document.getElementById('onb-bio');
+  const count = document.getElementById('onb-bio-count');
+  const display = document.getElementById('onb-display-name');
+  if (bio) {
+    bio.addEventListener('input', () => {
+      formData.bio = bio.value;
+      if (count) count.textContent = bio.value.length;
+      saveProgress();
+    });
+  }
+  if (display) {
+    display.addEventListener('input', () => {
+      formData.display_name = display.value;
+      saveProgress();
+    });
+  }
+}
+
+function setupPfpUpload() {
+  const input = document.getElementById('onb-pfp-file');
+  if (!input) return;
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      window.showToast('Image too big — max 2MB', 'error');
+      return;
+    }
+    pendingPfpFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = document.getElementById('onb-pfp-img');
+      const initial = document.getElementById('onb-pfp-initial');
+      const removeBtn = document.getElementById('onb-pfp-remove');
+      if (img) { img.src = ev.target.result; img.style.display = 'block'; }
+      if (initial) initial.style.display = 'none';
+      if (removeBtn) removeBtn.style.display = 'inline-flex';
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  });
+}
+
+window.onbRemovePfp = function() {
+  pendingPfpFile = null;
+  const img = document.getElementById('onb-pfp-img');
+  const initial = document.getElementById('onb-pfp-initial');
+  const removeBtn = document.getElementById('onb-pfp-remove');
+  if (img) { img.src = ''; img.style.display = 'none'; }
+  if (initial) initial.style.display = 'block';
+  if (removeBtn) removeBtn.style.display = 'none';
+};
+
+// ═══════════════════════════════════════════════════════════
+// ── SCREEN 4 — THEME GRID ──
+// ═══════════════════════════════════════════════════════════
+function renderThemeGrid() {
+  const grid = document.getElementById('onb-theme-grid');
+  const themes = window.THEME_PRESETS || [];
+  if (!grid || themes.length === 0) return;
+  const current = window.getCurrentTheme();
+
+  grid.innerHTML = '';
+  themes.forEach(theme => {
+    const card = document.createElement('div');
+    card.className = 'onb-theme-card';
+    card.dataset.theme = theme.id;
+    if (current && current.id === theme.id) card.classList.add('active');
+
+    const preview = document.createElement('div');
+    preview.className = 'onb-theme-preview';
+    const darkVars = theme.variants.dark;
+    const lightVars = theme.variants.light;
+
+    const half1 = document.createElement('div');
+    half1.className = 'onb-theme-half';
+    half1.style.background = darkVars['--bg'];
+    const dot1 = document.createElement('span');
+    dot1.style.background = darkVars['--neon'];
+    half1.appendChild(dot1);
+
+    const half2 = document.createElement('div');
+    half2.className = 'onb-theme-half';
+    half2.style.background = lightVars['--bg'];
+    const dot2 = document.createElement('span');
+    dot2.style.background = lightVars['--neon'];
+    half2.appendChild(dot2);
+
+    preview.appendChild(half1);
+    preview.appendChild(half2);
+    card.appendChild(preview);
+
+    const name = document.createElement('div');
+    name.className = 'onb-theme-name';
+    name.textContent = theme.name;
+    card.appendChild(name);
+
+    card.onclick = () => {
+      formData.theme_id = theme.id;
+      try { window.switchTheme(theme.id); } catch (e) {}
+      grid.querySelectorAll('.onb-theme-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      updateThemeCurrentLabel();
+      saveProgress();
+    };
+
+    grid.appendChild(card);
+  });
+}
+
+function updateThemeCurrentLabel() {
+  const el = document.getElementById('onb-theme-current-name');
+  if (!el) return;
+  const current = window.getCurrentTheme();
+  if (current) el.textContent = current.name + ' · ' + current.variant;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── SCREEN 5 — RULES & PRIVACY (fetch from about.html) ──
+// ═══════════════════════════════════════════════════════════
+async function loadRulesContent() {
+  if (rulesLoaded) return;
+  rulesLoaded = true;
+
+  try {
+    const res = await fetch('/about.html', { cache: 'force-cache' });
+    if (!res.ok) throw new Error('Fetch failed');
+    const html = await res.text();
+
+    const rulesFallback = html.match(/id="rules-rules-content"[^>]*>([\s\S]*?)<!-- ── PRIVACY ── -->/);
+    const privacyFallback = html.match(/id="rules-privacy-content"[^>]*>([\s\S]*?)<!-- ── TERMS ── -->/);
+
+    const rulesContent = (rulesFallback && rulesFallback[1]) || '';
+    const privacyContent = (privacyFallback && privacyFallback[1]) || '';
+
+    const rulesPanel = document.getElementById('onb-rules-panel-rules');
+    const privacyPanel = document.getElementById('onb-rules-panel-privacy');
+
+    if (rulesPanel) {
+      rulesPanel.innerHTML = rulesContent
+        ? '<div class="rules-body">' + rulesContent + '</div>'
+        : '<div class="onb-rules-empty">Could not load rules. <a href="/about#rules-rules" target="_blank">Open About page</a>.</div>';
+    }
+    if (privacyPanel) {
+      privacyPanel.innerHTML = privacyContent
+        ? '<div class="rules-body">' + privacyContent + '</div>'
+        : '<div class="onb-rules-empty">Could not load privacy policy. <a href="/about#rules-privacy" target="_blank">Open About page</a>.</div>';
+    }
+  } catch (e) {
+    console.error('loadRulesContent:', e);
+    const rulesPanel = document.getElementById('onb-rules-panel-rules');
+    const privacyPanel = document.getElementById('onb-rules-panel-privacy');
+    const fallbackHtml = '<div class="onb-rules-empty">Could not load rules. <a href="/about#rules-rules" target="_blank">Read on About page</a>.</div>';
+    if (rulesPanel) rulesPanel.innerHTML = fallbackHtml;
+    if (privacyPanel) privacyPanel.innerHTML = fallbackHtml;
+  }
+}
+
+window.onbSwitchRulesTab = function(tab) {
+  document.querySelectorAll('.onb-rules-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  const rulesPanel = document.getElementById('onb-rules-panel-rules');
+  const privacyPanel = document.getElementById('onb-rules-panel-privacy');
+  if (rulesPanel) rulesPanel.style.display = tab === 'rules' ? 'block' : 'none';
+  if (privacyPanel) privacyPanel.style.display = tab === 'privacy' ? 'block' : 'none';
+};
+
+window.onbUpdateAgree = function() {
+  const cb = document.getElementById('onb-agree-checkbox');
+  formData.agreed = !!(cb && cb.checked);
+  saveProgress();
+  updateNextButtonState();
+  if (formData.agreed) clearOnbError(5);
+};
+
+// ═══════════════════════════════════════════════════════════
+// ── FINISH ──
+// ═══════════════════════════════════════════════════════════
+async function finishOnboarding() {
+  if (isSubmitting) return;
+  isSubmitting = true;
+  updateNextButtonState();
+
+  const nextLabel = document.getElementById('onb-next-label');
+  if (nextLabel) nextLabel.textContent = 'Finishing...';
+
+  try {
+    let pfp_url = profile.pfp_url || null;
+    if (pendingPfpFile) {
+      try {
+        const ext = pendingPfpFile.name.split('.').pop();
+        const path = onbSession.user.id + '/pfp.' + ext;
+        const { error: upErr } = await window.supabaseClient.storage
+          .from('avatars')
+          .upload(path, pendingPfpFile, { upsert: true, contentType: pendingPfpFile.type });
+        if (!upErr) {
+          const { data: urlData } = window.supabaseClient.storage.from('avatars').getPublicUrl(path);
+          pfp_url = urlData.publicUrl;
+        }
+      } catch (e) {
+        console.error('pfp upload:', e);
+      }
+    }
+
+    const updates = {
+      onboarding_completed_at: new Date().toISOString(),
+      agreed_to_rules_at: new Date().toISOString()
+    };
+
+    if (formData.display_name && formData.display_name.trim()) {
+      updates.display_name = formData.display_name.trim();
+    }
+    if (formData.bio !== undefined) {
+      updates.bio = formData.bio;
+    }
+    if (pfp_url) {
+      updates.pfp_url = pfp_url;
+    }
+
+    const { error } = await window.supabaseClient
+      .from('profiles')
+      .update(updates)
+      .eq('id', onbSession.user.id);
+
+    if (error) {
+      console.error('finish update:', error);
+      window.showToast('Could not save: ' + error.message, 'error');
+      isSubmitting = false;
+      if (nextLabel) nextLabel.textContent = "Let's go";
+      updateNextButtonState();
+      return;
+    }
+
+    clearProgress();
+    showFinishOverlay();
+
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 2600);
+
+  } catch (e) {
+    console.error('finishOnboarding exception:', e);
+    window.showToast('Something went wrong. Please try again.', 'error');
+    isSubmitting = false;
+    if (nextLabel) nextLabel.textContent = "Let's go";
+    updateNextButtonState();
+  }
+}
+
+function showFinishOverlay() {
+  const overlay = document.getElementById('onb-finish-overlay');
+  const shell = document.getElementById('onb-shell');
+  const header = document.getElementById('onb-header');
+  if (overlay) overlay.style.display = 'flex';
+  if (shell) shell.style.display = 'none';
+  if (header) header.style.display = 'none';
+  document.body.classList.add('onb-finishing');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── RESTORE FORM VALUES INTO UI ──
+// ═══════════════════════════════════════════════════════════
+function restoreFormToUI() {
+  if (formData.class_number) updateChipSelection('#onb-class-options', 'class_number', formData.class_number);
+  if (formData.section) updateChipSelection('#onb-section-options', 'section', formData.section);
+  if (formData.level) updateChipSelection('#onb-level-options', 'level', formData.level);
+
+  const rollInput = document.getElementById('onb-roll');
+  if (rollInput && formData.roll_number) rollInput.value = formData.roll_number;
+
+  if (formData.subjects && formData.subjects.length > 0) updateSubjectSelection();
+
+  const display = document.getElementById('onb-display-name');
+  if (display && formData.display_name) display.value = formData.display_name;
+
+  const bio = document.getElementById('onb-bio');
+  const bioCount = document.getElementById('onb-bio-count');
+  if (bio && formData.bio) {
+    bio.value = formData.bio;
+    if (bioCount) bioCount.textContent = formData.bio.length;
+  }
+
+  const agree = document.getElementById('onb-agree-checkbox');
+  if (agree) agree.checked = !!formData.agreed;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── beforeunload / pagehide guard ──
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('beforeunload', (e) => {
+  if (isSubmitting) return;
+  if (currentScreen === 1 || currentScreen === 6) return;
+  if (document.getElementById('onb-finish-overlay')?.style.display === 'flex') return;
+  const startedFilling = !!formData.class_number || !!formData.section || !!formData.level;
+  if (!startedFilling && currentScreen === 2) return;
+  e.preventDefault();
+  e.returnValue = '';
+  return '';
+});
+
+window.addEventListener('pagehide', () => {
+  saveProgress();
+});
+
+// ═══════════════════════════════════════════════════════════
+// ── EXPOSE ──
+// ═══════════════════════════════════════════════════════════
+window.onbNext = window.onbNext;
+window.onbBack = window.onbBack;
+window.onbSkip = window.onbSkip;
+window.onbSwitchRulesTab = window.onbSwitchRulesTab;
+window.onbUpdateAgree = window.onbUpdateAgree;
+window.onbRemovePfp = window.onbRemovePfp;
+
+function escapeHTML(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[m]));
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── START ──
+// ═══════════════════════════════════════════════════════════
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', onbInit);
+} else {
+  onbInit();
+}
+</script>
+</body>
+</html>

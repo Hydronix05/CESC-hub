@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CESC Hub — Games</title>
 
-<!-- ── PWA META TAGS ── -->
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,13 +13,11 @@
 <link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
 
 <link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
 
-<!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- Load shared.js -->
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/games.css"/>
 <link rel="stylesheet" href="/css/ads.css"/>
@@ -28,7 +25,6 @@
 <script src="/js/theme-engine.js"></script>
 <script src="/js/ads.js"></script>
 
-<!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -40,8 +36,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 </head>
-<body>
-<!-- ── LOADING SCREEN ── -->
+<body data-page-title="Games">
 <div id="loading-screen">
   <div class="bg-canvas">
     <div class="orb orb1"></div>
@@ -86,83 +81,43 @@ if ('serviceWorker' in navigator) {
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
-<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
-
-<!-- ── MOBILE MENU HAMBURGER ── -->
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
-<!-- ── HEADER ── -->
-<header class="top-header">
-  <div class="header-left">
-    <a href="/" class="header-logo">
-      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
-    </a>
-    <span class="header-page-title">Games</span>
-  </div>
-  <div class="header-right">
-    <span class="header-online-status">
-      <span class="online-pulse-ring">
-        <span class="online-pulse-dot"></span>
-      </span>
-      <span class="online-count-number" id="online-count">...</span>
-      <span class="online-status-text">online now</span>
-    </span>
-    <button class="hdr-btn theme-toggle" id="theme-btn" onclick="cycleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
-    
-    <a href="/notifications" class="hdr-btn" title="Notifications">
-      <i class="fas fa-bell"></i>
-      <span class="notif-badge" id="notif-badge">0</span>
-    </a>
-    <div class="profile-chip" id="profile-chip" onclick="window.toggleDropdown()">
-      <div class="chip-av" id="chip-av"><span id="chip-initial">?</span></div>
-      <span class="chip-name" id="chip-name">loading</span>
-      <span class="chip-arrow"><i class="fas fa-chevron-down"></i></span>
-      <div class="profile-dropdown" id="profile-dropdown">
-        <div class="dd-header">
-          <div class="dd-name" id="dd-name">—</div>
-          <div class="dd-sub">CESC Hub member</div>
-        </div>
-        <a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>
-        <a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>
-        <a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>
-        <div class="dd-div"></div>
-        <button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-      </div>
-    </div>
-  </div>
-</header>
+<div id="app-header"></div>
+<div id="app-sidebar"></div>
 
-<!-- ── SIDEBAR ── -->
-<aside class="sidebar" id="sidebar">
-  <a href="/" class="nav-item"><span class="nav-icon"><i class="fas fa-newspaper"></i></span> <span class="nav-label-text">Feed</span></a>
-  <a href="/chat" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span> <span class="nav-label-text">Chat Room</span></a>
-  <a href="/profiles" class="nav-item"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label-text">Profiles</span></a>
-  <a href="/games" class="nav-item active"><span class="nav-icon"><i class="fas fa-gamepad"></i></span> <span class="nav-label-text">Games</span></a>
-  <a href="/leaderboard" class="nav-item"><span class="nav-icon"><i class="fas fa-trophy"></i></span> <span class="nav-label-text">Leaderboard</span></a>
-  <a href="/settings" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label-text">Settings</span></a>
-  <a href="/download" class="nav-item"><span class="nav-icon"><i class="fas fa-download"></i></span> <span class="nav-label-text">Downloads</span></a>
-  <a href="/notifications" class="nav-item" id="notif-nav">
-    <span class="nav-icon"><i class="fas fa-bell"></i></span>
-    <span class="nav-label-text">Notifications</span>
-    <span class="nav-badge-count" id="notif-nav-badge">0</span>
-  </a>
-
-  <button class="sidebar-toggle" onclick="window.toggleSidebarExpand()" title="Toggle sidebar">
-    <i class="fas fa-chevron-right"></i>
-    <span class="toggle-label">Collapse</span>
-  </button>
-
-  <div class="sidebar-ad-slot" id="sidebar-ad-slot"></div>
-</aside>
-
-<!-- ── MAIN ── -->
 <main class="main">
   <div class="page-header">
     <div>
       <h1>Games</h1>
-      <p id="games-subtitle">pick your battlefield</p>
+      <p id="games-subtitle">loading...</p>
     </div>
+  </div>
+
+  <!-- Category filter tabs -->
+  <div class="games-tabs" id="games-tabs">
+    <button class="games-tab active" data-category="all" onclick="window.switchCategory('all')">
+      <i class="fas fa-layer-group"></i> All
+    </button>
+    <button class="games-tab" data-category="arcade" onclick="window.switchCategory('arcade')">
+      <i class="fas fa-ghost"></i> Arcade
+    </button>
+    <button class="games-tab" data-category="puzzle" onclick="window.switchCategory('puzzle')">
+      <i class="fas fa-puzzle-piece"></i> Puzzle
+    </button>
+    <button class="games-tab" data-category="action" onclick="window.switchCategory('action')">
+      <i class="fas fa-bolt"></i> Action
+    </button>
+    <button class="games-tab" data-category="sandbox" onclick="window.switchCategory('sandbox')">
+      <i class="fas fa-cube"></i> Sandbox
+    </button>
+    <button class="games-tab" data-category="sports" onclick="window.switchCategory('sports')">
+      <i class="fas fa-futbol"></i> Sports
+    </button>
+    <button class="games-tab" data-category="multiplayer" onclick="window.switchCategory('multiplayer')">
+      <i class="fas fa-users"></i> Multiplayer
+    </button>
   </div>
 
   <div class="games-grid" id="games-grid">
@@ -170,112 +125,31 @@ if ('serviceWorker' in navigator) {
   </div>
 </main>
 
-<!-- ── DOWNBAR (MOBILE) ── -->
-<nav class="downbar" id="downbar">
-  <div class="downbar-inner">
-    <a href="/" class="downbar-item" id="downbar-home">
-      <span class="downbar-icon"><i class="fas fa-newspaper"></i></span>
-    </a>
-    <a href="/chat" class="downbar-item" id="downbar-chat">
-      <span class="downbar-icon"><i class="fas fa-comments"></i></span>
-    </a>
-    <a href="/profiles" class="downbar-item" id="downbar-profiles">
-      <span class="downbar-icon"><i class="fas fa-users"></i></span>
-    </a>
-    <a href="/games" class="downbar-item active" id="downbar-games">
-      <span class="downbar-icon"><i class="fas fa-gamepad"></i></span>
-    </a>
-    <button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">
-      <span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>
-    </button>
-  </div>
-</nav>
-
-<!-- ── DOWNBAR MORE OVERLAY ── -->
-<div class="downbar-overlay" id="downbar-overlay" onclick="window.closeDownbarMore()"></div>
-
-<!-- ── DOWNBAR MORE DRAWER ── -->
-<div class="downbar-more" id="downbar-more">
-  <div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>
-  
-  <div class="downbar-more-grid">
-    <a href="/" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-newspaper"></i></span>
-      <span class="downbar-more-label">Feed</span>
-    </a>
-    <a href="/chat" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-comments"></i></span>
-      <span class="downbar-more-label">Chat</span>
-    </a>
-    <a href="/profiles" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-users"></i></span>
-      <span class="downbar-more-label">Profiles</span>
-    </a>
-    <a href="/games" class="downbar-more-item active">
-      <span class="downbar-more-icon"><i class="fas fa-gamepad"></i></span>
-      <span class="downbar-more-label">Games</span>
-    </a>
-    <a href="/leaderboard" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-trophy"></i></span>
-      <span class="downbar-more-label">Leaderboard</span>
-    </a>
-    <a href="/settings" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-cog"></i></span>
-      <span class="downbar-more-label">Settings</span>
-    </a>
-    <a href="/download" class="downbar-more-item">
-      <span class="downbar-more-icon"><i class="fas fa-download"></i></span>
-      <span class="downbar-more-label">Downloads</span>
-    </a>
-    <a href="/notifications" class="downbar-more-item" id="downbar-more-notif">
-      <span class="downbar-more-icon"><i class="fas fa-bell"></i></span>
-      <span class="downbar-more-label">Notifications</span>
-      <span class="nav-badge-count" id="downbar-more-notif-badge" style="position:absolute;top:2px;right:2px;">0</span>
-    </a>
-    <button class="downbar-more-item logout" onclick="window.logout()">
-      <span class="downbar-more-icon"><i class="fas fa-sign-out-alt"></i></span>
-      <span class="downbar-more-label">Logout</span>
-    </button>
-  </div>
-
-  <div class="downbar-ad-slot" id="downbar-ad-slot"></div>
-</div>
+<div id="app-downbar"></div>
+<div id="app-downbar-more"></div>
 
 <script>
+// ═══════════════════════════════════════════════════════════
 // ── GAMES HUB PAGE ──
+// ═══════════════════════════════════════════════════════════
 
-// ── GAME CATALOG ──
-// Add new games here as they ship.
-const GAMES = [
-  {
-    id: 'bloxdio',
-    title: 'Bloxd.io',
-    description: 'Multiplayer sandbox · CESC Hub server',
-    icon: 'fas fa-cube',
-    accent: 'linear-gradient(135deg, #4a9eff, #6c5ce7)',
-    url: '/games/bloxdio',
-    live: true
-  }
-];
-
-// ── PLAYER PLAYTIME CACHE (filled from DB) ──
+let allGames = [];
 let myPlaytime = {};   // { game_id: total_seconds }
+let currentCategory = 'all';
 
-// ── LOADING STEPS ──
 function definePageSteps() {
   defineLoadingSteps([
     { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
     { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
     { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
     { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
-    { id: 'games', label: 'Loading games...', technical: 'Fetching playtime data' },
+    { id: 'games', label: 'Loading games...', technical: 'Fetching from database' },
     { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
     { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
     { id: 'ready', label: 'Done! ✨', technical: 'Games ready' }
   ]);
 }
 
-// ── FORMAT SECONDS → "12h 34m" / "4m 20s" / "45s" ──
 function formatPlaytime(totalSeconds) {
   if (!totalSeconds || totalSeconds < 1) return null;
   const s = Math.floor(totalSeconds);
@@ -287,7 +161,27 @@ function formatPlaytime(totalSeconds) {
   return `${sec}s`;
 }
 
-// ── LOAD MY PLAYTIME ──
+async function loadGames() {
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('games')
+      .select('id, slug, title, description, thumbnail_url, embed_url, category, icon, accent_color, plays, featured, created_at')
+      .eq('active', true)
+      .order('featured', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('loadGames:', error);
+      allGames = [];
+      return;
+    }
+    allGames = data || [];
+  } catch (e) {
+    console.error('loadGames exception:', e);
+    allGames = [];
+  }
+}
+
 async function loadMyPlaytime() {
   if (!window.session) return;
   try {
@@ -308,77 +202,120 @@ async function loadMyPlaytime() {
   }
 }
 
-// ── BUILD GAME CARD ──
+// Playtime for a game — keyed by game_id now, not game_id text like before.
+// The old schema stored game_id as text ('bloxdio'), new schema uses uuid.
+// To keep the leaderboard working, the play.html player will still call
+// add_game_playtime with a text id (the slug). So we look up by slug too.
+function getPlaytimeForGame(game) {
+  // Try slug first (what play.html writes), then uuid
+  return myPlaytime[game.slug] || myPlaytime[game.id] || 0;
+}
+
+window.switchCategory = function(category) {
+  currentCategory = category;
+  document.querySelectorAll('.games-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.category === category);
+  });
+  renderGames();
+};
+
+function renderGames() {
+  const grid = document.getElementById('games-grid');
+  const subtitle = document.getElementById('games-subtitle');
+  if (!grid) return;
+
+  let filtered = allGames;
+  if (currentCategory !== 'all') {
+    filtered = allGames.filter(g => g.category === currentCategory);
+  }
+
+  grid.innerHTML = '';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="games-empty">
+        <div class="games-empty-icon"><i class="fas fa-gamepad"></i></div>
+        <div>${currentCategory === 'all'
+          ? 'No games yet. Admins will add some soon.'
+          : 'No games in this category yet.'
+        }</div>
+      </div>
+    `;
+    if (subtitle) {
+      subtitle.textContent = currentCategory === 'all'
+        ? 'no games available'
+        : `no ${currentCategory} games`;
+    }
+    return;
+  }
+
+  if (subtitle) {
+    subtitle.textContent = currentCategory === 'all'
+      ? `${allGames.length} game${allGames.length === 1 ? '' : 's'} available`
+      : `${filtered.length} ${currentCategory} game${filtered.length === 1 ? '' : 's'}`;
+  }
+
+  filtered.forEach((game, i) => {
+    grid.appendChild(buildGameCard(game, i));
+  });
+}
+
 function buildGameCard(game, index) {
   const card = document.createElement('div');
   card.className = 'game-card';
   card.style.animationDelay = (index * 0.06) + 's';
 
-  const totalSec = myPlaytime[game.id] || 0;
-  const playtimeLabel = formatPlaytime(totalSec);
+  const playtimeSec = getPlaytimeForGame(game);
+  const playtimeLabel = formatPlaytime(playtimeSec);
+  const accent = game.accent_color || 'linear-gradient(135deg, #4a9eff, #6c5ce7)';
+  const iconClass = game.icon || 'fa-gamepad';
+
+  // Thumbnail image if provided, else use icon
+  const mediaHTML = game.thumbnail_url
+    ? `<div class="game-card-thumb" style="background-image:url('${window.escapeHTML(game.thumbnail_url)}')"></div>`
+    : `<div class="game-icon" style="background:${accent}"><i class="fas ${iconClass}"></i></div>`;
+
+  // Play count badge
+  const playsLabel = game.plays > 0
+    ? `${game.plays} play${game.plays === 1 ? '' : 's'}`
+    : null;
 
   card.innerHTML = `
     <div class="game-card-top">
-      <div class="game-icon" style="background:${game.accent}">
-        <i class="${game.icon}"></i>
+      ${mediaHTML}
+      <div class="game-card-badges">
+        ${game.featured ? '<div class="game-card-badge featured"><i class="fas fa-star"></i> Featured</div>' : ''}
+        ${playsLabel ? `<div class="game-card-badge plays"><i class="fas fa-play"></i> ${playsLabel}</div>` : ''}
       </div>
-      <div class="game-card-badge">${game.live ? 'Live' : 'Soon'}</div>
     </div>
     <div class="game-card-title">${window.escapeHTML(game.title)}</div>
-    <div class="game-card-desc">${window.escapeHTML(game.description)}</div>
+    <div class="game-card-desc">${window.escapeHTML(game.description || '')}</div>
+    <div class="game-card-category">
+      <span class="game-category-pill">${window.escapeHTML(game.category)}</span>
+    </div>
     ${playtimeLabel ? `
       <div class="game-card-playtime">
         <i class="fas fa-clock"></i>
         <span>${window.escapeHTML(playtimeLabel)}</span>
       </div>
     ` : ''}
-    <a href="${game.url}" class="game-play-btn">
-      <i class="fas fa-play"></i> Play
-    </a>
+    <a href="/games/play.html?slug=${encodeURIComponent(game.slug)}" class="game-play-btn">
+  <i class="fas fa-play"></i> Play
+</a>
   `;
 
   return card;
 }
 
-// ── RENDER GAME GRID ──
-function renderGames() {
-  const grid = document.getElementById('games-grid');
-  const subtitle = document.getElementById('games-subtitle');
-  if (!grid) return;
-
-  grid.innerHTML = '';
-
-  if (GAMES.length === 0) {
-    grid.innerHTML = `
-      <div class="games-empty">
-        <div class="games-empty-icon"><i class="fas fa-gamepad"></i></div>
-        <div>No games available yet. Check back soon.</div>
-      </div>
-    `;
-    if (subtitle) subtitle.textContent = 'no games yet';
-    return;
-  }
-
-  if (subtitle) {
-    subtitle.textContent = GAMES.length === 1
-      ? '1 game available'
-      : GAMES.length + ' games available';
-  }
-
-  GAMES.forEach((game, i) => {
-    grid.appendChild(buildGameCard(game, i));
-  });
-}
-
-// ── PAGE INIT ──
 async function pageInit() {
   definePageSteps();
   nextLoadingStep(); // theme
 
-  // auth + profile + pfp handled by initPage
-
   nextLoadingStep(); // games
-  await loadMyPlaytime();
+  await Promise.all([
+    loadGames(),
+    loadMyPlaytime()
+  ]);
   renderGames();
 
   // online + notifs handled by initPage
@@ -388,7 +325,6 @@ async function pageInit() {
   nextLoadingStep(); // ready
 }
 
-// ── START ──
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initPage(pageInit);

@@ -1,0 +1,620 @@
+/* ═══════════════════════════════════════════════════════════
+   CESC HUB — ABOUT PAGE STYLES
+   Rules, Privacy, Terms, Guides
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── MAIN TABS ── */
+.about-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  animation: about-fade-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.about-tabs::-webkit-scrollbar { display: none; }
+
+@keyframes about-fade-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.about-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.about-tab:hover {
+  color: var(--text-bright);
+  background: var(--surface);
+}
+.about-tab.active {
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  box-shadow: 0 4px 14px rgba(74,158,255,0.35);
+}
+.about-tab i { font-size: 0.85rem; }
+
+/* ── SUBTABS ── */
+.about-subtabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  width: fit-content;
+  max-width: 100%;
+}
+.about-subtabs::-webkit-scrollbar { display: none; }
+.about-subtabs-guides {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.about-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.about-subtab:hover {
+  color: var(--text-bright);
+  background: rgba(255,255,255,0.05);
+}
+.about-subtab.active {
+  background: rgba(74,158,255,0.12);
+  color: var(--neon);
+  border: 1px solid rgba(74,158,255,0.25);
+}
+.about-subtab i { font-size: 0.72rem; }
+
+/* ── CONTENT WRAPPER ── */
+.about-content {
+  animation: about-content-enter 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes about-content-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RULES / PRIVACY / TERMS
+   ═══════════════════════════════════════════════════════════ */
+
+.rules-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  animation: about-content-enter 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.rules-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+.rules-header-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+.rules-header-sub {
+  font-size: 0.72rem;
+  font-family: 'Space Mono', monospace;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.rules-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rules-section-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.rules-section-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--neon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.rules-section-content {
+  flex: 1;
+  min-width: 0;
+}
+.rules-section-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+.rules-section-text {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.placeholder-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(245, 196, 0, 0.08);
+  border: 1px solid rgba(245, 196, 0, 0.2);
+  color: var(--yellow);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.placeholder-note i {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GUIDES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── BROWSER TIP ── */
+.browser-tip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(74,158,255,0.08), rgba(108,92,231,0.06));
+  border: 1px solid rgba(74,158,255,0.22);
+  animation: about-content-enter 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.browser-tip i {
+  font-size: 1.6rem;
+  color: var(--neon);
+  flex-shrink: 0;
+}
+.browser-tip div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.browser-tip strong {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+.browser-tip span {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  line-height: 1.4;
+}
+
+/* ── GUIDE CONTENT ── */
+.guide-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  animation: about-content-enter 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.guide-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+.guide-header-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+.guide-header-sub {
+  font-size: 0.72rem;
+  font-family: 'Space Mono', monospace;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── STEPS ── */
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.guide-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.guide-step-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.guide-step-body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 3px;
+}
+.guide-step-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+.guide-step-text {
+  font-size: 0.84rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+.guide-step-text a {
+  color: var(--neon);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(74,158,255,0.4);
+}
+.guide-step-text a:hover {
+  color: var(--neon2);
+  border-bottom-color: var(--neon2);
+}
+.guide-step-text strong {
+  color: var(--text-bright);
+  font-weight: 700;
+}
+
+/* ── VIDEO PLACEHOLDER ── */
+.guide-video-placeholder {
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px dashed var(--border);
+  background: var(--bg2);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.guide-video-placeholder i {
+  font-size: 1.8rem;
+  color: var(--muted);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.guide-video-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.guide-video-text strong {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+.guide-video-text span {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+}
+
+/* ── INSTALL GUIDE ── */
+.install-intro {
+  font-size: 0.86rem;
+  color: var(--text);
+  line-height: 1.65;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.install-intro strong {
+  color: var(--neon);
+  font-weight: 700;
+}
+
+.install-platforms {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.install-platform {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.install-platform-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.install-platform-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  color: #fff;
+}
+.install-platform-icon.android { background: linear-gradient(135deg, #3ddc84, #0f9d58); }
+.install-platform-icon.apple   { background: linear-gradient(135deg, #555, #222); }
+.install-platform-icon.windows { background: linear-gradient(135deg, #0078d4, #005a9e); }
+.install-platform-icon.mac     { background: linear-gradient(135deg, #333, #111); }
+.install-platform-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+.install-platform-sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  margin-top: 1px;
+}
+.install-platform-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  counter-reset: install-step;
+}
+.install-platform-steps li {
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.55;
+  padding-left: 26px;
+  position: relative;
+  counter-increment: install-step;
+}
+.install-platform-steps li::before {
+  content: counter(install-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--neon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 0.6rem;
+}
+.install-platform-steps strong {
+  color: var(--text-bright);
+  font-weight: 700;
+}
+.install-platform-steps a {
+  color: var(--neon);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(74,158,255,0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .about-tab {
+    padding: 9px 16px;
+    font-size: 0.82rem;
+  }
+  .about-subtab {
+    padding: 7px 12px;
+    font-size: 0.74rem;
+  }
+  .rules-section,
+  .guide-content {
+    padding: 18px 16px;
+  }
+  .rules-header-icon,
+  .guide-header-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  .rules-section-title,
+  .guide-step-title {
+    font-size: 0.86rem;
+  }
+  .rules-section-text,
+  .guide-step-text {
+    font-size: 0.8rem;
+  }
+  .browser-tip {
+    padding: 12px 14px;
+  }
+  .browser-tip i {
+    font-size: 1.3rem;
+  }
+  .browser-tip strong {
+    font-size: 0.8rem;
+  }
+  .browser-tip span {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-tab {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+  .about-tab i {
+    font-size: 0.75rem;
+  }
+  .about-subtab {
+    padding: 6px 10px;
+    font-size: 0.7rem;
+  }
+  .about-subtab i {
+    font-size: 0.68rem;
+  }
+  .rules-section,
+  .guide-content {
+    padding: 16px 14px;
+    border-radius: 12px;
+  }
+  .rules-header,
+  .guide-header {
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+  .rules-header-icon,
+  .guide-header-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+  }
+  .rules-header-title,
+  .guide-header-title {
+    font-size: 1rem;
+  }
+  .rules-section-item {
+    gap: 10px;
+  }
+  .rules-section-num {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+  }
+  .rules-section-title,
+  .guide-step-title {
+    font-size: 0.82rem;
+  }
+  .rules-section-text,
+  .guide-step-text {
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
+  .guide-step {
+    gap: 10px;
+  }
+  .guide-step-num {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+  .guide-video-placeholder {
+    padding: 14px;
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  .guide-video-placeholder i {
+    font-size: 1.4rem;
+  }
+  .install-platform {
+    padding: 14px;
+  }
+  .install-platform-steps li {
+    font-size: 0.76rem;
+    padding-left: 22px;
+  }
+  .install-platform-steps li::before {
+    width: 16px;
+    height: 16px;
+    font-size: 0.55rem;
+  }
+}

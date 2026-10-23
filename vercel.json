@@ -1,51 +1,22 @@
 {
   "trailingSlash": false,
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/chat",
-      "destination": "/chat.html"
-    },
-    {
-      "source": "/chat/:slug",
-      "destination": "/chat.html?c=:slug"
-    },
-    {
-      "source": "/profiles",
-      "destination": "/profiles.html"
-    },
-    {
-      "source": "/games",
-      "destination": "/games.html"
-    },
-    {
-      "source": "/games/bloxdio",
-      "destination": "/games/bloxdio.html"
-    },
-    {
-      "source": "/leaderboard",
-      "destination": "/leaderboard.html"
-    },
-    {
-      "source": "/settings",
-      "destination": "/settings.html"
-    },
-    {
-      "source": "/notifications",
-      "destination": "/notifications.html"
-    },
-    {
-      "source": "/download",
-      "destination": "/download.html"
-    },
-    {
-      "source": "/login",
-      "destination": "/login.html"
-    }
-  ],
+  { "source": "/", "destination": "/index.html" },
+  { "source": "/chat", "destination": "/chat.html" },
+  { "source": "/chat/:slug", "destination": "/chat.html?c=:slug" },
+  { "source": "/profiles", "destination": "/profiles.html" },
+  { "source": "/games", "destination": "/games.html" },
+  { "source": "/games/bloxdio", "destination": "/games/play.html?slug=bloxdio" },
+  { "source": "/games/:slug", "destination": "/games/play.html?slug=:slug" },
+  { "source": "/leaderboard", "destination": "/leaderboard.html" },
+  { "source": "/settings", "destination": "/settings.html" },
+  { "source": "/notifications", "destination": "/notifications.html" },
+  { "source": "/download", "destination": "/download.html" },
+  { "source": "/login", "destination": "/login.html" },
+  { "source": "/timeout", "destination": "/timeout.html" },
+  { "source": "/onboarding", "destination": "/onboarding.html" },
+  { "source": "/about", "destination": "/about.html" }
+],
   "headers": [
     {
       "source": "/sw.js",

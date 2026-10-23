@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Playing — CESC Hub</title>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="/shared.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/shared.js"></script>
+<link rel="stylesheet" href="/css/pages/play.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ SW registered'))
+      .catch(err => console.log('❌ SW failed:', err));
+  });
+}
+</script>
+</head>
+<body class="game-body" data-page-title="Play">
+
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar">
+      <div class="loading-error-fill"></div>
+    </div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  <div class="loading-debug-hint">[ESC] force show</div>
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<div id="app-header"></div>
+<div id="app-sidebar"></div>
+
+<main class="main game-main">
+
+  <!-- ═══ NOT FOUND ═══ -->
+  <div class="game-not-found" id="game-not-found" style="display:none">
+    <div class="game-not-found-icon"><i class="fas fa-ghost"></i></div>
+    <div class="game-not-found-title">Game not found</div>
+    <div class="game-not-found-sub">This game may have been removed or the link is broken.</div>
+    <a href="/games" class="btn-back-to-games">
+      <i class="fas fa-arrow-left"></i> Back to Games
+    </a>
+  </div>
+
+  <!-- ═══ GAME PAGE ═══ -->
+  <div class="game-page" id="game-page" style="display:none">
+
+    <!-- Toolbar -->
+    <div class="game-toolbar" id="game-toolbar">
+      <a href="/games" class="game-back-btn">
+        <i class="fas fa-arrow-left"></i> <span class="game-back-label">Games</span>
+      </a>
+
+      <div class="game-title-wrap">
+        <div class="game-title" id="game-title">—</div>
+        <div class="game-sub" id="game-sub">—</div>
+      </div>
+
+      <div class="game-toolbar-stats">
+        <div class="gt-stat">
+          <i class="fas fa-clock"></i>
+          <span class="gt-label">Total</span>
+          <span class="gt-value" id="gt-total">—</span>
+        </div>
+        <div class="gt-stat">
+          <i class="fas fa-hourglass-half"></i>
+          <span class="gt-label">Session</span>
+          <span class="gt-value" id="gt-session">0s</span>
+        </div>
+      </div>
+
+<a href="#" id="game-open-new-tab" class="gt-btn" target="_blank" rel="noopener" title="Open in new tab">
+  <i class="fas fa-external-link-alt"></i>
+</a>
+
+      <button class="gt-btn gt-fullscreen-btn" id="gt-fullscreen-btn" onclick="window.toggleDesktopFullscreen()" title="Expand to fill browser">
+        <i class="fas fa-expand"></i>
+        <span>Expand</span>
+      </button>
+    </div>
+
+    <!-- Iframe area (fills remaining space) -->
+    <div class="game-frame-wrap" id="game-frame-wrap">
+      <iframe
+        id="game-iframe"
+        class="game-iframe"
+        src=""
+        allow="fullscreen; autoplay; gamepad; clipboard-write; microphone"
+        allowfullscreen="true"
+        webkitallowfullscreen="true"
+        mozallowfullscreen="true"
+        referrerpolicy="no-referrer-when-downgrade"
+        loading="eager">
+      </iframe>
+    </div>
+
+  </div>
+
+</main>
+
+<div id="app-downbar"></div>
+<div id="app-downbar-more"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── GAME PLAYER PAGE (v3 · iframe-only · no timeout) ──
+// ═══════════════════════════════════════════════════════════
+
+const FLUSH_INTERVAL_MS = 30 * 1000;
+const INACTIVITY_TIMEOUT_MS = 2 * 60 * 1000;
+const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'click', 'scroll'];
+
+let GAME_SLUG = null;
+let gameRecord = null;
+let isDesktopExpanded = false;
+
+let totalSecondsAllTime = 0;
+let sessionSeconds = 0;
+let pendingSeconds = 0;
+let isTracking = false;
+let currentSessionId = null;
+
+let tickInterval = null;
+let flushInterval = null;
+let inactivityTimer = null;
+
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'game', label: 'Loading game...', technical: 'Fetching from database' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Ready! ✨', technical: 'Game ready' }
+  ]);
+}
+
+function getSlugFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('slug');
+  if (fromQuery) return decodeURIComponent(fromQuery);
+  const m = window.location.pathname.match(/^\/games\/(.+)$/);
+  if (m) return decodeURIComponent(m[1]);
+  return null;
+}
+
+function formatPlaytime(totalSeconds) {
+  if (!totalSeconds || totalSeconds < 1) return null;
+  const s = Math.floor(totalSeconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+function formatSession(seconds) {
+  const s = Math.floor(seconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+async function fetchGame() {
+  const { data, error } = await window.supabaseClient
+    .from('games')
+    .select('id, slug, title, description, thumbnail_url, embed_url, category, icon, accent_color, plays')
+    .eq('slug', GAME_SLUG)
+    .eq('active', true)
+    .maybeSingle();
+  if (error) { console.error('fetchGame:', error); return null; }
+  return data;
+}
+
+function showGameNotFound() {
+  document.getElementById('game-not-found').style.display = 'flex';
+  document.getElementById('game-page').style.display = 'none';
+}
+
+function showGamePage(game) {
+  document.getElementById('game-not-found').style.display = 'none';
+  document.getElementById('game-page').style.display = 'flex';
+
+  document.getElementById('game-title').textContent = game.title;
+  document.getElementById('game-sub').textContent = game.description || game.category;
+
+  document.title = game.title + ' — CESC Hub';
+  document.body.dataset.pageTitle = game.title;
+
+  // Set the iframe src — this is the only thing that matters
+  const iframe = document.getElementById('game-iframe');
+  if (iframe) {
+    iframe.src = game.embed_url;
+  }
+
+  // Point the "Open in new tab" button at the game URL
+  const newTabLink = document.getElementById('game-open-new-tab');
+  if (newTabLink) newTabLink.href = game.embed_url;
+}
+
+function updateHUD() {
+  const totalStr = formatPlaytime(totalSecondsAllTime + sessionSeconds) || '0s';
+  const sessionStr = formatSession(sessionSeconds);
+
+  const gtTotal = document.getElementById('gt-total');
+  const gtSession = document.getElementById('gt-session');
+  if (gtTotal) gtTotal.textContent = totalStr;
+  if (gtSession) gtSession.textContent = sessionStr;
+}
+
+async function loadMyPlaytime() {
+  if (!window.session || !GAME_SLUG) return;
+  try {
+    const { data } = await window.supabaseClient
+      .from('game_playtime')
+      .select('total_seconds')
+      .eq('user_id', window.session.user.id)
+      .eq('game_id', GAME_SLUG)
+      .maybeSingle();
+    totalSecondsAllTime = Number(data?.total_seconds) || 0;
+  } catch (e) { console.error('loadMyPlaytime:', e); }
+  updateHUD();
+}
+
+async function startSession() {
+  if (!window.session || !GAME_SLUG) return;
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: open } = await window.supabaseClient
+      .from('game_sessions')
+      .select('id, started_at')
+      .eq('user_id', window.session.user.id)
+      .eq('game_id', GAME_SLUG)
+      .is('ended_at', null)
+      .gte('started_at', oneHourAgo)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (open) {
+      currentSessionId = open.id;
+    } else {
+      const { data: inserted, error } = await window.supabaseClient
+        .from('game_sessions')
+        .insert({
+          user_id: window.session.user.id,
+          game_id: GAME_SLUG,
+          started_at: new Date().toISOString()
+        })
+        .select('id')
+        .single();
+      if (error) { console.error('session insert:', error); return; }
+      currentSessionId = inserted.id;
+    }
+  } catch (e) { console.error('startSession:', e); }
+}
+
+async function endSession() {
+  if (!currentSessionId) return;
+  try {
+    await window.supabaseClient
+      .from('game_sessions')
+      .update({ ended_at: new Date().toISOString(), duration_seconds: sessionSeconds })
+      .eq('id', currentSessionId);
+    currentSessionId = null;
+  } catch (e) { console.error('endSession:', e); }
+}
+
+async function flushPending() {
+  const toSend = pendingSeconds;
+  if (toSend < 1) return;
+  pendingSeconds = 0;
+  try {
+    const { data, error } = await window.supabaseClient.rpc('add_game_playtime', {
+      p_game_id: GAME_SLUG,
+      p_seconds: toSend
+    });
+    if (error) { console.error('flush RPC:', error); pendingSeconds += toSend; return; }
+    if (data?.ok && typeof data.total_seconds === 'number') {
+      totalSecondsAllTime = data.total_seconds;
+      sessionSeconds = Math.max(0, sessionSeconds - toSend);
+    }
+    updateHUD();
+  } catch (e) { console.error('flushPending:', e); pendingSeconds += toSend; }
+}
+
+function tick() {
+  if (!isTracking) return;
+  sessionSeconds++;
+  pendingSeconds++;
+  updateHUD();
+  if (pendingSeconds >= 30) flushPending();
+}
+
+function startTracking() { if (!isTracking) isTracking = true; }
+function stopTracking() { if (!isTracking) return; isTracking = false; flushPending(); }
+
+function resetInactivity() {
+  clearTimeout(inactivityTimer);
+  if (document.hidden) return;
+  inactivityTimer = setTimeout(() => { stopTracking(); }, INACTIVITY_TIMEOUT_MS);
+  if (!document.hidden) startTracking();
+}
+
+function setupTrackingListeners() {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopTracking();
+    else resetInactivity();
+  });
+  window.addEventListener('blur', () => { stopTracking(); });
+  window.addEventListener('focus', () => { resetInactivity(); });
+  ACTIVITY_EVENTS.forEach(evt => {
+    document.addEventListener(evt, resetInactivity, { passive: true });
+  });
+  window.addEventListener('pagehide', () => {
+    stopTracking();
+    if (pendingSeconds >= 1 && currentSessionId) flushPending();
+  });
+}
+
+window.toggleDesktopFullscreen = function () {
+  isDesktopExpanded = !isDesktopExpanded;
+  document.body.classList.toggle('game-expanded', isDesktopExpanded);
+
+  const btn = document.getElementById('gt-fullscreen-btn');
+  if (btn) {
+    const icon = btn.querySelector('i');
+    const label = btn.querySelector('span');
+    if (isDesktopExpanded) {
+      if (icon) icon.className = 'fas fa-compress';
+      if (label) label.textContent = 'Collapse';
+    } else {
+      if (icon) icon.className = 'fas fa-expand';
+      if (label) label.textContent = 'Expand';
+    }
+  }
+};
+
+async function bumpGamePlayCount() {
+  if (!gameRecord) return;
+  try {
+    await window.supabaseClient.rpc('bump_game_play', { p_game_id: gameRecord.id });
+  } catch (e) { console.error('bump_game_play:', e); }
+}
+
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep();
+
+  GAME_SLUG = getSlugFromUrl();
+  if (!GAME_SLUG) { showGameNotFound(); return; }
+
+  nextLoadingStep();
+  const game = await fetchGame();
+  if (!game) { showGameNotFound(); return; }
+  gameRecord = game;
+
+  showGamePage(game);
+
+  loadMyPlaytime();
+  startSession();
+  bumpGamePlayCount();
+
+  tickInterval = setInterval(tick, 1000);
+  flushInterval = setInterval(flushPending, FLUSH_INTERVAL_MS);
+  setupTrackingListeners();
+
+  startTracking();
+  resetInactivity();
+
+  updateHUD();
+
+  nextLoadingStep();
+  nextLoadingStep();
+  nextLoadingStep();
+}
+
+window.addEventListener('beforeunload', () => {
+  stopTracking();
+  if (tickInterval) clearInterval(tickInterval);
+  if (flushInterval) clearInterval(flushInterval);
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  endSession();
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { initPage(pageInit); });
+} else {
+  initPage(pageInit);
+}
+</script>
+</body>
+</html>
