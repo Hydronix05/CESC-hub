@@ -243,14 +243,14 @@ if ('serviceWorker' in navigator) {
   <button class="close-btn" onclick="window.closeChatImageModal()"><i class="fas fa-times"></i></button>
 </div>
 
-<!-- ── NOTES MODAL (post / view / edit) ── -->
+<!-- ── NOTES MODAL (post / view / reply) ── -->
 <div class="note-modal-overlay" id="note-modal" onclick="window.closeNoteModal(event)">
   <div class="note-modal" onclick="event.stopPropagation()">
     <button class="note-modal-close" onclick="window.closeNoteModal()"><i class="fas fa-times"></i></button>
-    
-    <!-- Compose view -->
+
+    <!-- Compose view (create or replace own note) -->
     <div class="note-modal-compose" id="note-modal-compose">
-      <div class="note-modal-title">Post a note</div>
+      <div class="note-modal-title" id="note-modal-title">Post a note</div>
       <textarea 
         id="note-input" 
         class="note-input" 
@@ -267,7 +267,7 @@ if ('serviceWorker' in navigator) {
         <button class="note-btn-post" id="note-post-btn" onclick="window.submitNote()">Post Note</button>
       </div>
     </div>
-    
+
     <!-- View view (someone else's note or your own) -->
     <div class="note-modal-view" id="note-modal-view" style="display:none;">
       <div class="note-view-avatar" id="note-view-avatar"><span>?</span></div>
@@ -276,8 +276,31 @@ if ('serviceWorker' in navigator) {
       <div class="note-view-content" id="note-view-content">—</div>
       <div class="note-view-time" id="note-view-time">—</div>
       <div class="note-modal-actions">
-        <button class="note-btn-cancel" id="note-view-delete" style="display:none;color:var(--danger)" onclick="window.deleteMyNote()">Delete</button>
-        <button class="note-btn-post" onclick="window.closeNoteModal()">Close</button>
+        <button class="note-btn-cancel" id="note-view-secondary" onclick="window.onNoteViewSecondary()">Close</button>
+        <button class="note-btn-post" id="note-view-primary" onclick="window.onNoteViewPrimary()">Close</button>
+      </div>
+
+      <!-- Reply composer (slides in when Reply is clicked) -->
+      <div class="note-reply-composer" id="note-reply-composer">
+        <div class="note-reply-head">
+          <span class="note-reply-title"><i class="fas fa-reply"></i> Reply to note</span>
+          <button class="note-reply-close" onclick="window.closeNoteReplyComposer()" title="Close reply">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <textarea 
+          id="note-reply-input" 
+          class="note-reply-input" 
+          placeholder="Type your reply..." 
+          maxlength="200"
+          rows="2"
+        ></textarea>
+        <div class="note-reply-footer">
+          <div class="note-reply-count"><span id="note-reply-count">0</span>/200</div>
+          <button class="note-reply-send" id="note-reply-send" onclick="window.submitNoteReply()">
+            <span>Send</span> <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -490,8 +490,67 @@ async function loadConversations() {
 // ═══════════════════════════════════════════════════════════
 // ── NOTES ──
 // ═══════════════════════════════════════════════════════════
+
+// Follow graph cache — who I follow + who follows me (mutual filter for notes)
+let noteFollowGraph = {
+  loaded: false,
+  followingIds: new Set(),    // users I follow (active)
+  followerIds: new Set(),     // users who follow me (active)
+  mutualIds: new Set(),       // intersection — users where both directions active
+};
+
+async function loadNoteFollowGraph() {
+  if (!myUserId) return;
+
+  try {
+    const [followingRes, followerRes] = await Promise.all([
+      window.supabaseClient
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', myUserId)
+        .eq('status', 'active'),
+      window.supabaseClient
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', myUserId)
+        .eq('status', 'active'),
+    ]);
+
+    const followingIds = new Set((followingRes.data || []).map(f => f.following_id));
+    const followerIds = new Set((followerRes.data || []).map(f => f.follower_id));
+
+    const mutualIds = new Set();
+    followingIds.forEach(id => {
+      if (followerIds.has(id)) mutualIds.add(id);
+    });
+
+    noteFollowGraph = {
+      loaded: true,
+      followingIds,
+      followerIds,
+      mutualIds,
+    };
+  } catch (e) {
+    console.error('loadNoteFollowGraph:', e);
+    noteFollowGraph.loaded = true; // don't block, just show own note + none others
+  }
+}
+
+function isNoteVisibleToMe(note) {
+  if (!note) return false;
+  // Always show own note
+  if (note.user_id === myUserId) return true;
+  // Mutual-only filter
+  return noteFollowGraph.mutualIds.has(note.user_id);
+}
+
 async function loadNotes() {
   try { window.supabaseClient.rpc('cleanup_expired_notes').then(() => {}, () => {}); } catch {}
+
+  // Load follow graph once per session (cached)
+  if (!noteFollowGraph.loaded) {
+    await loadNoteFollowGraph();
+  }
 
   const { data, error } = await window.supabaseClient
     .from('notes')
@@ -504,7 +563,9 @@ async function loadNotes() {
     notesCache = [];
     return;
   }
-  notesCache = data || [];
+
+  // Mutual-only filter
+  notesCache = (data || []).filter(isNoteVisibleToMe);
   renderNotesRow();
 }
 
@@ -623,28 +684,43 @@ function buildNoteCard(opts) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── NOTE MODAL ──
+// ── NOTE COMPOSE MODAL ──
 // ═══════════════════════════════════════════════════════════
-window.openNoteComposeModal = function() {
+window.openNoteComposeModal = function(opts) {
   const overlay = document.getElementById('note-modal');
   const compose = document.getElementById('note-modal-compose');
   const view = document.getElementById('note-modal-view');
+  const titleEl = document.getElementById('note-modal-title');
   if (!overlay || !compose || !view) return;
 
   const existing = notesCache.find(n => n.username === username);
+  const isReplace = !!(existing || opts?.replace);
+
   const input = document.getElementById('note-input');
   if (input) {
     input.value = existing ? existing.content : '';
     updateNoteCharCount();
   }
-  document.getElementById('note-post-btn').textContent = existing ? 'Update Note' : 'Post Note';
+
+  const postBtn = document.getElementById('note-post-btn');
+  if (postBtn) {
+    postBtn.textContent = isReplace ? 'Replace Note' : 'Post Note';
+  }
+  if (titleEl) {
+    titleEl.textContent = isReplace ? 'Replace your note' : 'Post a note';
+  }
 
   compose.style.display = 'block';
   view.style.display = 'none';
+  // close reply composer if it was open
+  closeNoteReplyComposer();
   overlay.classList.add('show');
   if (input) setTimeout(() => input.focus(), 100);
 };
 
+// ═══════════════════════════════════════════════════════════
+// ── NOTE VIEW MODAL ──
+// ═══════════════════════════════════════════════════════════
 function openNoteViewModal(note) {
   const overlay = document.getElementById('note-modal');
   const compose = document.getElementById('note-modal-compose');
@@ -673,16 +749,44 @@ function openNoteViewModal(note) {
     .join('<br>');
   document.getElementById('note-view-time').textContent = timeAgoShort(note.created_at);
 
-  const delBtn = document.getElementById('note-view-delete');
-  if (note.username === username) {
-    delBtn.style.display = 'inline-block';
+  // Configure footer buttons based on whose note this is
+  const isOwn = note.username === username;
+  const secondaryBtn = document.getElementById('note-view-secondary');
+  const primaryBtn = document.getElementById('note-view-primary');
+
+  if (isOwn) {
+    // Own note → Close + New Note
+    secondaryBtn.textContent = 'Close';
+    secondaryBtn.onclick = () => window.closeNoteModal();
+    primaryBtn.innerHTML = '<i class="fas fa-plus"></i> New Note';
+    primaryBtn.onclick = () => {
+      // Switch modal into compose mode
+      openNoteComposeModal({ replace: true });
+    };
   } else {
-    delBtn.style.display = 'none';
+    // Someone else's note → Close + Reply
+    secondaryBtn.textContent = 'Close';
+    secondaryBtn.onclick = () => window.closeNoteModal();
+    primaryBtn.innerHTML = '<i class="fas fa-reply"></i> Reply';
+    primaryBtn.onclick = () => openNoteReplyComposer(note);
   }
+
+  // Close any open reply composer when opening view
+  closeNoteReplyComposer();
 
   compose.style.display = 'none';
   view.style.display = 'flex';
   overlay.classList.add('show');
+}
+
+// Handle legacy footer buttons (kept for safety)
+window.onNoteViewSecondary = function() {
+  // Default: close
+  window.closeNoteModal();
+};
+
+window.onNoteViewPrimary = function() {
+  // No-op by default; overridden in openNoteViewModal based on context
 };
 
 window.closeNoteModal = function(e) {
@@ -690,6 +794,7 @@ window.closeNoteModal = function(e) {
   const overlay = document.getElementById('note-modal');
   if (overlay) overlay.classList.remove('show');
   currentViewingNote = null;
+  closeNoteReplyComposer();
 };
 
 function updateNoteCharCount() {
@@ -703,6 +808,208 @@ function updateNoteCharCount() {
   else if (len > NOTE_MAX_LEN - 10) count.parentElement.classList.add('near');
 }
 
+// ═══════════════════════════════════════════════════════════
+// ── NOTE REPLY COMPOSER ──
+// ═══════════════════════════════════════════════════════════
+let currentReplyingToNote = null;
+
+function openNoteReplyComposer(note) {
+  const composer = document.getElementById('note-reply-composer');
+  const input = document.getElementById('note-reply-input');
+  const count = document.getElementById('note-reply-count');
+  if (!composer || !input) return;
+
+  currentReplyingToNote = note;
+  input.value = '';
+  if (count) count.textContent = '0';
+
+  composer.classList.add('open');
+  setTimeout(() => input.focus(), 150);
+
+  // Wire char count once
+  if (!input.dataset.wired) {
+    input.dataset.wired = '1';
+    input.addEventListener('input', () => {
+      if (count) count.textContent = input.value.length;
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        window.submitNoteReply();
+      }
+    });
+  }
+}
+
+window.closeNoteReplyComposer = function() {
+  const composer = document.getElementById('note-reply-composer');
+  if (composer) composer.classList.remove('open');
+  currentReplyingToNote = null;
+};
+
+window.submitNoteReply = async function() {
+  if (!currentReplyingToNote) return;
+  const input = document.getElementById('note-reply-input');
+  if (!input) return;
+  const replyText = input.value.trim();
+  if (!replyText) {
+    window.showToast('Write a reply first', 'error');
+    return;
+  }
+
+  const noteOwner = currentReplyingToNote;
+  const sendBtn = document.getElementById('note-reply-send');
+  if (sendBtn) sendBtn.disabled = true;
+
+  try {
+    // 1. Check if DM conversation already exists
+    const dmSlugStr = dmSlug(username, noteOwner.username);
+    const { data: existingConvo } = await window.supabaseClient
+      .from('conversations')
+      .select('id')
+      .eq('slug', dmSlugStr)
+      .maybeSingle();
+
+    let convoId = existingConvo?.id || null;
+
+    if (!convoId) {
+      // Need to create the conversation. Fetch note owner profile id first.
+      const { data: ownerProfile } = await window.supabaseClient
+        .from('profiles')
+        .select('id, username')
+        .eq('username', noteOwner.username)
+        .maybeSingle();
+
+      if (!ownerProfile?.id) {
+        window.showToast('Could not find note owner', 'error');
+        if (sendBtn) sendBtn.disabled = false;
+        return;
+      }
+
+      const sorted = [username.toLowerCase(), noteOwner.username.toLowerCase()].sort();
+
+      const { data: newConvo, error: cErr } = await window.supabaseClient
+        .from('conversations')
+        .insert({
+          type: 'dm',
+          slug: dmSlugStr,
+          name: `${sorted[0]}-${sorted[1]}`,
+          created_by: window.session.user.id,
+          owner_id: null,
+          dm_user_a: sorted[0],
+          dm_user_b: sorted[1]
+        })
+        .select('id')
+        .single();
+
+      if (cErr) {
+        // Retry once if it was a race (unique violation)
+        if (cErr.code === '23505') {
+          const { data: retry } = await window.supabaseClient
+            .from('conversations')
+            .select('id')
+            .eq('slug', dmSlugStr)
+            .maybeSingle();
+          if (retry?.id) convoId = retry.id;
+        }
+        if (!convoId) {
+          console.error('submitNoteReply create convo:', cErr);
+          window.showToast('Could not send reply. @' + noteOwner.username + ' might have DMs restricted.', 'error');
+          if (sendBtn) sendBtn.disabled = false;
+          return;
+        }
+      } else {
+        convoId = newConvo.id;
+      }
+
+      // Add self + other as conversation members
+      try {
+        await window.supabaseClient
+          .from('conversation_members')
+          .insert({ conversation_id: convoId, user_id: window.session.user.id, role: 'member' });
+      } catch (e) { /* duplicate ok */ }
+
+      try {
+        await window.supabaseClient
+          .from('conversation_members')
+          .insert({ conversation_id: convoId, user_id: ownerProfile.id, role: 'member' });
+      } catch (e) {
+        console.error('submitNoteReply add other member:', e);
+        window.showToast('Could not send reply. @' + noteOwner.username + ' might have DMs restricted.', 'error');
+        if (sendBtn) sendBtn.disabled = false;
+        return;
+      }
+    } else {
+      // Conversation exists. Ensure we're both members (edge case for older convos).
+      const { data: existingMembers } = await window.supabaseClient
+        .from('conversation_members')
+        .select('user_id')
+        .eq('conversation_id', convoId);
+      const existingIds = new Set((existingMembers || []).map(m => m.user_id));
+
+      const { data: ownerProfile } = await window.supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('username', noteOwner.username)
+        .maybeSingle();
+
+      if (ownerProfile?.id && !existingIds.has(ownerProfile.id)) {
+        try {
+          await window.supabaseClient
+            .from('conversation_members')
+            .insert({ conversation_id: convoId, user_id: ownerProfile.id, role: 'member' });
+        } catch (e) {}
+      }
+      if (!existingIds.has(window.session.user.id)) {
+        try {
+          await window.supabaseClient
+            .from('conversation_members')
+            .insert({ conversation_id: convoId, user_id: window.session.user.id, role: 'member' });
+        } catch (e) {}
+      }
+    }
+
+    // 2. Compose the reply body with note context prefix
+    const noteText = (noteOwner.content || '').trim();
+    const prefix = noteText
+      ? `Replied to your note:\n"${noteText}"\n\n`
+      : `Replied to your note:\n\n`;
+    const fullContent = prefix + replyText;
+
+    // 3. Insert the DM message
+    const { error: msgErr } = await window.supabaseClient
+      .from('dm_messages')
+      .insert({
+        conversation_id: convoId,
+        user_id: window.session.user.id,
+        username: username,
+        display_name: currentDisplayName,
+        content: fullContent,
+        receiver_username: noteOwner.username,
+      });
+
+    if (msgErr) {
+      console.error('submitNoteReply dm insert:', msgErr);
+      window.showToast('Could not send reply: ' + msgErr.message, 'error');
+      if (sendBtn) sendBtn.disabled = false;
+      return;
+    }
+
+    // 4. Success
+    window.showToast('Reply sent to @' + noteOwner.username, 'success');
+    closeNoteReplyComposer();
+    window.closeNoteModal();
+  } catch (e) {
+    console.error('submitNoteReply exception:', e);
+    window.showToast('Something went wrong', 'error');
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// ── SUBMIT / DELETE NOTE ──
+// ═══════════════════════════════════════════════════════════
 window.submitNote = async function() {
   const input = document.getElementById('note-input');
   if (!input) return;
@@ -744,6 +1051,7 @@ window.submitNote = async function() {
   await loadNotes();
 };
 
+// Keep for backwards compatibility — not wired to any button now
 window.deleteMyNote = async function() {
   if (!currentViewingNote || currentViewingNote.username !== username) return;
   if (!confirm('Delete your note?')) return;
@@ -759,6 +1067,7 @@ window.deleteMyNote = async function() {
   window.showToast('Note deleted', 'success');
   await loadNotes();
 };
+
 
 function setupNotesRealtime() {
   if (notesChannel) window.supabaseClient.removeChannel(notesChannel);
@@ -1062,8 +1371,21 @@ function buildInboxRow(opts) {
     av.classList.add('global');
     av.innerHTML = '<i class="fas fa-globe"></i>';
   } else if (opts.avatarType === 'group') {
+    // Group chat: use PFP if available, else show the users icon
     av.classList.add('global');
-    av.innerHTML = '<i class="fas fa-users"></i>';
+    const pfp = opts.avatarUser?.pfp_url || null;
+    if (pfp) {
+      const img = document.createElement('img');
+      img.src = pfp;
+      img.onload = () => img.classList.add('loaded');
+      img.onerror = () => {
+        img.remove();
+        av.innerHTML = '<i class="fas fa-users"></i>';
+      };
+      av.appendChild(img);
+    } else {
+      av.innerHTML = '<i class="fas fa-users"></i>';
+    }
   } else {
     const u = opts.avatarUser || {};
     const span = document.createElement('span');
@@ -2242,6 +2564,83 @@ function buildMsgAvatar(uname) {
   return div;
 }
 
+// ═══════════════════════════════════════════════════════════
+// ── CHAT: URL DETECTION + LINK PREVIEW ──
+// ═══════════════════════════════════════════════════════════
+
+// Find the first http(s) URL in a plain text string. Returns null if none.
+function extractFirstUrl(text) {
+  if (!text) return null;
+  // Match http(s) URLs. Trailing punctuation (.,!?;:) gets trimmed off.
+  const re = /\bhttps?:\/\/[^\s<>"']+/gi;
+  const m = text.match(re);
+  if (!m || m.length === 0) return null;
+  let url = m[0];
+  // Strip common trailing punctuation that was probably not part of the URL
+  url = url.replace(/[.,!?;:)\]]+$/, '');
+  return url;
+}
+
+// Turn URLs in plain text into clickable <a> tags. Escapes everything else.
+function linkifyText(text) {
+  if (!text) return '';
+  // Escape first, then linkify
+  const escaped = window.escapeHTML(text);
+  // URL regex over escaped text — safe because http(s):// won't be altered by escaping
+  return escaped.replace(/\bhttps?:\/\/[^\s<>"']+/gi, (match) => {
+    // Trim trailing punctuation
+    const trailingMatch = match.match(/[.,!?;:)\]]+$/);
+    const trailing = trailingMatch ? trailingMatch[0] : '';
+    const clean = trailing ? match.slice(0, -trailing.length) : match;
+    return `<a href="${clean}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${clean}</a>${trailing}`;
+  });
+}
+
+// Extract domain from a URL (without www.)
+function extractDomain(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+// Build a link preview card element for the first URL in the message.
+// Returns null if no URL exists, or if the message already has an image.
+function buildChatLinkPreview(msg) {
+  if (!msg || msg.image_url) return null;
+  if (!msg.content) return null;
+  const url = extractFirstUrl(msg.content);
+  if (!url) return null;
+
+  const domain = extractDomain(url);
+  if (!domain) return null;
+
+  const card = document.createElement('a');
+  card.className = 'chat-link-preview';
+  card.href = url;
+  card.target = '_blank';
+  card.rel = 'noopener noreferrer';
+  card.onclick = (e) => e.stopPropagation();
+
+  const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+  const fallbackIcon = 'https://www.google.com/s2/favicons?domain=example.com&sz=32';
+
+  card.innerHTML = `
+    <div class="chat-link-preview-icon">
+      <img src="${faviconUrl}" alt="" onerror="this.src='${fallbackIcon}'"/>
+    </div>
+    <div class="chat-link-preview-body">
+      <div class="chat-link-preview-domain">${window.escapeHTML(domain)}</div>
+      <div class="chat-link-preview-url">${window.escapeHTML(url)}</div>
+    </div>
+    <div class="chat-link-preview-arrow"><i class="fas fa-external-link-alt"></i></div>
+  `;
+
+  return card;
+}
+
 function buildMessageGroup(msg, isContinued) {
   const group = document.createElement('div');
   group.className = 'msg-group' + (isContinued ? '' : ' first-in-group');
@@ -2315,8 +2714,7 @@ function buildMessageGroup(msg, isContinued) {
         <span class="msg-time">${fmtTime(msg.created_at)}</span>
         ${msg.edited ? '<span class="msg-edited">(edited)</span>' : ''}
       </div>
-      <div class="msg-text" id="text-${msg.id}">${window.escapeHTML(maskedContent)} ${imageHTML}</div>
-    `;
+      <div class="msg-text" id="text-${msg.id}">${linkifyText(maskedContent)} ${imageHTML}</div>    `;
     content.appendChild(bubble);
     row.appendChild(content);
   } else {
@@ -2330,13 +2728,22 @@ function buildMessageGroup(msg, isContinued) {
     bubble.className = 'msg-bubble';
     bubble.innerHTML = `
       ${replyHTML}
-      <div class="msg-text" id="text-${msg.id}">${window.escapeHTML(maskedContent)} ${imageHTML}</div>
-    `;
+      <div class="msg-text" id="text-${msg.id}">${linkifyText(maskedContent)} ${imageHTML}</div>    `;
     content.appendChild(bubble);
     row.appendChild(content);
   }
 
   group.appendChild(row);
+
+  // Link preview — only if message has no image and contains a URL
+  const linkPreview = buildChatLinkPreview(msg);
+  if (linkPreview) {
+    const previewWrap = document.createElement('div');
+    previewWrap.className = 'chat-link-preview-wrap';
+    previewWrap.appendChild(linkPreview);
+    group.appendChild(previewWrap);
+  }
+
   attachContextTrigger(group, msg.id);
   return group;
 }

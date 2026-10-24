@@ -1571,3 +1571,64 @@ html::-webkit-scrollbar {
   pointer-events: none;
   user-select: none;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL CHAT UNREAD BADGE (sidebar + downbar + downbar-more)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Sidebar: reuses .nav-badge-count which is already styled */
+
+/* Downbar (mobile): small badge on the chat icon, top-right */
+.downbar-item .nav-badge-count {
+  position: absolute;
+  top: 2px;
+  right: calc(50% - 20px);
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  font-family: 'Space Mono', monospace;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--sidebar-bg);
+  z-index: 3;
+  pointer-events: none;
+}
+.downbar-item .nav-badge-count.show {
+  display: flex;
+}
+
+/* Downbar-more drawer: same treatment */
+.downbar-more-item .nav-badge-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  font-family: 'Space Mono', monospace;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--sidebar-bg);
+}
+.downbar-more-item .nav-badge-count.show {
+  display: flex;
+}
+
+/* Mobile-only fix: downbar icons already have flex, keep badge visible */
+@media (max-width: 768px) {
+  .downbar-item {
+    position: relative;
+  }
+}

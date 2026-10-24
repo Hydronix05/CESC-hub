@@ -1,11 +1,16 @@
 {
-  "current": "3.7",
+  "current": "3.8",
   "versions": {
     "v3": [
       {
+        "version": "3.8",
+        "date": "2026-10-24",
+        "changes": "Social & economy update · Follows (any public user, private accounts need approval) · Followers/following lists on every profile · Friends badge for mutual follows · Follow notifications · Private accounts (Settings toggle, approval queue, hidden from browse, privacy-aware feeds) · Profile upgrades (banner image, pinned post, up to 3 links, location, joined date, verified checkmark) · Custom profile URL (/u/username) · Instagram-style profile page (banner + avatar overlap, 3-column post grid, post detail overlay with likes + comments + delete/report) · Feed redesign (Following / Explore toggle, Instagram-style default Explore with engagement scoring + diversity rules) · Creator analytics (view count, likes, comments, shares, reach on own posts) · CEIN currency (earn-only): +10 daily login, +5 per post (max 3/day), +2 per comment (max 10/day), +50/+100/+200 at 7/30/100-day streaks · Wallet page with transaction history · CEIN balance in profile dropdown and feed banner · Chat seen-by UI (global + group chats) · Chat global unread badge in inbox · Rich text rendering on profile post tiles and post details · Service worker cache bumped to v3.8.0"
+      },
+      {
         "version": "3.7",
         "date": "2026-10-23",
-        "changes": "Major polish release · Onboarding wizard (6 screens: welcome, about you, profile, theme, rules & privacy, getting started) · Full feedback system (bug/suggestion/design/performance/other, anonymous option, threaded replies, quick-report from posts/comments/chat/profiles) · Timeout system with countdown, boredom-click game, and cross-page enforcement · New About page (rules, privacy, terms, 8 feature guides, install instructions per device) · Games hub now DB-driven with dynamic iframe player at /games/play.html · Leaderboard redesign (All Games + per-game sub-tabs) · Inter font, refreshed header, focus ring fixes, unified card hovers · Chat: typing indicators, windowed message loading, read receipts, "Seen by" tracking for global + group chats · Message read watermark system · Sidebar scroll with left-edge scrollbar · Force update button in profile dropdown · Delete own comments · Improved ad frequency (multiple ads spread across feed) · Streak indicator in feed banner · Settings roles display · Service worker cache bumped to v3.7.0"
+        "changes": "Major polish release · Onboarding wizard (6 screens: welcome, about you, profile, theme, rules & privacy, getting started) · Full feedback system (bug/suggestion/design/performance/other, anonymous option, threaded replies, quick-report from posts/comments/chat/profiles) · Timeout system with countdown, boredom-click game, and cross-page enforcement · New About page (rules, privacy, terms, 8 feature guides, install instructions per device) · Games hub now DB-driven with dynamic iframe player at /games/play.html · Leaderboard redesign (All Games + per-game sub-tabs) · Inter font, refreshed header, focus ring fixes, unified card hovers · Chat: typing indicators, windowed message loading, read receipts, Seen by tracking for global + group chats · Message read watermark system · Sidebar scroll with left-edge scrollbar · Force update button in profile dropdown · Delete own comments · Improved ad frequency (multiple ads spread across feed) · Streak indicator in feed banner · Settings roles display · Service worker cache bumped to v3.7.0"
       },
       {
         "version": "3.6",

@@ -108,6 +108,11 @@ window.addEventListener('appinstalled', () => {
         <span id="banner-streak-count">0</span>
         <span class="banner-streak-label">day streak</span>
       </div>
+      <a href="/wallet" class="banner-cein" id="banner-cein" title="Your CEIN balance">
+        <i class="fas fa-coins"></i>
+        <span id="banner-cein-count">0</span>
+        <span class="banner-cein-label">CEIN</span>
+      </a>
       <a href="/chat" class="banner-btn">Open Chat <i class="fas fa-arrow-right"></i></a>
     </div>
   </div>
@@ -117,7 +122,17 @@ window.addEventListener('appinstalled', () => {
       <h1>Feed</h1>
       <p id="feed-subtitle">Loading posts...</p>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+      <div class="feed-tabs" id="feed-tabs">
+        <button class="feed-tab active" data-feed="following" onclick="window.switchFeedTab('following')">
+          <i class="fas fa-user-check"></i>
+          <span>Following</span>
+        </button>
+        <button class="feed-tab" data-feed="explore" onclick="window.switchFeedTab('explore')">
+          <i class="fas fa-compass"></i>
+          <span>Explore</span>
+        </button>
+      </div>
       <button class="create-post-btn" onclick="openPostModal()">
         <i class="fas fa-plus"></i> <span>Create Post</span>
       </button>
@@ -177,13 +192,11 @@ window.addEventListener('appinstalled', () => {
     </div>
 
     <div class="post-modal-body">
-      <!-- Author -->
       <div class="post-modal-author">
         <div class="post-modal-av" id="post-modal-av"><span id="post-modal-av-initial">?</span></div>
         <div class="post-modal-name" id="post-modal-name">loading</div>
       </div>
 
-      <!-- Toolbar -->
       <div class="post-toolbar" id="post-toolbar">
         <button class="pt-btn bold" title="Bold (Ctrl+B)" onclick="applyFormat('bold')"><i class="fas fa-bold"></i></button>
         <button class="pt-btn italic" title="Italic (Ctrl+I)" onclick="applyFormat('italic')"><i class="fas fa-italic"></i></button>
@@ -222,36 +235,30 @@ window.addEventListener('appinstalled', () => {
         <input type="file" id="post-image-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleImageUpload(event)"/>
       </div>
 
-      <!-- Link input panel -->
       <div class="pt-link-panel" id="pt-link-panel">
         <input type="text" class="pt-link-input" id="pt-link-input" placeholder="Paste URL or domain..." onkeydown="if(event.key==='Enter'){event.preventDefault();confirmLink();}" />
         <button class="pt-link-add" onclick="confirmLink()">Add</button>
         <button class="pt-link-cancel" onclick="closeLinkPanel()"><i class="fas fa-times"></i></button>
       </div>
 
-      <!-- Textarea -->
       <textarea class="post-modal-ta" id="post-ta" placeholder="What's on your mind?" oninput="onPostInput()"></textarea>
 
-      <!-- Hint -->
       <div class="post-modal-hint">
         <i class="fas fa-lightbulb"></i>
         select text + tap a style button — or type it manually
       </div>
 
-      <!-- Preview -->
       <div class="post-preview-wrap" id="post-preview-wrap">
         <div class="post-preview-label"><i class="fas fa-eye"></i> preview</div>
         <div class="post-preview rich post-text" id="post-preview"></div>
       </div>
 
-      <!-- Image preview -->
       <div class="post-img-preview" id="post-img-preview">
         <img id="post-img-el" src="" alt="preview"/>
         <button class="post-img-remove" onclick="removeImage()"><i class="fas fa-times"></i></button>
         <span class="post-img-size" id="post-img-size">0 KB</span>
       </div>
 
-      <!-- Link preview (auto when no image) -->
       <div class="post-link-preview-modal" id="post-link-preview-modal">
         <i class="fas fa-link"></i>
         <div class="post-link-preview-modal-body">
@@ -273,15 +280,12 @@ window.addEventListener('appinstalled', () => {
   </div>
 </div>
 
-<!-- Image viewer -->
 <div class="post-img-modal" id="img-modal" onclick="closeImageModal()">
   <img id="modal-img" src="" alt="Post image"/>
   <button onclick="closeImageModal()" style="position:fixed;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1000;"><i class="fas fa-times"></i></button>
 </div>
 
 <div id="app-downbar"></div>
-
-
 <div id="app-downbar-more"></div>
 
 <script>
@@ -290,6 +294,7 @@ window.addEventListener('appinstalled', () => {
 // ═══════════════════════════════════════════════════════════
 const MAX_IMAGE_SIZE = 500 * 1024;
 const POSTS_PER_BATCH = 10;
+const FEED_TAB_KEY = 'cesc_feed_tab';
 
 let pendingImageFile = null;
 let emojiPickerInitialized = false;
@@ -300,16 +305,17 @@ let hasMorePosts = true;
 let sentinelObserver = null;
 let postModalOpen = false;
 
+// V3.8 feed state
+let currentFeedTab = 'following';
+let followingIds = new Set();   // user_ids I follow
+let followingUsernames = new Set(); // usernames I follow
+let likeCountsByPost = {};
+let commentCountsByPost = {};
+let viewTrackedThisSession = new Set(); // session-scoped, prevents re-tracking views
+
 // ═══════════════════════════════════════════════════════════
 // ── RICH TEXT PARSER ──
 // ═══════════════════════════════════════════════════════════
-// Order matters: links first (so [label](url) inside bold works),
-// then strike (~~), then underline (__), then bold (**), then italic (*),
-// then sizes (# / ## / ###), then newlines.
-//
-// Everything is HTML-escaped FIRST to prevent XSS.
-// Only our own generated tags reach the output.
-
 function escapeHtml(s) {
   if (!s) return '';
   return String(s)
@@ -323,9 +329,7 @@ function escapeHtml(s) {
 function sanitizeUrl(url) {
   if (!url) return null;
   let u = String(url).trim();
-  // Strip unsafe schemes
   if (/^(javascript|data|vbscript):/i.test(u)) return null;
-  // If no protocol, add https://
   if (!/^https?:\/\//i.test(u)) {
     u = 'https://' + u;
   }
@@ -347,8 +351,6 @@ function extractDomain(url) {
   }
 }
 
-// Find first link in a plain text post and return its { label, url }.
-// Used for the link preview card.
 function findFirstLink(text) {
   if (!text) return null;
   const re = /\[([^\]]+)\]\(([^)]+)\)/;
@@ -359,39 +361,23 @@ function findFirstLink(text) {
   return { label: m[1], url: safeUrl, domain: extractDomain(safeUrl) };
 }
 
-// Core parser — takes plain text, returns sanitized HTML.
 function parseContent(text) {
   if (!text) return '';
-
   let s = escapeHtml(text);
 
-  // ── 1. Links: [label](url) — must run before other formatting ──
   s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
     const safe = sanitizeUrl(url);
-    if (!safe) return match; // leave literal if invalid
+    if (!safe) return match;
     return `<a href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
   });
 
-  // ── 2. Strikethrough: ~~text~~ ──
   s = s.replace(/~~([^~]+)~~/g, '<s>$1</s>');
-
-  // ── 3. Underline: __text__ ──
   s = s.replace(/__([^_]+)__/g, '<u>$1</u>');
-
-  // ── 4. Bold: **text** ──
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-  // ── 5. Italic: *text* (after bold so ** is already consumed) ──
   s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-  // ── 6. Sizes: ###text###, ##text##, #text# ──
-  // Order: huge first, then large, then small (all triple/double/single hashes
-  // must not be matched by shorter patterns, so they run in order).
   s = s.replace(/###([^#\n]+)###/g, '<span class="sz-huge">$1</span>');
   s = s.replace(/##([^#\n]+)##/g, '<span class="sz-large">$1</span>');
   s = s.replace(/#([^#\n]+)#/g, '<span class="sz-small">$1</span>');
-
-  // ── 7. Newlines to <br> (except inside code — we don't support code) ──
   s = s.replace(/\n/g, '<br>');
 
   return s;
@@ -411,7 +397,6 @@ function openPostModal() {
   document.getElementById('post-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
 
-  // Fill author
   const displayName = window.currentUser.display_name || window.currentUser.username;
   document.getElementById('post-modal-name').textContent = displayName;
   document.getElementById('post-modal-av-initial').textContent = (window.currentUser.username?.[0] || '?').toUpperCase();
@@ -427,7 +412,6 @@ function openPostModal() {
     av.appendChild(img);
   }
 
-  // Reset
   document.getElementById('post-ta').value = '';
   document.getElementById('post-preview').innerHTML = '';
   document.getElementById('post-preview-wrap').classList.remove('show');
@@ -473,11 +457,9 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Live preview + link preview auto-update ──
 function onPostInput() {
   const text = document.getElementById('post-ta').value;
 
-  // Live preview
   const wrap = document.getElementById('post-preview-wrap');
   const preview = document.getElementById('post-preview');
   if (text.trim()) {
@@ -488,7 +470,6 @@ function onPostInput() {
     preview.innerHTML = '';
   }
 
-  // Auto link preview (only if no image)
   const linkPreview = document.getElementById('post-link-preview-modal');
   if (!pendingImageFile && text.trim()) {
     const link = findFirstLink(text);
@@ -504,7 +485,6 @@ function onPostInput() {
   }
 }
 
-// ── Toolbar: wrap selection with markers ──
 function wrapSelection(open, close) {
   const ta = document.getElementById('post-ta');
   const start = ta.selectionStart;
@@ -512,11 +492,9 @@ function wrapSelection(open, close) {
   const value = ta.value;
 
   if (start === end) {
-    // No selection — insert markers and place cursor between
     ta.value = value.slice(0, start) + open + close + value.slice(end);
     ta.selectionStart = ta.selectionEnd = start + open.length;
   } else {
-    // Wrap selection
     const selected = value.slice(start, end);
     ta.value = value.slice(0, start) + open + selected + close + value.slice(end);
     ta.selectionStart = start + open.length;
@@ -539,7 +517,6 @@ function applyFormat(type) {
   wrapSelection(m[0], m[1]);
 }
 
-// ── Size menu ──
 function toggleSizeMenu(e) {
   e.stopPropagation();
   const menu = document.getElementById('pt-size-menu');
@@ -560,19 +537,16 @@ function applySize(size) {
   const ta = document.getElementById('post-ta');
   document.getElementById('pt-size-menu').classList.remove('open');
 
-  // If there's already a size marker around the selection, strip it first
   let start = ta.selectionStart;
   let end = ta.selectionEnd;
   let value = ta.value;
 
-  // Strip any leading size marker right before selection
   const before = value.slice(0, start);
   const after = value.slice(end);
   const stripRe = /(###|##|#)$/;
   const stripBefore = before.replace(stripRe, '');
   const stripAfter = after.replace(/^(###|##|#)/, '');
 
-  // Are we inside a size marker? Then apply a new one (or strip if "normal")
   start = stripBefore.length;
   end = stripBefore.length + (end - start);
   value = stripBefore + value.slice(ta.selectionStart, end) + stripAfter;
@@ -580,7 +554,6 @@ function applySize(size) {
   const selected = value.slice(start, end);
 
   if (size === 'normal') {
-    // Just wrap with nothing (strip any markers already there)
     ta.value = value.slice(0, start) + selected + value.slice(end);
     ta.selectionStart = start;
     ta.selectionEnd = end;
@@ -600,7 +573,6 @@ function applySize(size) {
   onPostInput();
 }
 
-// ── Link panel ──
 function openLinkPanel() {
   const panel = document.getElementById('pt-link-panel');
   panel.classList.add('open');
@@ -631,14 +603,11 @@ function confirmLink() {
 
   let label;
   if (start === end) {
-    // No selection — use domain as default label
     label = extractDomain(safe) || safe;
-    // Insert [label](url) at cursor
     const insertion = `[${label}](${safe})`;
     ta.value = value.slice(0, start) + insertion + value.slice(end);
     ta.selectionStart = ta.selectionEnd = start + insertion.length;
   } else {
-    // Wrap selected text
     label = value.slice(start, end);
     const insertion = `[${label}](${safe})`;
     ta.value = value.slice(0, start) + insertion + value.slice(end);
@@ -651,7 +620,6 @@ function confirmLink() {
   onPostInput();
 }
 
-// ── Image upload ──
 function handleImageUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -666,7 +634,6 @@ function handleImageUpload(e) {
     document.getElementById('post-img-el').src = ev.target.result;
     document.getElementById('post-img-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
     document.getElementById('post-img-preview').classList.add('show');
-    // Hide link preview when image is present
     document.getElementById('post-link-preview-modal').classList.remove('show');
   };
   reader.readAsDataURL(file);
@@ -677,11 +644,9 @@ function removeImage() {
   pendingImageFile = null;
   document.getElementById('post-img-preview').classList.remove('show');
   document.getElementById('post-img-el').src = '';
-  // Re-check for link preview
   onPostInput();
 }
 
-// ── Upload image to Supabase ──
 async function uploadImage(file) {
   if (!file) return null;
   const ext = file.name.split('.').pop();
@@ -697,7 +662,6 @@ async function uploadImage(file) {
   return urlData.publicUrl;
 }
 
-// ── Submit post ──
 async function submitPost() {
   const text = document.getElementById('post-ta').value.trim();
   if (!text && !pendingImageFile) {
@@ -725,13 +689,13 @@ async function submitPost() {
 
   const displayName = window.currentUser.display_name || window.currentUser.username;
 
-  const { error } = await window.supabaseClient.from('posts').insert({
+  const { data: insertedPost, error } = await window.supabaseClient.from('posts').insert({
     user_id: window.session.user.id,
     username: window.currentUser.username,
     display_name: displayName,
     content: text || '📷',
     image_url: image_url
-  });
+  }).select('id').single();
 
   if (error) {
     window.showToast('post failed: ' + error.message, 'error');
@@ -740,7 +704,21 @@ async function submitPost() {
     return;
   }
 
-  // Reset
+  // CEIN award for post — server-side, idempotent, capped at 3/day
+  if (insertedPost?.id) {
+    try {
+      const { data: cein } = await window.supabaseClient.rpc('award_post_cein', {
+        p_post_id: insertedPost.id
+      });
+      if (cein && cein.ok) {
+        window.showToast(`📝 posted · +${cein.amount} CEIN`, 'success');
+        await refreshCEINDisplays();
+      }
+    } catch (e) {
+      console.error('award_post_cein failed:', e);
+    }
+  }
+
   document.getElementById('post-ta').value = '';
   document.getElementById('post-preview').innerHTML = '';
   document.getElementById('post-preview-wrap').classList.remove('show');
@@ -750,13 +728,12 @@ async function submitPost() {
   btn.disabled = false;
   btn.innerHTML = '<span>Post</span> <i class="fas fa-paper-plane"></i>';
 
-  window.showToast('posted!', 'success');
   closePostModal();
   await refreshFeed();
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── EMOJI PICKER (reused for modal) ──
+// ── EMOJI PICKER ──
 // ═══════════════════════════════════════════════════════════
 const EMOJIS = [
   '😀','😁','😂','🤣','😊','😍','🥰','😘','😜','😝','😛','🤑','🤪','😋','😇','🤗',
@@ -791,15 +768,12 @@ function positionEmojiPicker() {
   if (!picker || !toolbar) return;
 
   const rect = toolbar.getBoundingClientRect();
-
-  // Position above the toolbar
   picker.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
   picker.style.top = 'auto';
   picker.style.left = rect.left + 'px';
   picker.style.width = Math.min(rect.width, 400) + 'px';
 
-  // Clamp height strictly to whatever room is above (min 60px so it's usable)
-  const availableAbove = rect.top - 16; // 8px top margin + 8px gap above toolbar
+  const availableAbove = rect.top - 16;
   const clampedHeight = Math.max(60, Math.min(240, availableAbove));
   picker.style.maxHeight = clampedHeight + 'px';
 }
@@ -809,7 +783,6 @@ function toggleEmojiPicker(e) {
   const picker = document.getElementById('emoji-picker');
   if (!picker) return;
 
-  // Ensure picker is a direct child of <body> (escapes all stacking contexts)
   if (picker.parentElement !== document.body) {
     document.body.appendChild(picker);
   }
@@ -833,8 +806,6 @@ function insertEmoji(emoji) {
   input.focus();
   onPostInput();
 }
-
-
 
 // ═══════════════════════════════════════════════════════════
 // ── FEED LOADING ──
@@ -877,6 +848,7 @@ async function attachCommentCounts(posts) {
   const counts = {};
   comments.forEach(c => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
   posts.forEach(post => {
+    commentCountsByPost[post.id] = counts[post.id] || 0;
     const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
     if (!card) return;
     const span = card.querySelector('.comment-count');
@@ -905,6 +877,7 @@ async function attachLikeData(posts) {
   });
   
   posts.forEach(post => {
+    likeCountsByPost[post.id] = counts[post.id] || 0;
     const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
     if (!card) return;
     const likeBtn = card.querySelector('.action-pill');
@@ -945,7 +918,6 @@ async function loadMorePosts() {
   
   await Promise.all([attachCommentCounts(batchPosts), attachLikeData(batchPosts)]);
   
-  // Re-run ad injection now that more posts exist in the DOM
   try {
     if (window.Ads && typeof window.Ads.mountFeedInjection === 'function') {
       window.Ads.mountFeedInjection(feedEl);
@@ -963,7 +935,140 @@ async function loadMorePosts() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── FEED RENDER ──
+// ── V3.8 — FEED TAB SWITCHING ──
+// ═══════════════════════════════════════════════════════════
+window.switchFeedTab = function(tab) {
+  if (tab !== 'following' && tab !== 'explore') return;
+  if (currentFeedTab === tab) return;
+  currentFeedTab = tab;
+  try { localStorage.setItem(FEED_TAB_KEY, tab); } catch {}
+
+  document.querySelectorAll('.feed-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.feed === tab);
+  });
+
+  refreshFeed();
+};
+
+function loadFeedTabPreference() {
+  let saved = null;
+  try { saved = localStorage.getItem(FEED_TAB_KEY); } catch {}
+  if (saved === 'following' || saved === 'explore') {
+    currentFeedTab = saved;
+  } else {
+    currentFeedTab = 'explore';
+  }
+  document.querySelectorAll('.feed-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.feed === currentFeedTab);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── V3.8 — LOAD FOLLOWING GRAPH ──
+// ═══════════════════════════════════════════════════════════
+async function loadFollowingGraph() {
+  followingIds = new Set();
+  followingUsernames = new Set();
+  if (!window.session) return;
+
+  try {
+    const { data } = await window.supabaseClient
+      .from('follows')
+      .select('following_id, profiles:following_id(username)')
+      .eq('follower_id', window.session.user.id)
+      .eq('status', 'active');
+
+    (data || []).forEach(row => {
+      if (row.following_id) followingIds.add(row.following_id);
+      if (row.profiles?.username) followingUsernames.add(row.profiles.username);
+    });
+  } catch (e) {
+    console.error('loadFollowingGraph:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── V3.8 — EXPLORE ALGORITHM ──
+// ═══════════════════════════════════════════════════════════
+function scorePostForExplore(post) {
+  const likes = likeCountsByPost[post.id] || 0;
+  const comments = commentCountsByPost[post.id] || 0;
+
+  const ageMs = Date.now() - new Date(post.created_at).getTime();
+  const ageDays = ageMs / (1000 * 60 * 60 * 24);
+  const recencyBoost = Math.max(0, 7 - ageDays) * 5;
+
+  const followBoost = followingUsernames.has(post.username) ? 20 : 0;
+
+  return (likes * 1) + (comments * 2) + recencyBoost + followBoost;
+}
+
+function sortExploreWithDiversity(posts) {
+  const scored = posts.map(p => ({ post: p, score: scorePostForExplore(p) }));
+  scored.sort((a, b) => b.score - a.score);
+
+  // Diversity: no 2 consecutive from same author (best-effort)
+  const result = [];
+  let lastAuthor = null;
+  const pending = [...scored];
+
+  while (pending.length > 0) {
+    let pickedIdx = 0;
+    if (lastAuthor) {
+      const altIdx = pending.findIndex(item => item.post.username !== lastAuthor);
+      if (altIdx >= 0) pickedIdx = altIdx;
+    }
+    const [picked] = pending.splice(pickedIdx, 1);
+    result.push(picked.post);
+    lastAuthor = picked.post.username;
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── V3.8 — EMPTY STATES ──
+// ═══════════════════════════════════════════════════════════
+function showFollowingEmptyStates() {
+  const feedEl = document.getElementById('feed');
+  feedEl.innerHTML = '';
+  const subtitle = document.getElementById('feed-subtitle');
+  hasMorePosts = false;
+  document.getElementById('feed-loading').style.display = 'none';
+
+  if (followingIds.size === 0) {
+    // No one followed — guide to Explore
+    if (subtitle) subtitle.textContent = 'following nobody yet';
+    const box = document.createElement('div');
+    box.className = 'feed-empty-empty';
+    box.innerHTML = `
+      <div class="feed-empty-icon"><i class="fas fa-user-plus"></i></div>
+      <div class="feed-empty-title">You're not following anyone yet</div>
+      <div class="feed-empty-desc">Follow people to see their posts here. Explore has everything from the whole community.</div>
+      <button class="feed-empty-btn" onclick="window.switchFeedTab('explore')">
+        <i class="fas fa-compass"></i> Switch to Explore
+      </button>
+    `;
+    feedEl.appendChild(box);
+  } else {
+    // Following someone, but they have no posts
+    if (subtitle) subtitle.textContent = 'no posts from people you follow';
+    const box = document.createElement('div');
+    box.className = 'feed-empty-empty';
+    box.innerHTML = `
+      <div class="feed-empty-icon"><i class="fas fa-inbox"></i></div>
+      <div class="feed-empty-title">No posts from your follows yet</div>
+      <div class="feed-empty-desc">The people you follow haven't posted anything. Check back later or look at Explore.</div>
+      <button class="feed-empty-btn" onclick="window.switchFeedTab('explore')">
+        <i class="fas fa-compass"></i> Switch to Explore
+      </button>
+    `;
+    feedEl.appendChild(box);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── FEED RENDER (main entry) ──
 // ═══════════════════════════════════════════════════════════
 async function refreshFeed() {
   const btn = document.getElementById('refresh-btn');
@@ -992,7 +1097,8 @@ async function refreshFeed() {
 
 async function loadFeed() {
   const feedEl = document.getElementById('feed');
-  
+
+  // Fetch posts + profiles in parallel
   const [postsRes, profilesRes] = await Promise.all([
     window.supabaseClient
       .from('posts')
@@ -1002,22 +1108,67 @@ async function loadFeed() {
       .from('profiles')
       .select('username, pfp_url')
   ]);
-  
+
   if (postsRes.error) {
     window.showToast('could not load feed: ' + postsRes.error.message, 'error');
     return;
   }
-  
-  allPosts = postsRes.data || [];
-  
+
   if (profilesRes.data) {
     profilesRes.data.forEach(p => {
       if (p.pfp_url) window.pfpCache[p.username] = p.pfp_url;
     });
   }
-  
+
+  const allFetchedPosts = postsRes.data || [];
+
+  // Pre-fetch like/comment counts for ALL posts (needed for Explore scoring)
+  if (allFetchedPosts.length > 0) {
+    const ids = allFetchedPosts.map(p => p.id);
+
+    // Likes
+    const { data: likesData } = await window.supabaseClient
+      .from('likes')
+      .select('post_id, user_id')
+      .in('post_id', ids);
+    const myId = window.session?.user?.id;
+    likeCountsByPost = {};
+    (likesData || []).forEach(l => {
+      likeCountsByPost[l.post_id] = (likeCountsByPost[l.post_id] || 0) + 1;
+    });
+
+    // Comments
+    const { data: commentsData } = await window.supabaseClient
+      .from('comments')
+      .select('post_id')
+      .in('post_id', ids);
+    commentCountsByPost = {};
+    (commentsData || []).forEach(c => {
+      commentCountsByPost[c.post_id] = (commentCountsByPost[c.post_id] || 0) + 1;
+    });
+  }
+
+  // Apply feed tab filter / sort
+  let displayPosts = [];
+
+  if (currentFeedTab === 'following') {
+    if (followingIds.size === 0) {
+      showFollowingEmptyStates();
+      return;
+    }
+    displayPosts = allFetchedPosts.filter(p => followingIds.has(p.user_id));
+    if (displayPosts.length === 0) {
+      showFollowingEmptyStates();
+      return;
+    }
+  } else {
+    // Explore
+    displayPosts = sortExploreWithDiversity(allFetchedPosts);
+  }
+
+  allPosts = displayPosts;
   feedEl.innerHTML = '';
-  
+
   if (allPosts.length === 0) {
     feedEl.innerHTML = `<div class="empty-feed"><div class="big">📭</div><div>No posts yet. Be the first!</div></div>`;
     document.getElementById('feed-subtitle').textContent = '0 posts';
@@ -1025,17 +1176,24 @@ async function loadFeed() {
     document.getElementById('feed-loading').style.display = 'none';
     return;
   }
-  
-  document.getElementById('feed-subtitle').textContent = allPosts.length + ' posts total';
-  
+
+  const subtitle = document.getElementById('feed-subtitle');
+  if (subtitle) {
+    if (currentFeedTab === 'following') {
+      subtitle.textContent = `${allPosts.length} post${allPosts.length === 1 ? '' : 's'} from people you follow`;
+    } else {
+      subtitle.textContent = `${allPosts.length} post${allPosts.length === 1 ? '' : 's'} in Explore`;
+    }
+  }
+
   currentBatch = 0;
   const firstBatch = allPosts.slice(0, POSTS_PER_BATCH);
   const frag = document.createDocumentFragment();
   firstBatch.forEach(post => frag.appendChild(buildPostCard(post)));
   feedEl.appendChild(frag);
-  
+
   await Promise.all([attachCommentCounts(firstBatch), attachLikeData(firstBatch)]);
-  
+
   if (allPosts.length <= POSTS_PER_BATCH) {
     hasMorePosts = false;
     document.getElementById('feed-loading').style.display = 'none';
@@ -1044,6 +1202,34 @@ async function loadFeed() {
     document.getElementById('feed-loading').style.display = 'block';
     document.getElementById('feed-loading').textContent = 'Scroll for more posts...';
   }
+
+  // Track views on visible posts (debounced, once per post per session)
+  setTimeout(() => trackViewsForVisiblePosts(), 800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── V3.8 — POST VIEW TRACKING ──
+// ═══════════════════════════════════════════════════════════
+function trackViewsForVisiblePosts() {
+  if (!window.session) return;
+  const cards = document.querySelectorAll('.post-card[data-id]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.dataset.id;
+      if (!id) return;
+      if (viewTrackedThisSession.has(id)) return;
+      viewTrackedThisSession.add(id);
+      window.supabaseClient
+        .rpc('record_post_view', { p_post_id: id })
+        .then(() => {}, () => {});
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.5 });
+
+  cards.forEach(card => {
+    if (!viewTrackedThisSession.has(card.dataset.id)) observer.observe(card);
+  });
 }
 
 // ── Build post card (uses parseContent) ──
@@ -1109,7 +1295,6 @@ function buildPostCard(post) {
   `;
   top.appendChild(meta);
   
-  // Options menu — always visible now (own posts get Delete, others get Report)
   const isOwnPost = window.currentUser && post.username === window.currentUser.username;
   const wrap = document.createElement('div');
   wrap.style.position = 'relative';
@@ -1140,7 +1325,6 @@ function buildPostCard(post) {
   top.appendChild(wrap);
   card.appendChild(top);
   
-  // ── POST BODY: rich parsed content ──
   const body = document.createElement('div');
   body.className = 'post-body';
 
@@ -1148,7 +1332,6 @@ function buildPostCard(post) {
     ? `<div class="post-text rich">${parseContent(post.content)}</div>`
     : '';
 
-  // Image OR link preview card
   let mediaHTML = '';
   if (post.image_url) {
     mediaHTML = `<div class="post-img-wrap"><img class="post-img" src="${window.escapeHTML(post.image_url)}" alt="Post image" loading="lazy" onclick="event.stopPropagation();openImageModal('${window.escapeHTML(post.image_url)}')" onerror="this.parentElement.remove()"/></div>`;
@@ -1320,7 +1503,6 @@ async function loadComments(postId) {
     body.className = 'comment-body';
     const displayName = c.display_name || c.username;
 
-    // Head row: author name + optional report button
     const head = document.createElement('div');
     head.className = 'comment-head';
 
@@ -1353,13 +1535,11 @@ async function loadComments(postId) {
     }
     body.appendChild(head);
 
-    // Text
     const textEl = document.createElement('div');
     textEl.className = 'comment-text';
     textEl.textContent = c.content || '';
     body.appendChild(textEl);
 
-    // Time
     const timeEl = document.createElement('div');
     timeEl.className = 'comment-time';
     timeEl.textContent = window.timeAgo(c.created_at);
@@ -1385,15 +1565,11 @@ async function deleteComment(commentId, postId) {
     return;
   }
 
-  // Remove the comment DOM element
   const section = document.getElementById('cl-' + postId);
   if (section) {
-    // Find the comment item containing this comment id — but we don't have
-    // data-id on the item, so just reload all comments for this post
     await loadComments(postId);
   }
 
-  // Decrement the post's comment counter
   const postCard = document.querySelector(`.post-card[data-id="${postId}"]`);
   if (postCard) {
     const span = postCard.querySelector('.comment-count');
@@ -1421,17 +1597,32 @@ async function submitComment(postId) {
   
   const displayName = window.currentUser.display_name || window.currentUser.username;
   
-  const { error } = await window.supabaseClient.from('comments').insert({
+  const { data: insertedComment, error } = await window.supabaseClient.from('comments').insert({
     post_id: postId,
     user_id: window.session.user.id,
     username: window.currentUser.username,
     display_name: displayName,
     content: text
-  });
+  }).select('id').single();
   
   if (error) {
     window.showToast('comment failed', 'error');
     return;
+  }
+
+  // CEIN award for comment — server-side, idempotent, capped at 10/day
+  if (insertedComment?.id) {
+    try {
+      const { data: cein } = await window.supabaseClient.rpc('award_comment_cein', {
+        p_comment_id: insertedComment.id
+      });
+      if (cein && cein.ok) {
+        window.showToast(`💬 +${cein.amount} CEIN`, 'success');
+        await refreshCEINDisplays();
+      }
+    } catch (e) {
+      console.error('award_comment_cein failed:', e);
+    }
   }
   
   input.value = '';
@@ -1468,8 +1659,6 @@ function closeImageModal() {
   document.getElementById('img-modal').classList.remove('show');
 }
 
-
-
 // ── EXPOSE ──
 window.openPostModal = openPostModal;
 window.closePostModal = closePostModal;
@@ -1494,8 +1683,6 @@ window.openImageModal = openImageModal;
 window.closeImageModal = closeImageModal;
 window.toggleEmojiPicker = toggleEmojiPicker;
 
-
-// ── QUICK REPORT ──
 window.reportPost = function(postId, preview) {
   window.openQuickReport('post', postId, preview);
 };
@@ -1508,34 +1695,52 @@ window.reportComment = function(commentId, preview) {
 function updateBannerStreak() {
   const el = document.getElementById('banner-streak-count');
   if (!el) return;
-
   const streak = window.currentUser?.streak || 0;
   el.textContent = streak;
-
-  // Optional visual flourish: fire icon pulses if streak >= 3
   const wrap = document.getElementById('banner-streak');
   if (wrap) {
-    if (streak >= 3) {
-      wrap.classList.add('hot');
-    } else {
-      wrap.classList.remove('hot');
-    }
+    if (streak >= 3) wrap.classList.add('hot');
+    else wrap.classList.remove('hot');
+  }
+}
+
+// ── BANNER CEIN ──
+async function updateBannerCEIN() {
+  const el = document.getElementById('banner-cein-count');
+  if (!el) return;
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_my_credits');
+    if (error || !data || !data.ok) return;
+    el.textContent = data.balance;
+  } catch (e) {
+    console.error('updateBannerCEIN:', e);
+  }
+}
+
+async function refreshCEINDisplays() {
+  await updateBannerCEIN();
+  if (typeof window.loadCEINBalance === 'function') {
+    await window.loadCEINBalance();
   }
 }
 
 // ── PAGE INIT ──
 async function pageInit() {
   definePageSteps();
-  nextLoadingStep();
-  
-  nextLoadingStep();
-  
-  nextLoadingStep();
+  nextLoadingStep();  // theme
+  nextLoadingStep();  // auth
+  nextLoadingStep();  // profile
+
+  // Load following graph so we know what to filter
+  await loadFollowingGraph();
+
+  nextLoadingStep();  // feed
+  loadFeedTabPreference();
   await loadFeed();
 
-  // Populate streak in welcome banner
   updateBannerStreak();
-  
+  updateBannerCEIN();
+
   try {
     const tryMountFeedAd = (attempt = 0) => {
       if (!window.Ads || typeof window.Ads.getCached !== 'function') {
@@ -1556,13 +1761,12 @@ async function pageInit() {
   } catch (e) {
     console.log('[Ads feed]', e);
   }
-  
-  nextLoadingStep();
-  
-  nextLoadingStep();
-  
+
+  nextLoadingStep();  // online
+  nextLoadingStep();  // notifs
+
   setupInfiniteScroll();
-  
+
   const params = new URLSearchParams(window.location.search);
   const postId = params.get('post');
   if (postId) {

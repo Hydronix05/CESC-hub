@@ -113,7 +113,8 @@ function renderHeaderNav() {
     +         '</div>'
     +         '<a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>'
     +         '<a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>'
-    +         '<a href="/notifications" class="dd-item"><span class="di-icon"><i class="fas fa-bell"></i></span> Notifications</a>'
++         '<a href="/leaderboard" class="dd-item"><span class="di-icon"><i class="fas fa-fire" style="color:var(--yellow);"></i></span> Streak · <span class="dd-streak-count" id="dd-streak-count" style="margin-left:4px;font-family:Space Mono,monospace;font-size:0.72rem;color:var(--yellow);font-weight:700;">0</span> days</a>'
+    +         '<a href="/wallet" class="dd-item"><span class="di-icon"><i class="fas fa-coins"></i></span> Wallet <span class="dd-cein-balance" id="dd-cein-balance" style="margin-left:auto;font-family:Space Mono,monospace;font-size:0.72rem;color:var(--neon);font-weight:700;"></span></a>'
     +         '<a href="/about" class="dd-item"><span class="di-icon"><i class="fas fa-info-circle"></i></span> About</a>'
 +         '<a href="/feedback" class="dd-item"><span class="di-icon"><i class="fas fa-comment-dots"></i></span> Feedback</a>'
 +         '<button class="dd-item" onclick="window.forceUpdate()"><span class="di-icon"><i class="fas fa-rotate"></i></span> Force Update</button>'
@@ -132,10 +133,11 @@ function renderSidebarNav() {
     + '<aside class="sidebar" id="sidebar">'
     +   '<div class="sidebar-nav-scroll">'
     +     navItem('/',           'fa-newspaper',   'Feed',          { active: p === 'home' })
-    +     navItem('/chat',       'fa-comments',    'Chat Room',     { active: p === 'chat' })
+    +     navItem('/chat',       'fa-comments',    'Chat Room',     { active: p === 'chat', id: 'chat-nav', badge: 'chat-nav-badge' })
     +     navItem('/profiles',   'fa-users',       'Profiles',      { active: p === 'profiles' })
     +     navItem('/games',      'fa-gamepad',     'Games',         { active: p === 'games' || p === 'bloxdio' })
     +     navItem('/leaderboard','fa-trophy',      'Leaderboard',   { active: p === 'leaderboard' })
+    +     navItem('/wallet',     'fa-coins',       'Wallet',        { active: p === 'wallet' })
     +     navItem('/settings',   'fa-cog',         'Settings',      { active: p === 'settings' })
     +     navItem('/download',   'fa-download',    'Downloads',     { active: p === 'download' })
     +     navItem('/notifications','fa-bell',      'Notifications', { active: p === 'notifications', id: 'notif-nav', badge: 'notif-nav-badge' })
@@ -159,7 +161,10 @@ function renderDownbarNav() {
     + '<nav class="downbar" id="downbar">'
     +   '<div class="downbar-inner">'
     +     downbarItem('/',        'fa-newspaper', { active: p === 'home',     id: 'downbar-home' })
-    +     downbarItem('/chat',    'fa-comments',  { active: p === 'chat',     id: 'downbar-chat' })
+    +     '<a href="/chat" class="downbar-item' + (p === 'chat' ? ' active' : '') + '" id="downbar-chat" style="position:relative;">'
+    +       '<span class="downbar-icon"><i class="fas fa-comments"></i></span>'
+    +       '<span class="nav-badge-count" id="downbar-chat-badge">0</span>'
+    +     '</a>'
     +     downbarItem('/profiles','fa-users',     { active: p === 'profiles', id: 'downbar-profiles' })
     +     downbarItem('/games',   'fa-gamepad',   { active: p === 'games' || p === 'bloxdio', id: 'downbar-games' })
     +     '<button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">'
@@ -178,11 +183,16 @@ function renderDownbarMoreNav() {
     +   '<div class="downbar-more-handle" onclick="window.closeDownbarMore()"></div>'
     +   '<div class="downbar-more-grid">'
     +     downbarMoreItem('/',            'fa-newspaper',   'Feed',          { active: p === 'home' })
-    +     downbarMoreItem('/chat',        'fa-comments',    'Chat',          { active: p === 'chat' })
+    +     '<a href="/chat" class="downbar-more-item' + (p === 'chat' ? ' active' : '') + '">'
+    +       '<span class="downbar-more-icon"><i class="fas fa-comments"></i></span>'
+    +       '<span class="downbar-more-label">Chat</span>'
+    +       '<span class="nav-badge-count" id="downbar-more-chat-badge" style="position:absolute;top:2px;right:2px;">0</span>'
+    +     '</a>'
     +     downbarMoreItem('/profiles',    'fa-users',       'Profiles',      { active: p === 'profiles' })
     +     downbarMoreItem('/games',       'fa-gamepad',     'Games',         { active: p === 'games' || p === 'bloxdio' })
     +     downbarMoreItem('/leaderboard', 'fa-trophy',      'Leaderboard',   { active: p === 'leaderboard' })
     +     downbarMoreItem('/settings',    'fa-cog',         'Settings',      { active: p === 'settings' })
+    +     downbarMoreItem('/wallet',      'fa-coins',       'Wallet',        { active: p === 'wallet' })
     +     downbarMoreItem('/download',    'fa-download',    'Downloads',     { active: p === 'download' })
     +     downbarMoreItem('/about',       'fa-info-circle', 'About',         { active: p === 'about' })
     +     downbarMoreItem('/feedback',    'fa-comment-dots','Feedback',      { active: p === 'feedback' })
@@ -619,6 +629,178 @@ async function loadNotifCount() {
   }
 }
 
+// ── CHAT UNREAD COUNT (global, across all pages) ──
+// Counts how many CONVERSATIONS have unread messages, not total messages.
+// Includes: DMs + GCs + Global chat.
+// Updates every chat badge in the DOM.
+async function loadChatUnreadCount() {
+  if (!session) return;
+  const myId = session.user.id;
+
+  try {
+    // Fetch my conversation memberships with last_read_at + last_message_at
+    const { data: members, error } = await supabaseClient
+      .from('conversation_members')
+      .select(`
+        conversation_id,
+        last_read_at,
+        conversations(
+          id, type, slug, last_message_at
+        )
+      `)
+      .eq('user_id', myId);
+
+    if (error || !members) {
+      console.error('loadChatUnreadCount:', error);
+      return;
+    }
+
+    let unreadConvoCount = 0;
+
+    // Identify the global-chat conversation id (uses `messages` table, not gc_messages)
+    let globalChatId = null;
+    const globalEntry = members.find(m => m.conversations?.slug === 'global-chat');
+    if (globalEntry) globalChatId = globalEntry.conversations.id;
+
+    for (const m of members) {
+      const c = m.conversations;
+      if (!c) continue;
+
+      const lastRead = m.last_read_at || '1970-01-01T00:00:00Z';
+
+      if (c.id === globalChatId) {
+        // Global chat: check latest `messages` row directly
+        const { data: latestGlobal } = await supabaseClient
+          .from('messages')
+          .select('created_at, user_id')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestGlobal && latestGlobal.user_id !== myId && latestGlobal.created_at > lastRead) {
+          unreadConvoCount++;
+        }
+      } else {
+        // DM + GC: use conversations.last_message_at
+        if (c.last_message_at && c.last_message_at > lastRead) {
+          unreadConvoCount++;
+        }
+      }
+    }
+
+    updateChatBadges(unreadConvoCount);
+  } catch (e) {
+    console.error('loadChatUnreadCount exception:', e);
+  }
+}
+
+// Update all chat badges in the DOM
+function updateChatBadges(count) {
+  const label = count > 99 ? '99+' : (count > 0 ? String(count) : '');
+  const els = [
+    document.getElementById('chat-nav-badge'),
+    document.getElementById('downbar-chat-badge'),
+    document.getElementById('downbar-more-chat-badge'),
+  ];
+
+  els.forEach(el => {
+    if (!el) return;
+    if (count > 0) {
+      el.textContent = label;
+      el.classList.add('show');
+    } else {
+      el.textContent = '0';
+      el.classList.remove('show');
+    }
+  });
+}
+
+// ── CHAT UNREAD REALTIME SUBSCRIPTION ──
+// One subscription per page load. Tear down on unload.
+let _chatUnreadChannel = null;
+let _chatUnreadDebounce = null;
+
+function startChatUnreadRealtime() {
+  if (!session) return;
+  if (_chatUnreadChannel) return; // already running
+
+  const scheduleRefresh = () => {
+    if (_chatUnreadDebounce) clearTimeout(_chatUnreadDebounce);
+    _chatUnreadDebounce = setTimeout(() => {
+      _chatUnreadDebounce = null;
+      loadChatUnreadCount();
+    }, 500);
+  };
+
+  try {
+    _chatUnreadChannel = supabaseClient
+      .channel('global-chat-unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages' }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gc_messages' }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, scheduleRefresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversation_members', filter: `user_id=eq.${session.user.id}` }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversation_members', filter: `user_id=eq.${session.user.id}` }, scheduleRefresh)
+      .subscribe();
+  } catch (e) {
+    console.error('startChatUnreadRealtime:', e);
+  }
+}
+
+function stopChatUnreadRealtime() {
+  if (_chatUnreadChannel) {
+    supabaseClient.removeChannel(_chatUnreadChannel);
+    _chatUnreadChannel = null;
+  }
+  if (_chatUnreadDebounce) {
+    clearTimeout(_chatUnreadDebounce);
+    _chatUnreadDebounce = null;
+  }
+}
+
+// ── CEIN BALANCE IN DROPDOWN ──
+async function loadCEINBalance() {
+  if (!session) return;
+  try {
+    const { data, error } = await supabaseClient.rpc('get_my_credits');
+    if (error || !data || !data.ok) return;
+
+    const el = document.getElementById('dd-cein-balance');
+    if (el) {
+      el.textContent = data.balance + ' CEIN';
+    }
+  } catch (e) {
+    console.error('loadCEINBalance:', e);
+  }
+}
+
+// ── DAILY LOGIN CEIN CLAIM ──
+// Runs once per page load. Idempotent server-side.
+// Only shows a toast on the feed page (so it doesn't spam every page).
+async function claimDailyLoginCEIN() {
+  if (!session) return;
+  try {
+    const { data, error } = await supabaseClient.rpc('claim_daily_login');
+    if (error) {
+      console.error('claim_daily_login error:', error);
+      return;
+    }
+
+    if (data && data.ok) {
+      // Refresh the CEIN balance shown in the dropdown
+      await loadCEINBalance();
+
+      // Toast only on the feed page
+      const isFeed = window.location.pathname === '/' || window.location.pathname === '/index.html';
+      if (isFeed) {
+        showToast(`+10 CEIN claimed · ${data.balance} total`, 'success');
+      }
+    }
+    // If already claimed today, stay silent.
+  } catch (e) {
+    console.error('claimDailyLoginCEIN exception:', e);
+  }
+}
+
 // ── AVATAR BUILDER ──
 function buildAvatar(username, pfpUrl, size = 40, cls = '') {
   const div = document.createElement('div');
@@ -708,7 +890,7 @@ async function loadUserProfile() {
   try {
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('username, display_name, pfp_url, bio, streak, last_active_date, is_timed_out, timeout_until, roles, onboarding_completed_at')
+      .select('id, username, display_name, pfp_url, bio, streak, last_active_date, is_timed_out, timeout_until, roles, onboarding_completed_at, is_private, follower_count, following_count, verified, banner_url, links, pinned_post_id, location, created_at')
       .eq('id', session.user.id)
       .single();
     if (profile) currentUser = profile;
@@ -759,6 +941,12 @@ function updateUserUI(profile) {
       av.appendChild(img);
     });
   }
+
+    // Streak in dropdown
+  const ddStreak = document.getElementById('dd-streak-count');
+  if (ddStreak && profile.streak !== undefined) {
+    ddStreak.textContent = profile.streak || 0;
+  }
 }
 
 // ── UPDATE LAST SEEN ──
@@ -767,7 +955,7 @@ let _lastSeenUpdate = 0;
 async function updateLastSeen() {
   if (!session) return;
   const now = Date.now();
-  if (now - _lastSeenUpdate < 10000) return; // Throttle to 30s
+  if (now - _lastSeenUpdate < 10000) return; // Throttle to 10s
   _lastSeenUpdate = now;
   try {
     await supabaseClient
@@ -786,17 +974,33 @@ async function updateStreak() {
     const today = new Date().toISOString().split('T')[0];
     const lastDate = currentUser?.last_active_date;
     let streak = currentUser?.streak || 0;
+    let newStreak = null;
     
     if (lastDate !== today) {
       const yest = new Date();
       yest.setDate(yest.getDate() - 1);
-      streak = (lastDate === yest.toISOString().split('T')[0]) ? streak + 1 : 1;
+      newStreak = (lastDate === yest.toISOString().split('T')[0]) ? streak + 1 : 1;
       await supabaseClient
         .from('profiles')
-        .update({ streak, last_active_date: today })
+        .update({ streak: newStreak, last_active_date: today })
         .eq('id', session.user.id);
-      currentUser.streak = streak;
+      currentUser.streak = newStreak;
       currentUser.last_active_date = today;
+    }
+
+    // Streak milestone bonus — idempotent server-side.
+    // Fire only when we just incremented to a milestone.
+    const effectiveStreak = newStreak !== null ? newStreak : streak;
+    if (effectiveStreak === 7 || effectiveStreak === 30 || effectiveStreak === 100) {
+      try {
+        const { data } = await supabaseClient.rpc('award_streak_bonus', { p_days: effectiveStreak });
+        if (data && data.ok) {
+          showToast(`🔥 ${effectiveStreak}-day streak! +${data.amount} CEIN`, 'success');
+          await loadCEINBalance();
+        }
+      } catch (e) {
+        console.error('award_streak_bonus failed:', e);
+      }
     }
   } catch (e) {
     console.error('Error updating streak:', e);
@@ -835,14 +1039,18 @@ function startBackgroundTasks() {
     updateLastSeen();
     loadOnlineCount();
     loadNotifCount();
+    loadCEINBalance();
+    loadChatUnreadCount();
+    startChatUnreadRealtime();
   }
   
-  // Run every 30s (reduced from 15s to save resources)
+  // Run every 10s
   _backgroundInterval = setInterval(() => {
     if (!session) return;
     updateLastSeen();
     loadOnlineCount();
     loadNotifCount();
+    loadChatUnreadCount();
   }, 10000);
 }
 
@@ -928,6 +1136,10 @@ async function initPage(pageInitFn) {
           return;
         }
       }
+
+      // ── CEIN: DAILY LOGIN CLAIM ──
+      // Server-side idempotent. Silent if already claimed.
+      try { await claimDailyLoginCEIN(); } catch (e) { console.error('claimDailyLoginCEIN failed:', e); }
     }
     
     // Step 4: PFP Cache
@@ -947,7 +1159,8 @@ async function initPage(pageInitFn) {
     nextLoadingStep();
     await Promise.all([
       loadOnlineCount(),
-      loadNotifCount()
+      loadNotifCount(),
+      loadChatUnreadCount()
     ]);
 
     // ── ADS: load ads + mount slots BEFORE hiding the loading screen ──
@@ -984,10 +1197,8 @@ async function initPage(pageInitFn) {
     _loadingInProgress = false;
 
     // ── ADS: re-render ads that depend on the page being ready ──
-    // (feed, profiles, notifications mounts)
     try {
       if (window.Ads && typeof window.Ads.reRenderAll === 'function') {
-        // Give the page a moment to finish its own rendering
         setTimeout(() => {
           try { window.Ads.reRenderAll(); } catch (e) {}
         }, 200);
@@ -1079,7 +1290,6 @@ window.addEventListener('resize', () => {
 });
 
 // ── EXPOSE EVERYTHING TO WINDOW ──
-// Use getters so they always return the current value
 Object.defineProperty(window, 'session', {
   get: function() { return session; },
   set: function(val) { session = val; }
@@ -1106,8 +1316,12 @@ window.injectNav = injectNav;
 window.getActivePageKey = getActivePageKey;
 window.toggleDownbarMore = toggleDownbarMore;
 window.closeDownbarMore = closeDownbarMore;
-window.loadOnlineCount = loadOnlineCount;
-window.loadNotifCount = loadNotifCount;
+window.loadChatUnreadCount = loadChatUnreadCount;
+window.updateChatBadges = updateChatBadges;
+window.startChatUnreadRealtime = startChatUnreadRealtime;
+window.stopChatUnreadRealtime = stopChatUnreadRealtime;
+window.loadCEINBalance = loadCEINBalance;
+window.claimDailyLoginCEIN = claimDailyLoginCEIN;
 window.buildAvatar = buildAvatar;
 window.loadPfpCache = loadPfpCache;
 window.initAuth = initAuth;
@@ -1134,9 +1348,6 @@ window.setLoadingEscapeEnabled = setLoadingEscapeEnabled;
 window.openQuickReport = openQuickReport;
 
 // ── AUTO-INIT: INJECT NAV + SIDEBAR EXPANSION ──
-// Runs on every page load since shared.js is loaded everywhere.
-// Injection MUST happen before any page initPage() call so nav elements
-// (profile-chip, notif-badge, online-count, sidebar-ad-slot, etc.) exist.
 function _autoInitOnReady() {
   if (typeof injectNav === 'function') injectNav();
   if (typeof initSidebarExpand === 'function') initSidebarExpand();
@@ -1147,6 +1358,11 @@ if (document.readyState === 'loading') {
 } else {
   _autoInitOnReady();
 }
+
+// ── CLEANUP ON UNLOAD ──
+window.addEventListener('beforeunload', () => {
+  stopChatUnreadRealtime();
+});
 
 console.log('✅ shared.js loaded successfully!');
 console.log('🔑 Session:', session ? 'Logged in' : 'Not logged in');

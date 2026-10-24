@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CESC Hub — Notifications</title>
 
-<!-- ── PWA META TAGS ── -->
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,9 +17,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="shared.css"/>
 
-<!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- Load shared.js -->
 <script src="shared.js"></script>
 <link rel="stylesheet" href="/css/pages/notifications.css"/>
 <link rel="stylesheet" href="/css/ads.css"/>
@@ -28,7 +25,6 @@
 <script src="/js/theme-engine.js"></script>
 <script src="/js/ads.js"></script>
 
-<!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -40,8 +36,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 </head>
-<<body data-page-title="Notifications">>
-<!-- ── LOADING SCREEN ── -->
+<body data-page-title="Notifications">
 <div id="loading-screen">
   <div class="bg-canvas">
     <div class="orb orb1"></div>
@@ -86,18 +81,13 @@ if ('serviceWorker' in navigator) {
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
-<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
-
-<!-- ── MOBILE MENU HAMBURGER (HIDDEN ON MOBILE) ── -->
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
 <div id="app-header"></div>
 
 <div id="app-sidebar"></div>
 
-
-<!-- ── MAIN ── -->
 <main class="main">
   <div class="page-header">
     <div>
@@ -131,10 +121,11 @@ if ('serviceWorker' in navigator) {
 
 <div id="app-downbar-more"></div>
 
-
 <script>
 // ── NOTIFICATIONS PAGE ──
-// Use window.session, window.currentUser, window.supabaseClient from shared.js
+
+// Cache of who I already follow (username → status), loaded once per session
+let myFollowingMap = {}; // { username: 'active' | 'pending' }
 
 // ── LOADING STEPS ──
 function definePageSteps() {
@@ -149,34 +140,70 @@ function definePageSteps() {
   ]);
 }
 
-// ── NOTIF LINK HELPER ──
-function notifLink(type, refId) {
-  if (!refId) return '#';
-  if (type === 'post_comment' || type === 'like') {
-    return `/?post=${refId}`;
-  }
-  if (type === 'chat_reply') {
-    return `/chat?msg=${refId}`;
-  }
-  return '#';
-}
-
 // ── NOTIF LABEL ──
 function notifLabel(type) {
-  if(type === 'post_comment') return 'commented on your post';
-  if(type === 'chat_reply') return 'replied to your message';
-  if(type === 'like') return 'liked your post';
-  if(type === 'follow') return 'started following you';
+  if (type === 'post_comment') return 'commented on your post';
+  if (type === 'chat_reply') return 'replied to your message';
+  if (type === 'like') return 'liked your post';
+  if (type === 'follow') return 'started following you';
+  if (type === 'follow_request') return 'requested to follow you';
+  if (type === 'follow_approved') return 'approved your follow request';
+  if (type === 'chat_mention') return 'mentioned you in chat';
   return 'interacted with you';
 }
 
 // ── NOTIF ICON ──
 function notifIcon(type) {
-  if(type === 'post_comment') return '<i class="fas fa-comment" style="color:var(--neon);"></i>';
-  if(type === 'chat_reply') return '<i class="fas fa-reply" style="color:var(--neon2);"></i>';
-  if(type === 'like') return '<i class="fas fa-heart" style="color:#ff4d6d;"></i>';
-  if(type === 'follow') return '<i class="fas fa-user-plus" style="color:var(--yellow);"></i>';
+  if (type === 'post_comment') return '<i class="fas fa-comment" style="color:var(--neon);"></i>';
+  if (type === 'chat_reply') return '<i class="fas fa-reply" style="color:var(--neon2);"></i>';
+  if (type === 'like') return '<i class="fas fa-heart" style="color:#ff4d6d;"></i>';
+  if (type === 'follow') return '<i class="fas fa-user-plus" style="color:var(--yellow);"></i>';
+  if (type === 'follow_request') return '<i class="fas fa-user-clock" style="color:var(--yellow);"></i>';
+  if (type === 'follow_approved') return '<i class="fas fa-user-check" style="color:#22c55e;"></i>';
+  if (type === 'chat_mention') return '<i class="fas fa-at" style="color:var(--neon);"></i>';
   return '<i class="fas fa-bell" style="color:var(--muted);"></i>';
+}
+
+// Is this a follow-family type? (row click → profile, follow-back button shown)
+function isFollowType(type) {
+  return type === 'follow' || type === 'follow_request';
+}
+
+// ── LOAD MY FOLLOWING MAP ──
+async function loadMyFollowingMap() {
+  if (!window.session) return;
+  try {
+    // Step 1 — get the raw follow rows (no join, no FK inference)
+    const { data: rows, error } = await window.supabaseClient
+      .from('follows')
+      .select('following_id, status')
+      .eq('follower_id', window.session.user.id)
+      .in('status', ['active', 'pending']);
+
+    if (error) { console.error('loadMyFollowingMap:', error); return; }
+    if (!rows || rows.length === 0) { myFollowingMap = {}; return; }
+
+    // Step 2 — get usernames for those user_ids
+    const ids = rows.map(r => r.following_id);
+    const { data: profiles, error: pErr } = await window.supabaseClient
+      .from('profiles')
+      .select('id, username')
+      .in('id', ids);
+
+    if (pErr) { console.error('loadMyFollowingMap profiles:', pErr); return; }
+
+    // Step 3 — merge into a username → status map
+    const usernameById = {};
+    (profiles || []).forEach(p => { usernameById[p.id] = p.username; });
+
+    myFollowingMap = {};
+    rows.forEach(r => {
+      const uname = usernameById[r.following_id];
+      if (uname) myFollowingMap[uname] = r.status;
+    });
+  } catch (e) {
+    console.error('loadMyFollowingMap exception:', e);
+  }
 }
 
 // ── LOAD NOTIFICATIONS ──
@@ -223,69 +250,200 @@ async function loadNotifs() {
       list.innerHTML = `
         <div class="empty-notifs">
           <div class="big"><i class="fas fa-bell" style="color:var(--muted);"></i></div>
-          <div>No notifications yet.<br>They'll show up here when someone comments on your posts or replies to your messages.</div>
+          <div>No notifications yet.<br>They'll show up here when someone interacts with you.</div>
         </div>`;
       return;
     }
 
     list.innerHTML = '';
     notifs.forEach((n, i) => {
-      const item = document.createElement('div');
-      item.className = 'notif-item' + (n.read ? '' : ' unread');
-      item.style.animationDelay = (i * 0.04) + 's';
-      
-      if (!n.read) {
-        const dot = document.createElement('div');
-        dot.className = 'unread-dot';
-        item.appendChild(dot);
-      }
-      
-      // Avatar
-      const av = document.createElement('div');
-      av.className = 'notif-av';
-      const initial = document.createElement('span');
-      initial.textContent = (n.actor_username?.[0] || '?').toUpperCase();
-      av.appendChild(initial);
-      
-      const displayName = n.actor_display_name || n.actor_username;
-      
-      if (n.actor_pfp_url || window.pfpCache?.[n.actor_username]) {
-        const img = document.createElement('img');
-        img.src = n.actor_pfp_url || window.pfpCache?.[n.actor_username];
-        img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
-        img.onerror = () => img.remove();
-        av.appendChild(img);
-      }
-      item.appendChild(av);
-      
-      // Body
-      const body = document.createElement('div');
-      body.className = 'notif-body';
-      body.innerHTML = `
-        <div class="notif-text"><strong>${window.escapeHTML(displayName)}</strong> ${notifLabel(n.type)}</div>
-        ${n.preview ? `<div class="notif-preview">"${window.escapeHTML(n.preview)}"</div>` : ''}
-        <div class="notif-time">${window.timeAgo(n.created_at)}</div>`;
-      item.appendChild(body);
-      
-      // Icon - Font Awesome
-      const iconEl = document.createElement('div');
-      iconEl.className = 'notif-type-icon';
-      iconEl.innerHTML = notifIcon(n.type);
-      item.appendChild(iconEl);
-      
-      // Click — mark read + navigate
-      item.onclick = async () => {
-        if (!n.read) {
-          await window.supabaseClient.from('notifications').update({ read: true }).eq('id', n.id);
-          item.classList.remove('unread');
-          item.querySelector('.unread-dot')?.remove();
-        }
-        window.location.href = notifLink(n.type, n.ref_id);
-      };
-      list.appendChild(item);
+      list.appendChild(buildNotifRow(n, i));
     });
   } catch (e) {
     console.error('Error loading notifications:', e);
+  }
+}
+
+function buildNotifRow(n, i) {
+  const item = document.createElement('div');
+  item.className = 'notif-item' + (n.read ? '' : ' unread');
+  item.style.animationDelay = (i * 0.04) + 's';
+
+  if (!n.read) {
+    const dot = document.createElement('div');
+    dot.className = 'unread-dot';
+    item.appendChild(dot);
+  }
+
+  const displayName = n.actor_display_name || n.actor_username;
+  const actorUsername = n.actor_username || '';
+
+  // ── Avatar (clickable → profile) ──
+  const av = document.createElement('div');
+  av.className = 'notif-av notif-av-link';
+  av.title = 'View @' + actorUsername;
+  const initial = document.createElement('span');
+  initial.textContent = (actorUsername[0] || '?').toUpperCase();
+  av.appendChild(initial);
+
+  if (n.actor_pfp_url || window.pfpCache?.[actorUsername]) {
+    const img = document.createElement('img');
+    img.src = n.actor_pfp_url || window.pfpCache?.[actorUsername];
+    img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+  av.onclick = (e) => {
+    e.stopPropagation();
+    if (actorUsername) {
+      window.location.href = `/profiles?u=${encodeURIComponent(actorUsername)}`;
+    }
+  };
+  item.appendChild(av);
+
+  // ── Body ──
+  const body = document.createElement('div');
+  body.className = 'notif-body';
+
+  const textEl = document.createElement('div');
+  textEl.className = 'notif-text';
+  textEl.innerHTML = `<strong class="notif-name-link" title="View @${window.escapeHTML(actorUsername)}">${window.escapeHTML(displayName)}</strong> ${notifLabel(n.type)}`;
+  const nameLink = textEl.querySelector('.notif-name-link');
+  if (nameLink && actorUsername) {
+    nameLink.onclick = (e) => {
+      e.stopPropagation();
+      window.location.href = `/profiles?u=${encodeURIComponent(actorUsername)}`;
+    };
+  }
+  body.appendChild(textEl);
+
+  if (n.preview) {
+    const prevEl = document.createElement('div');
+    prevEl.className = 'notif-preview';
+    prevEl.textContent = `"${n.preview}"`;
+    body.appendChild(prevEl);
+  }
+
+  const timeEl = document.createElement('div');
+  timeEl.className = 'notif-time';
+  timeEl.textContent = window.timeAgo(n.created_at);
+  body.appendChild(timeEl);
+
+  // ── Follow-back button (only on follow-type notifications from real users) ──
+  if (isFollowType(n.type) && actorUsername) {
+    const followState = myFollowingMap[actorUsername];
+    const btn = document.createElement('button');
+    btn.className = 'notif-follow-back-btn';
+    btn.type = 'button';
+
+    if (followState === 'active') {
+      btn.classList.add('following');
+      btn.innerHTML = '<i class="fas fa-check"></i> Following';
+      btn.disabled = true;
+    } else if (followState === 'pending') {
+      btn.classList.add('pending');
+      btn.innerHTML = '<i class="fas fa-clock"></i> Requested';
+      btn.disabled = true;
+    } else {
+      btn.innerHTML = '<i class="fas fa-user-plus"></i> Follow back';
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        handleFollowBack(actorUsername, btn);
+      };
+    }
+
+    body.appendChild(btn);
+  }
+
+  item.appendChild(body);
+
+  // ── Icon ──
+  const iconEl = document.createElement('div');
+  iconEl.className = 'notif-type-icon';
+  iconEl.innerHTML = notifIcon(n.type);
+  item.appendChild(iconEl);
+
+  // ── Row click ──
+  item.onclick = async () => {
+    // Mark read
+    if (!n.read) {
+      await window.supabaseClient.from('notifications').update({ read: true }).eq('id', n.id);
+      item.classList.remove('unread');
+      item.querySelector('.unread-dot')?.remove();
+    }
+
+    // Route based on type
+    if (isFollowType(n.type)) {
+      if (actorUsername) {
+        window.location.href = `/profiles?u=${encodeURIComponent(actorUsername)}`;
+      }
+    } else if (n.type === 'follow_approved') {
+      // Navigate to their profile too
+      if (actorUsername) {
+        window.location.href = `/profiles?u=${encodeURIComponent(actorUsername)}`;
+      }
+    } else if ((n.type === 'post_comment' || n.type === 'like') && n.ref_id) {
+      window.location.href = `/?post=${n.ref_id}`;
+    } else if (n.type === 'chat_reply' && n.ref_id) {
+      window.location.href = `/chat?msg=${n.ref_id}`;
+    } else if (n.type === 'chat_mention' && n.ref_id) {
+      window.location.href = `/chat`;
+    }
+  };
+
+  return item;
+}
+
+// ── HANDLE FOLLOW BACK ──
+async function handleFollowBack(targetUsername, btn) {
+  if (!window.session) return;
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  try {
+    // Need the target user_id — fetch from profiles by username
+    const { data: targetProfile, error: pErr } = await window.supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('username', targetUsername)
+      .maybeSingle();
+
+    if (pErr || !targetProfile?.id) {
+      window.showToast('Could not find user', 'error');
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+      return;
+    }
+
+    const { data, error } = await window.supabaseClient.rpc('request_follow', {
+      p_target_user_id: targetProfile.id
+    });
+
+    if (error || !data || !data.ok) {
+      window.showToast('Could not follow: ' + (data?.reason || error?.message || 'unknown'), 'error');
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+      return;
+    }
+
+    // Update local cache + button
+    myFollowingMap[targetUsername] = data.status;
+
+    if (data.status === 'active') {
+      btn.classList.add('following');
+      btn.innerHTML = '<i class="fas fa-check"></i> Following';
+      window.showToast('Followed back ✅', 'success');
+    } else if (data.status === 'pending') {
+      btn.classList.add('pending');
+      btn.innerHTML = '<i class="fas fa-clock"></i> Requested';
+      window.showToast('Follow request sent', 'success');
+    }
+  } catch (e) {
+    console.error('handleFollowBack:', e);
+    window.showToast('Something went wrong', 'error');
+    btn.innerHTML = originalHTML;
+    btn.disabled = false;
   }
 }
 
@@ -308,7 +466,6 @@ window.markAllRead = async function() {
     const total = document.querySelectorAll('.notif-item').length;
     document.getElementById('notif-subtitle').textContent = total + ' total · 0 unread';
     
-    // Update badges
     const badge = document.getElementById('notif-badge');
     const navBadge = document.getElementById('notif-nav-badge');
     const downbarMoreBadge = document.getElementById('downbar-more-notif-badge');
@@ -329,15 +486,15 @@ async function pageInit() {
   definePageSteps();
   nextLoadingStep(); // theme
   
-  // auth is handled by initPage
-  // profile is handled by initPage
-  
-  nextLoadingStep(); // pfp (already loaded in initPage)
-  
+  nextLoadingStep(); // pfp
+
+  // Load follow map BEFORE notifications so buttons render correctly
+  await loadMyFollowingMap();
+
   nextLoadingStep(); // notifications
   await loadNotifs();
 
-  // ── ADS: mount notifications banner ──
+  // ── ADS: notifications banner ──
   try {
     if (window.Ads && typeof window.Ads.mountNotificationsBanner === 'function') {
       const slot = document.getElementById('notifications-ad-slot');
@@ -347,8 +504,7 @@ async function pageInit() {
     console.log('[Ads notifications]', e);
   }
 
-  nextLoadingStep(); // online (handled by initPage)
-  
+  nextLoadingStep(); // online
   nextLoadingStep(); // ready
 }
 

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Hub — Wallet</title>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="shared.js"></script>
+<link rel="stylesheet" href="/css/pages/wallet.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed:', err));
+  });
+}
+</script>
+
+</head>
+<body data-page-title="Wallet">
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar"><div class="loading-error-fill"></div></div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  <div class="loading-debug-hint">[ESC] force show</div>
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<div id="app-header"></div>
+<div id="app-sidebar"></div>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Wallet</h1>
+      <p>your CEIN balance &amp; transaction history</p>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="window.refreshWallet()">
+      <span class="spin"><i class="fas fa-sync-alt"></i></span> Refresh
+    </button>
+  </div>
+
+  <!-- ═══ BALANCE CARD ═══ -->
+  <div class="wallet-balance-card">
+    <div class="wallet-balance-glow"></div>
+    <div class="wallet-balance-content">
+      <div class="wallet-balance-label">
+        <i class="fas fa-coins"></i> CEIN Balance
+      </div>
+      <div class="wallet-balance-amount">
+        <span id="wallet-balance">—</span>
+        <span class="wallet-balance-unit">CEIN</span>
+      </div>
+      <div class="wallet-balance-sub">
+        <span id="wallet-total-earned">—</span> earned lifetime
+      </div>
+    </div>
+    <div class="wallet-balance-icon">
+      <i class="fas fa-wallet"></i>
+    </div>
+  </div>
+
+  <!-- ═══ EARN HINTS ═══ -->
+  <div class="wallet-earn-section">
+    <div class="wallet-earn-title">
+      <i class="fas fa-gift"></i> How to earn more CEIN
+    </div>
+    <div class="wallet-earn-grid">
+      <div class="wallet-earn-card">
+        <div class="wallet-earn-icon"><i class="fas fa-calendar-check"></i></div>
+        <div class="wallet-earn-info">
+          <div class="wallet-earn-amount">+10</div>
+          <div class="wallet-earn-label">Daily login</div>
+          <div class="wallet-earn-desc">Once per day, every day</div>
+        </div>
+      </div>
+      <div class="wallet-earn-card">
+        <div class="wallet-earn-icon"><i class="fas fa-pen"></i></div>
+        <div class="wallet-earn-info">
+          <div class="wallet-earn-amount">+5</div>
+          <div class="wallet-earn-label">Per post</div>
+          <div class="wallet-earn-desc">Max 3 posts/day</div>
+        </div>
+      </div>
+      <div class="wallet-earn-card">
+        <div class="wallet-earn-icon"><i class="fas fa-comment"></i></div>
+        <div class="wallet-earn-info">
+          <div class="wallet-earn-amount">+2</div>
+          <div class="wallet-earn-label">Per comment</div>
+          <div class="wallet-earn-desc">Max 10 comments/day</div>
+        </div>
+      </div>
+      <div class="wallet-earn-card">
+        <div class="wallet-earn-icon"><i class="fas fa-fire"></i></div>
+        <div class="wallet-earn-info">
+          <div class="wallet-earn-amount">+50/+100/+200</div>
+          <div class="wallet-earn-label">Streak bonuses</div>
+          <div class="wallet-earn-desc">At 7, 30, 100-day streaks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TRANSACTIONS ═══ -->
+  <div class="wallet-tx-section">
+    <div class="wallet-tx-header">
+      <div class="wallet-tx-title">
+        <i class="fas fa-receipt"></i> Transaction History
+      </div>
+      <div class="wallet-tx-count" id="wallet-tx-count">Loading...</div>
+    </div>
+    <div class="wallet-tx-list" id="wallet-tx-list">
+      <div class="wallet-tx-skel"></div>
+      <div class="wallet-tx-skel"></div>
+      <div class="wallet-tx-skel"></div>
+    </div>
+  </div>
+</main>
+
+<div id="app-downbar"></div>
+<div id="app-downbar-more"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── WALLET PAGE LOGIC ──
+// ═══════════════════════════════════════════════════════════
+
+const REASON_META = {
+  daily_login:    { icon: 'fa-calendar-check', label: 'Daily login',   color: 'var(--neon)' },
+  post:           { icon: 'fa-pen',            label: 'Post',           color: 'var(--neon)' },
+  comment:        { icon: 'fa-comment',        label: 'Comment',        color: 'var(--neon)' },
+  streak_bonus:   { icon: 'fa-fire',           label: 'Streak bonus',   color: '#f5c400' },
+  // Reserved for V3.9 — will show if they ever appear in history
+  spend:          { icon: 'fa-shopping-bag',   label: 'Purchase',       color: 'var(--danger)' },
+  transfer_in:    { icon: 'fa-arrow-down',     label: 'Transfer in',    color: '#22c55e' },
+  transfer_out:   { icon: 'fa-arrow-up',       label: 'Transfer out',   color: 'var(--danger)' }
+};
+
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'wallet', label: 'Loading wallet...', technical: 'Fetching credits & history' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'Wallet ready' }
+  ]);
+}
+
+// ── LOAD BALANCE ──
+async function loadBalance() {
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_my_credits');
+    if (error || !data || !data.ok) {
+      console.error('get_my_credits:', error || data);
+      return;
+    }
+
+    const balEl = document.getElementById('wallet-balance');
+    const earnedEl = document.getElementById('wallet-total-earned');
+    if (balEl) balEl.textContent = data.balance.toLocaleString();
+    if (earnedEl) earnedEl.textContent = data.total_earned.toLocaleString();
+  } catch (e) {
+    console.error('loadBalance exception:', e);
+  }
+}
+
+// ── LOAD TRANSACTIONS ──
+async function loadTransactions() {
+  const list = document.getElementById('wallet-tx-list');
+  const countEl = document.getElementById('wallet-tx-count');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_my_credit_transactions', { p_limit: 100 });
+
+    if (error) {
+      console.error('get_my_credit_transactions:', error);
+      list.innerHTML = '<div class="wallet-tx-empty"><i class="fas fa-triangle-exclamation"></i><div>Could not load transactions</div></div>';
+      if (countEl) countEl.textContent = '';
+      return;
+    }
+
+    const txs = data || [];
+
+    if (countEl) {
+      countEl.textContent = txs.length === 0
+        ? 'no transactions yet'
+        : `${txs.length} transaction${txs.length === 1 ? '' : 's'}`;
+    }
+
+    if (txs.length === 0) {
+      list.innerHTML = `
+        <div class="wallet-tx-empty">
+          <div class="wallet-tx-empty-icon"><i class="fas fa-inbox"></i></div>
+          <div class="wallet-tx-empty-title">No transactions yet</div>
+          <div class="wallet-tx-empty-desc">Log in daily to earn CEIN. Your history will appear here.</div>
+          <a href="/" class="wallet-tx-empty-btn">
+            <i class="fas fa-arrow-left"></i> Back to Feed
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    txs.forEach((tx, i) => {
+      frag.appendChild(buildTxRow(tx, i));
+    });
+    list.appendChild(frag);
+  } catch (e) {
+    console.error('loadTransactions exception:', e);
+    list.innerHTML = '<div class="wallet-tx-empty"><i class="fas fa-triangle-exclamation"></i><div>Something went wrong</div></div>';
+    if (countEl) countEl.textContent = '';
+  }
+}
+
+function buildTxRow(tx, index) {
+  const meta = REASON_META[tx.reason] || {
+    icon: 'fa-circle',
+    label: tx.reason || 'Unknown',
+    color: 'var(--muted)'
+  };
+
+  const amount = Number(tx.amount) || 0;
+  const isPositive = amount >= 0;
+
+  const row = document.createElement('div');
+  row.className = 'wallet-tx-row';
+  row.style.animationDelay = Math.min(index * 0.03, 0.5) + 's';
+
+  row.innerHTML = `
+    <div class="wallet-tx-icon" style="color:${meta.color};background:${meta.color}15;border-color:${meta.color}30;">
+      <i class="fas ${meta.icon}"></i>
+    </div>
+    <div class="wallet-tx-info">
+      <div class="wallet-tx-label">${window.escapeHTML(meta.label)}</div>
+      <div class="wallet-tx-time">${formatTxTime(tx.created_at)}</div>
+    </div>
+    <div class="wallet-tx-amount ${isPositive ? 'positive' : 'negative'}">
+      ${isPositive ? '+' : ''}${amount}
+    </div>
+  `;
+
+  return row;
+}
+
+function formatTxTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+
+  const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (sameDay) return `Today at ${timeStr}`;
+  if (isYesterday) return `Yesterday at ${timeStr}`;
+
+  const daysAgo = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+  if (daysAgo < 7) return `${daysAgo}d ago at ${timeStr}`;
+
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
+// ── REFRESH ──
+window.refreshWallet = async function() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+
+  await Promise.all([loadBalance(), loadTransactions()]);
+
+  if (btn) {
+    setTimeout(() => {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }, 400);
+  }
+
+  window.showToast('Wallet refreshed', 'success');
+};
+
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep();  // theme
+  nextLoadingStep();  // auth
+  nextLoadingStep();  // profile
+  nextLoadingStep();  // pfp
+
+  nextLoadingStep();  // wallet
+  await Promise.all([
+    loadBalance(),
+    loadTransactions()
+  ]);
+
+  nextLoadingStep();  // online
+  nextLoadingStep();  // notifs
+  nextLoadingStep();  // ready
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
+} else {
+  initPage(pageInit);
+}
+</script>
+</body>
+</html>

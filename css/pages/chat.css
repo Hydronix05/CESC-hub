@@ -2285,3 +2285,328 @@
     font-size: 0.82rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   CHAT — Clickable links + link preview cards
+   ═══════════════════════════════════════════════════════════ */
+
+/* Links inside message text */
+.msg-text a {
+  color: var(--neon);
+  text-decoration: underline;
+  text-decoration-color: rgba(74,158,255,0.4);
+  text-underline-offset: 2px;
+  word-break: break-all;
+  transition: color 0.15s;
+}
+.msg-text a:hover {
+  color: var(--neon2);
+  text-decoration-color: var(--neon2);
+}
+
+/* Preview card wrapper (adds a little margin below the message bubble) */
+.chat-link-preview-wrap {
+  margin-top: 6px;
+  max-width: 100%;
+}
+
+/* The preview card itself */
+.chat-link-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  max-width: 100%;
+  overflow: hidden;
+  cursor: pointer;
+}
+.chat-link-preview:hover {
+  border-color: rgba(74,158,255,0.4);
+  background: rgba(74,158,255,0.05);
+  transform: translateY(-1px);
+}
+
+/* Favicon */
+.chat-link-preview-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.chat-link-preview-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Text body */
+.chat-link-preview-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chat-link-preview-domain {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  text-transform: lowercase;
+  letter-spacing: 0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-link-preview-url {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Arrow icon on the right */
+.chat-link-preview-arrow {
+  color: var(--muted);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s;
+}
+.chat-link-preview:hover .chat-link-preview-arrow {
+  color: var(--neon);
+  transform: translate(1px, -1px);
+}
+
+/* Meta layout: card sits under the bubble, aligned with message text */
+.meta-layout .msg-group.own .chat-link-preview-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+.meta-layout .msg-group.own .chat-link-preview {
+  max-width: 82%;
+}
+
+/* Discord layout: card indents to match text */
+.discord-layout .chat-link-preview-wrap {
+  margin-left: 52px;
+}
+.discord-layout .msg-group.first-in-group .chat-link-preview-wrap {
+  margin-left: 52px;
+}
+
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  .chat-link-preview {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .chat-link-preview-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .chat-link-preview-icon img {
+    width: 18px;
+    height: 18px;
+  }
+  .chat-link-preview-domain { font-size: 0.68rem; }
+  .chat-link-preview-url { font-size: 0.6rem; }
+  .discord-layout .chat-link-preview-wrap { margin-left: 44px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   V3.8 PATCH 9 — Note view polish + reply composer
+   ═══════════════════════════════════════════════════════════ */
+
+/* Polished note content — bigger, softer */
+.note-modal-view .note-view-content {
+  font-size: 1.15rem;
+  color: var(--text-bright);
+  background: linear-gradient(135deg, rgba(74,158,255,0.08), rgba(108,92,231,0.05));
+  border: 1px solid rgba(74,158,255,0.2);
+  border-radius: 18px;
+  padding: 20px 22px;
+  max-width: 100%;
+  word-wrap: break-word;
+  margin-top: 6px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  text-align: left;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+.note-modal-view .note-view-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--neon), transparent);
+  opacity: 0.5;
+}
+
+/* Note view name font bump */
+.note-modal-view .note-view-name {
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+
+/* Reply composer — slides up inside view */
+.note-reply-composer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              margin-top 0.3s,
+              padding-top 0.3s;
+  margin-top: 0;
+  padding-top: 0;
+}
+.note-reply-composer.open {
+  max-height: 300px;
+  opacity: 1;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.note-reply-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.note-reply-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--neon);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.note-reply-title i {
+  font-size: 0.72rem;
+}
+.note-reply-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+.note-reply-close:hover {
+  background: var(--surface);
+  color: var(--text-bright);
+}
+
+.note-reply-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--text-bright);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  resize: none;
+  min-height: 70px;
+  line-height: 1.5;
+  transition: border-color 0.2s, background 0.2s;
+}
+.note-reply-input:focus {
+  border-color: rgba(74,158,255,0.4);
+  background: rgba(255,255,255,0.06);
+}
+.note-reply-input::placeholder {
+  color: var(--muted);
+}
+
+.note-reply-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.note-reply-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.note-reply-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.note-reply-send:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(74,158,255,0.4);
+}
+.note-reply-send:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.note-reply-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.note-reply-send i {
+  font-size: 0.78rem;
+}
+
+/* Mobile: reply composer */
+@media (max-width: 480px) {
+  .note-modal-view .note-view-content {
+    font-size: 1rem;
+    padding: 16px 18px;
+    border-radius: 14px;
+  }
+  .note-reply-input {
+    min-height: 60px;
+    font-size: 0.85rem;
+  }
+  .note-reply-send {
+    padding: 9px 14px;
+    font-size: 0.8rem;
+  }
+}

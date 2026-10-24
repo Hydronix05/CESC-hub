@@ -1365,3 +1365,249 @@ body.onb-finishing { overflow: hidden; }
     font-size: 0.88rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   V3.8 — ONBOARDING FOLLOW STEP (screen 4)
+   ═══════════════════════════════════════════════════════════ */
+
+.onb-follow-counter-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.onb-follow-counter {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.onb-follow-counter.met {
+  animation: onb-counter-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.onb-follow-counter.recommended {
+  animation: onb-counter-burst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes onb-counter-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes onb-counter-burst {
+  0% { transform: scale(1) rotate(0); }
+  30% { transform: scale(1.25) rotate(-5deg); }
+  60% { transform: scale(1.15) rotate(5deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.onb-follow-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--neon);
+  line-height: 1;
+  transition: color 0.3s;
+}
+.onb-follow-counter.met .onb-follow-count {
+  color: #22c55e;
+}
+.onb-follow-counter.recommended .onb-follow-count {
+  color: var(--neon);
+  text-shadow: 0 0 20px var(--neon-glow);
+}
+
+.onb-follow-count-total {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.1rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.onb-follow-hint {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+.onb-follow-hint strong {
+  color: var(--text-bright);
+  font-weight: 800;
+}
+
+.onb-follow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .onb-follow-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+.onb-follow-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: onb-follow-card-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  position: relative;
+  overflow: hidden;
+}
+@keyframes onb-follow-card-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.onb-follow-card:hover {
+  border-color: rgba(74, 158, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.onb-follow-card.followed {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.onb-follow-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.onb-follow-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  border-radius: 50%;
+}
+.onb-follow-avatar img.loaded { display: block; }
+.onb-follow-avatar span { position: relative; z-index: 1; }
+
+.onb-follow-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.onb-follow-username {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: -4px;
+}
+
+.onb-follow-btn {
+  margin-top: 4px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: none;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+.onb-follow-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(74, 158, 255, 0.4);
+}
+.onb-follow-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.onb-follow-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.onb-follow-btn.followed {
+  background: var(--surface);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.onb-follow-btn i { font-size: 0.72rem; }
+
+.onb-follow-loading,
+.onb-follow-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.onb-follow-loadmore-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.onb-follow-loadmore {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.onb-follow-loadmore:hover {
+  border-color: rgba(74, 158, 255, 0.4);
+  color: var(--neon);
+  transform: translateY(-1px);
+}
+.onb-follow-loadmore i { font-size: 0.78rem; }

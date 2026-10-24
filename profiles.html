@@ -37,45 +37,36 @@ if ('serviceWorker' in navigator) {
 
 </head>
 <body data-page-title="Profiles">
-  <!-- ── LOADING SCREEN ── -->
 <div id="loading-screen">
   <div class="bg-canvas">
     <div class="orb orb1"></div>
     <div class="orb orb2"></div>
     <div class="orb orb3"></div>
   </div>
-  
   <div class="loading-dots">
     <div class="loading-dot"></div>
     <div class="loading-dot"></div>
     <div class="loading-dot"></div>
   </div>
-  
   <div class="loading-progress-wrap">
     <div class="loading-progress-bar">
       <div class="loading-progress-fill" id="loading-progress-fill"></div>
     </div>
     <div class="loading-progress-text" id="loading-progress-text">0%</div>
   </div>
-  
   <div class="loading-status">
     <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
     <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
   </div>
-  
   <div class="loading-error" id="loading-error">
     <div class="loading-error-friendly" id="loading-error-friendly"></div>
     <div class="loading-error-technical" id="loading-error-technical"></div>
-    <div class="loading-error-bar">
-      <div class="loading-error-fill"></div>
-    </div>
+    <div class="loading-error-bar"><div class="loading-error-fill"></div></div>
     <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
       <i class="fas fa-redo"></i> Retry
     </button>
   </div>
-  
   <div class="loading-debug-hint">[ESC] force show</div>
-
   <div class="loading-ad-slot" id="loading-ad-slot"></div>
 </div>
 
@@ -86,76 +77,190 @@ if ('serviceWorker' in navigator) {
 <div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
 
 <div id="app-header"></div>
-
 <div id="app-sidebar"></div>
 
-
 <main class="main">
-  <div class="page-header">
-    <div>
-      <h1>Profiles</h1>
-      <p id="profile-count">Loading members...</p>
-    </div>
-    <button class="profiles-view-toggle" id="view-toggle" onclick="window.toggleViewMode()" title="Switch view">
-      <i class="fas fa-list" id="view-toggle-icon"></i>
-      <span id="view-toggle-label">Rows</span>
-    </button>
-  </div>
 
-  <div class="profiles-toolbar">
-    <div class="search-bar">
-      <i class="fas fa-search search-icon"></i>
-      <input id="search-input" placeholder="Search by username or display name..." oninput="window.debounceSearch()" />
-      <button class="search-clear" id="search-clear" onclick="window.clearSearch()" title="Clear">
-        <i class="fas fa-times"></i>
+  <!-- ═══════════════════════════════════════════════════
+       VIEW: BROWSE (default) — grid / rows of all profiles
+       ═══════════════════════════════════════════════════ -->
+  <div id="view-browse">
+    <div class="page-header">
+      <div>
+        <h1>Profiles</h1>
+        <p id="profile-count">Loading members...</p>
+      </div>
+      <button class="profiles-view-toggle" id="view-toggle" onclick="window.toggleViewMode()" title="Switch view">
+        <i class="fas fa-list" id="view-toggle-icon"></i>
+        <span id="view-toggle-label">Rows</span>
       </button>
     </div>
-  </div>
 
-  <!-- CARDS VIEW -->
-  <div class="profile-grid" id="profile-grid"></div>
-
-  <!-- ROWS VIEW -->
-  <div class="profile-rows-wrap" id="profile-rows" style="display:none;">
-    <div class="profile-rows-head">
-      <div class="prh-col prh-user">Member</div>
-      <div class="prh-col prh-bio">Bio</div>
-      <div class="prh-col prh-roles">Roles</div>
-      <div class="prh-col prh-status">Status</div>
+    <div class="profiles-toolbar">
+      <div class="search-bar">
+        <i class="fas fa-search search-icon"></i>
+        <input id="search-input" placeholder="Search by username or display name..." oninput="window.debounceSearch()" />
+        <button class="search-clear" id="search-clear" onclick="window.clearSearch()" title="Clear">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
     </div>
-    <div class="profile-rows-list" id="profile-rows-list"></div>
+
+    <!-- CARDS VIEW -->
+    <div class="profile-grid" id="profile-grid"></div>
+
+    <!-- ROWS VIEW -->
+    <div class="profile-rows-wrap" id="profile-rows" style="display:none;">
+      <div class="profile-rows-head">
+        <div class="prh-col prh-user">Member</div>
+        <div class="prh-col prh-bio">Bio</div>
+        <div class="prh-col prh-roles">Roles</div>
+        <div class="prh-col prh-status">Status</div>
+      </div>
+      <div class="profile-rows-list" id="profile-rows-list"></div>
+    </div>
   </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       VIEW: PROFILE PAGE — Instagram-style
+       ═══════════════════════════════════════════════════ -->
+  <div id="view-profile" style="display:none;">
+    <button class="profile-back-btn" onclick="window.backToBrowse()">
+      <i class="fas fa-arrow-left"></i> Back
+    </button>
+
+    <div id="profile-loading" class="profile-loading">
+      <div class="loading-spin-ring"></div>
+      <div>Loading profile...</div>
+    </div>
+
+    <div id="profile-content" style="display:none;">
+      <!-- Banner -->
+      <div class="profile-banner" id="profile-banner"></div>
+
+      <!-- Header row: avatar + info -->
+      <div class="profile-header">
+        <div class="profile-header-avatar-wrap">
+          <div class="profile-header-avatar" id="profile-header-avatar">
+            <span id="profile-header-initial">?</span>
+          </div>
+        </div>
+
+        <div class="profile-header-info">
+          <div class="profile-header-top">
+            <h1 class="profile-header-name">
+              <span id="profile-header-name">—</span>
+              <i class="fas fa-circle-check profile-verified-icon" id="profile-verified-icon" style="display:none;" title="Verified"></i>
+            </h1>
+            <div class="profile-header-username" id="profile-header-username">@—</div>
+          </div>
+
+          <div class="profile-header-actions" id="profile-header-actions">
+            <!-- Follow / Following / Edit Profile buttons rendered by JS -->
+          </div>
+
+          <div class="profile-header-stats">
+            <div class="profile-stat">
+              <span class="profile-stat-value" id="profile-stat-posts">0</span>
+              <span class="profile-stat-label">posts</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-value" id="profile-stat-followers">0</span>
+              <span class="profile-stat-label">followers</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-value" id="profile-stat-following">0</span>
+              <span class="profile-stat-label">following</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bio block -->
+      <div class="profile-bio-block">
+        <div class="profile-bio" id="profile-bio" style="display:none;"></div>
+        <div class="profile-meta-row">
+          <span class="profile-meta-item" id="profile-location" style="display:none;">
+            <i class="fas fa-location-dot"></i> <span></span>
+          </span>
+          <span class="profile-meta-item" id="profile-joined" style="display:none;">
+            <i class="fas fa-calendar"></i> <span></span>
+          </span>
+          <span class="profile-meta-item profile-meta-cein" id="profile-cein" style="display:none;">
+            <i class="fas fa-coins"></i> <span></span>
+          </span>
+          <span class="profile-meta-item profile-meta-streak" id="profile-streak" style="display:none;">
+            <i class="fas fa-fire"></i> <span></span>
+          </span>
+        </div>
+        <div class="profile-links-row" id="profile-links-row" style="display:none;"></div>
+      </div>
+
+      <!-- Pinned post (if any) -->
+      <div class="profile-pinned-wrap" id="profile-pinned-wrap" style="display:none;">
+        <div class="profile-section-label">
+          <i class="fas fa-thumbtack"></i> Pinned
+        </div>
+        <div id="profile-pinned-content"></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="profile-tabs">
+        <button class="profile-tab active" data-tab="posts" onclick="window.switchProfileTab('posts')">
+          <i class="fas fa-table-cells"></i> Posts
+        </button>
+        <button class="profile-tab" data-tab="about" onclick="window.switchProfileTab('about')">
+          <i class="fas fa-circle-info"></i> About
+        </button>
+      </div>
+
+      <!-- Posts grid -->
+      <div class="profile-posts-view" id="profile-posts-view">
+        <div class="profile-posts-grid" id="profile-posts-grid"></div>
+        <div class="profile-posts-empty" id="profile-posts-empty" style="display:none;">
+          <i class="fas fa-camera"></i>
+          <div>No posts yet</div>
+        </div>
+        <div class="profile-private-notice" id="profile-private-notice" style="display:none;">
+          <i class="fas fa-lock"></i>
+          <div class="profile-private-title">This account is private</div>
+          <div class="profile-private-desc">Follow this account to see their posts.</div>
+        </div>
+      </div>
+
+      <!-- About view -->
+      <div class="profile-about-view" id="profile-about-view" style="display:none;">
+        <div class="profile-about-list" id="profile-about-list"></div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
-<!-- ── MODAL ── -->
-<div class="modal-overlay" id="modal-overlay" onclick="window.closeModal(event)">
-  <div class="modal-card">
-    <button class="modal-close" onclick="window.closeModal()"><i class="fas fa-times"></i></button>
-    <div class="modal-avatar" id="modal-avatar"><span>?</span></div>
-    <div class="modal-name" id="modal-name">—</div>
-    <div class="modal-username" id="modal-username">@username</div>
-    <div class="modal-role" id="modal-role"></div>
-    <div class="modal-bio" id="modal-bio">No bio yet</div>
-    <div class="modal-joined" id="modal-joined"></div>
-    <div class="modal-last-seen" id="modal-last-seen"></div>
-    <button class="modal-report-btn" id="modal-report-btn" onclick="reportProfileFromModal()" style="display:none;">
-      <i class="fas fa-flag"></i> Report this profile
+<!-- ═══════════════════════════════════════════════════════════
+     POST MODAL — opens when a thumbnail is clicked
+     ═══════════════════════════════════════════════════════════ -->
+<div class="post-detail-overlay" id="post-detail-overlay" onclick="window.closePostDetail(event)">
+  <div class="post-detail-card" onclick="event.stopPropagation()">
+    <button class="post-detail-close" onclick="window.closePostDetail()">
+      <i class="fas fa-times"></i>
     </button>
+    <div id="post-detail-body"></div>
   </div>
 </div>
 
 <div id="app-downbar"></div>
-
 <div id="app-downbar-more"></div>
-
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// ── PROFILES PAGE ──
+// ── PROFILES PAGE LOGIC ──
+// Two views in one page:
+//   - Browse view (/profiles) — grid of all members
+//   - Profile view (/profiles?u=username) — Instagram-style
 // ═══════════════════════════════════════════════════════════
 
 const VIEW_KEY = 'cesc_profiles_view';
-const TARGET_CARDS = 20;
 const DISPLAYABLE_ROLES = ['teacher', 'og', 'vip'];
 const ELEVATED_ROLES = ['owner', 'admin', 'moderator', 'teacher', 'vip', 'advertiser'];
 const ROLE_COLORS = {
@@ -165,11 +270,57 @@ const ROLE_COLORS = {
   vip: '#f472b6'
 };
 
+// ═══════════════════════════════════════════════════════════
+// ── RICH TEXT PARSER (mirrors index.html) ──
+// ═══════════════════════════════════════════════════════════
+function sanitizeUrl(url) {
+  if (!url) return null;
+  let u = String(url).trim();
+  if (/^(javascript|data|vbscript):/i.test(u)) return null;
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try {
+    const parsed = new URL(u);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.href;
+  } catch { return null; }
+}
+
+function parseContent(text) {
+  if (!text) return '';
+  let s = window.escapeHTML(text);
+
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, url) => {
+    const safe = sanitizeUrl(url);
+    if (!safe) return match;
+    return `<a href="${window.escapeHTML(safe)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
+
+  s = s.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+  s = s.replace(/__([^_]+)__/g, '<u>$1</u>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  s = s.replace(/###([^#\n]+)###/g, '<span class="sz-huge">$1</span>');
+  s = s.replace(/##([^#\n]+)##/g, '<span class="sz-large">$1</span>');
+  s = s.replace(/#([^#\n]+)#/g, '<span class="sz-small">$1</span>');
+  s = s.replace(/\n/g, '<br>');
+
+  return s;
+}
+
 let allProfiles = [];
 let viewMode = 'cards';
 let searchTimeout = null;
 let searchQuery = '';
 let currentAd = null;
+
+// Profile view state
+let profileUserId = null;
+let profileData = null;
+let profileIsFollowing = false;
+let profileIsPending = false;
+let profileIsFriends = false;
+let profileIsPrivate = false;
+let profileCanViewPrivate = false;
 
 // ── LOADING STEPS ──
 function definePageSteps() {
@@ -181,7 +332,7 @@ function definePageSteps() {
     { id: 'members', label: 'Loading members...', technical: 'Fetching all profiles' },
     { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
     { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
-    { id: 'ready', label: 'Done! ✨', technical: 'All members loaded' }
+    { id: 'ready', label: 'Done! ✨', technical: 'Profiles ready' }
   ]);
 }
 
@@ -221,7 +372,6 @@ function roleBadgeHTML(role) {
   </span>`;
 }
 
-// ── SHUFFLE ──
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -231,7 +381,56 @@ function shuffle(arr) {
   return a;
 }
 
-// ── VIEW MODE ──
+// ═══════════════════════════════════════════════════════════
+// ── ROUTING: ?u=username in URL ──
+// ═══════════════════════════════════════════════════════════
+function getProfileFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('u');
+}
+
+function pushProfileUrl(username) {
+  const newPath = username ? `/profiles?u=${encodeURIComponent(username)}` : '/profiles';
+  const current = window.location.pathname + window.location.search;
+  if (current !== newPath) {
+    history.pushState({ u: username }, '', newPath);
+  }
+}
+
+window.addEventListener('popstate', () => {
+  const u = getProfileFromUrl();
+  if (u) {
+    showProfileView(u);
+  } else {
+    showBrowseView();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// ── VIEW SWITCHING ──
+// ═══════════════════════════════════════════════════════════
+function showBrowseView() {
+  document.getElementById('view-browse').style.display = '';
+  document.getElementById('view-profile').style.display = 'none';
+  document.body.dataset.pageTitle = 'Profiles';
+  document.title = 'CESC Hub — Profiles';
+}
+
+function showProfileView(username) {
+  document.getElementById('view-browse').style.display = 'none';
+  document.getElementById('view-profile').style.display = '';
+  loadProfilePage(username);
+}
+
+window.backToBrowse = function() {
+  pushProfileUrl(null);
+  showBrowseView();
+  renderProfiles();
+};
+
+// ═══════════════════════════════════════════════════════════
+// ── BROWSE VIEW ──
+// ═══════════════════════════════════════════════════════════
 function loadViewMode() {
   const saved = localStorage.getItem(VIEW_KEY);
   viewMode = saved === 'rows' ? 'rows' : 'cards';
@@ -243,16 +442,17 @@ function applyViewMode() {
   const rows = document.getElementById('profile-rows');
   const label = document.getElementById('view-toggle-label');
   const icon = document.getElementById('view-toggle-icon');
+  if (!grid || !rows) return;
   if (viewMode === 'cards') {
     grid.style.display = '';
     rows.style.display = 'none';
-    label.textContent = 'Rows';
-    icon.className = 'fas fa-list';
+    if (label) label.textContent = 'Rows';
+    if (icon) icon.className = 'fas fa-list';
   } else {
     grid.style.display = 'none';
     rows.style.display = 'block';
-    label.textContent = 'Cards';
-    icon.className = 'fas fa-table-cells-large';
+    if (label) label.textContent = 'Cards';
+    if (icon) icon.className = 'fas fa-table-cells-large';
   }
 }
 
@@ -263,11 +463,10 @@ window.toggleViewMode = function() {
   renderProfiles();
 };
 
-// ── SEARCH ──
 window.debounceSearch = function() {
   const input = document.getElementById('search-input');
   const clearBtn = document.getElementById('search-clear');
-  clearBtn.style.display = input.value ? 'flex' : 'none';
+  if (clearBtn) clearBtn.style.display = input.value ? 'flex' : 'none';
 
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -278,12 +477,12 @@ window.debounceSearch = function() {
 
 window.clearSearch = function() {
   document.getElementById('search-input').value = '';
-  document.getElementById('search-clear').style.display = 'none';
+  const clearBtn = document.getElementById('search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
   searchQuery = '';
   renderProfiles();
 };
 
-// ── GET FILTERED LIST ──
 function getFilteredList() {
   if (!searchQuery) return allProfiles;
   return allProfiles.filter(p => {
@@ -293,7 +492,6 @@ function getFilteredList() {
   });
 }
 
-// ── COLUMN COUNT ──
 function getColumnCount() {
   const grid = document.getElementById('profile-grid');
   if (!grid) return 4;
@@ -302,11 +500,18 @@ function getColumnCount() {
   return Math.max(1, cols);
 }
 
-// ═══════════════════════════════════════════════════════════
-// ── RENDER: CARDS VIEW ──
-// ═══════════════════════════════════════════════════════════
+function renderProfiles() {
+  const list = getFilteredList();
+  if (viewMode === 'cards') {
+    renderCards(list);
+  } else {
+    renderRows(list);
+  }
+}
+
 function renderCards(list) {
   const grid = document.getElementById('profile-grid');
+  if (!grid) return;
   grid.innerHTML = '';
 
   if (list.length === 0) {
@@ -320,13 +525,7 @@ function renderCards(list) {
   }
 
   const cols = getColumnCount();
-
-  // Target ~20 cards, fill grid rectangle exactly.
-  // cols=5 → 4 rows × 5 = 20
-  // cols=4 → 5 rows × 4 = 20
-  // cols=3 → 7 rows × 3 = 21
-  // cols=2 → 10 rows × 2 = 20
-  // cols=1 → 20 rows × 1 = 20
+  const TARGET_CARDS = 20;
   const targetRows = cols === 3 ? 7 : Math.round(TARGET_CARDS / cols);
   const targetSlots = cols * targetRows;
 
@@ -355,7 +554,6 @@ function renderCards(list) {
     }
   });
 
-  // Invisible spacers to fill last row
   const spacersNeeded = targetSlots - children.length;
   for (let i = 0; i < spacersNeeded; i++) {
     const spacer = document.createElement('div');
@@ -367,25 +565,34 @@ function renderCards(list) {
   const countEl = document.getElementById('profile-count');
   const shown = visible.length;
   const total = list.length;
-  if (searchQuery) {
-    countEl.textContent = `${shown} of ${total} match "${searchQuery}"`;
-  } else {
-    countEl.textContent = `${shown} member${shown === 1 ? '' : 's'} shown`;
+  if (countEl) {
+    if (searchQuery) {
+      countEl.textContent = `${shown} of ${total} match "${searchQuery}"`;
+    } else {
+      countEl.textContent = `${shown} member${shown === 1 ? '' : 's'} shown`;
+    }
   }
 }
 
-// ── PROFILE CARD ──
 function buildProfileCard(p) {
   const card = document.createElement('div');
   card.className = 'profile-card';
-  card.onclick = () => window.openModal(p);
+  card.onclick = () => {
+    pushProfileUrl(p.username);
+    showProfileView(p.username);
+  };
 
   const displayName = p.display_name || p.username;
   const initial = (p.username?.[0] || '?').toUpperCase();
   const online = isOnline(p.last_seen);
   const roles = getDisplayableRoles(p);
-
   const pfpUrl = p.pfp_url || (window.pfpCache && window.pfpCache[p.username]) || null;
+  const verifiedHTML = p.verified
+    ? '<i class="fas fa-circle-check profile-card-verified" title="Verified"></i>'
+    : '';
+  const privateHTML = p.is_private
+    ? '<i class="fas fa-lock profile-card-lock" title="Private account"></i>'
+    : '';
 
   card.innerHTML = `
     <div class="profile-avatar-wrap">
@@ -395,7 +602,7 @@ function buildProfileCard(p) {
       </div>
       <span class="profile-status-dot ${online ? 'online' : 'offline'}"></span>
     </div>
-    <div class="profile-name">${window.escapeHTML(displayName)}</div>
+    <div class="profile-name">${window.escapeHTML(displayName)} ${verifiedHTML}${privateHTML}</div>
     <div class="profile-username">@${window.escapeHTML(p.username)}</div>
     ${roles.length ? `<div class="profile-roles">${roles.map(roleBadgeHTML).join('')}</div>` : ''}
     <div class="profile-last-seen ${online ? 'is-online' : ''}">
@@ -407,7 +614,6 @@ function buildProfileCard(p) {
   return card;
 }
 
-// ── AD CARD ──
 function buildAdCard(ad) {
   const card = document.createElement('div');
   card.className = 'profile-card profile-ad-card';
@@ -436,11 +642,9 @@ function buildAdCard(ad) {
   return card;
 }
 
-// ═══════════════════════════════════════════════════════════
-// ── RENDER: ROWS VIEW ──
-// ═══════════════════════════════════════════════════════════
 function renderRows(list) {
   const container = document.getElementById('profile-rows-list');
+  if (!container) return;
   container.innerHTML = '';
 
   if (list.length === 0) {
@@ -475,23 +679,30 @@ function renderRows(list) {
   const countEl = document.getElementById('profile-count');
   const shown = visible.length;
   const total = list.length;
-  if (searchQuery) {
-    countEl.textContent = `${shown} of ${total} match "${searchQuery}"`;
-  } else {
-    countEl.textContent = `${shown} member${shown === 1 ? '' : 's'} shown`;
+  if (countEl) {
+    if (searchQuery) {
+      countEl.textContent = `${shown} of ${total} match "${searchQuery}"`;
+    } else {
+      countEl.textContent = `${shown} member${shown === 1 ? '' : 's'} shown`;
+    }
   }
 }
 
 function buildProfileRow(p) {
   const row = document.createElement('div');
   row.className = 'profile-row';
-  row.onclick = () => window.openModal(p);
+  row.onclick = () => {
+    pushProfileUrl(p.username);
+    showProfileView(p.username);
+  };
 
   const displayName = p.display_name || p.username;
   const initial = (p.username?.[0] || '?').toUpperCase();
   const online = isOnline(p.last_seen);
   const roles = getDisplayableRoles(p);
   const pfpUrl = p.pfp_url || (window.pfpCache && window.pfpCache[p.username]) || null;
+  const verifiedHTML = p.verified ? '<i class="fas fa-circle-check profile-card-verified"></i>' : '';
+  const privateHTML = p.is_private ? '<i class="fas fa-lock profile-card-lock"></i>' : '';
 
   row.innerHTML = `
     <div class="profile-row-user">
@@ -500,7 +711,7 @@ function buildProfileRow(p) {
         ${pfpUrl ? `<img src="${window.escapeHTML(pfpUrl)}" onload="this.classList.add('loaded');this.previousElementSibling.style.display='none'" onerror="this.remove()"/>` : ''}
       </div>
       <div class="profile-row-info">
-        <div class="profile-row-name">${window.escapeHTML(displayName)}</div>
+        <div class="profile-row-name">${window.escapeHTML(displayName)} ${verifiedHTML}${privateHTML}</div>
         <div class="profile-row-username">@${window.escapeHTML(p.username)}</div>
       </div>
     </div>
@@ -547,110 +758,7 @@ function buildAdRow(ad) {
   return row;
 }
 
-// ── MASTER RENDER ──
-function renderProfiles() {
-  const list = getFilteredList();
-  if (viewMode === 'cards') {
-    renderCards(list);
-  } else {
-    renderRows(list);
-  }
-}
-
-// ── MODAL ──
-window.openModal = function(p) {
-  const overlay = document.getElementById('modal-overlay');
-  overlay.classList.add('show');
-
-  const avatar = document.getElementById('modal-avatar');
-  avatar.innerHTML = '';
-
-  const initial = document.createElement('span');
-  initial.textContent = (p.username?.[0] || '?').toUpperCase();
-  avatar.appendChild(initial);
-
-  const pfpUrl = p.pfp_url || (window.pfpCache && window.pfpCache[p.username]) || null;
-  if (pfpUrl) {
-    const img = document.createElement('img');
-    img.src = pfpUrl;
-    img.onload = () => { img.classList.add('loaded'); initial.style.display = 'none'; };
-    img.onerror = () => img.remove();
-    avatar.appendChild(img);
-  }
-
-  document.getElementById('modal-name').textContent = p.display_name || p.username;
-  document.getElementById('modal-username').textContent = '@' + p.username;
-  document.getElementById('modal-bio').textContent = p.bio || 'No bio yet';
-
-  const roleEl = document.getElementById('modal-role');
-  const roles = getDisplayableRoles(p);
-  if (roles.length) {
-    roleEl.innerHTML = roles.map(roleBadgeHTML).join('');
-    roleEl.style.display = 'flex';
-    roleEl.style.gap = '6px';
-    roleEl.style.flexWrap = 'wrap';
-    roleEl.style.justifyContent = 'center';
-  } else {
-    roleEl.style.display = 'none';
-  }
-
-  const joinedEl = document.getElementById('modal-joined');
-  if (p.created_at) {
-    joinedEl.textContent = `Joined ${new Date(p.created_at).toLocaleDateString([], { month:'long', day:'numeric', year:'numeric' })}`;
-  } else {
-    joinedEl.textContent = '';
-  }
-
-  const lastSeenEl = document.getElementById('modal-last-seen');
-  const online = isOnline(p.last_seen);
-  if (online) {
-    lastSeenEl.textContent = '● Online now';
-    lastSeenEl.style.color = 'var(--neon)';
-  } else {
-    lastSeenEl.textContent = formatLastSeen(p.last_seen);
-    lastSeenEl.style.color = 'var(--muted)';
-  }
-
-  // Show "Report this profile" button only on other users' profiles
-  const reportBtn = document.getElementById('modal-report-btn');
-  const isOwnProfile = window.currentUser && p.username === window.currentUser.username;
-  if (reportBtn) {
-    if (isOwnProfile) {
-      reportBtn.style.display = 'none';
-    } else {
-      reportBtn.style.display = 'flex';
-      reportBtn.dataset.username = p.username;
-      reportBtn.dataset.userId = p.id || '';
-    }
-  }
-};
-
-// ── Report profile from modal ──
-window.reportProfileFromModal = function() {
-  const btn = document.getElementById('modal-report-btn');
-  if (!btn) return;
-  const userId = btn.dataset.userId;
-  const username = btn.dataset.username;
-  if (!userId) {
-    window.showToast('Cannot report this profile — missing ID', 'error');
-    return;
-  }
-  window.openQuickReport('user', userId, username);
-};
-
-window.closeModal = function(e) {
-  if (!e || e.target.id === 'modal-overlay' || e.target.className === 'modal-close' || e.target.closest('.modal-close')) {
-    document.getElementById('modal-overlay').classList.remove('show');
-  }
-};
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('show');
-});
-
-// ── LOAD PROFILES ──
-// Filter rule: only include profiles that are "alive" — has pfp, has logged in,
-// or has an elevated role. Dead accounts (no pfp + never logged in + user role only) are hidden.
+// ── LOAD PROFILES LIST ──
 function isAliveProfile(p) {
   if (p.pfp_url && String(p.pfp_url).trim() !== '') return true;
   if (p.last_seen) return true;
@@ -665,13 +773,15 @@ async function loadProfiles() {
   try {
     const { data, error } = await window.supabaseClient
       .from('profiles')
-      .select('id, username, display_name, bio, pfp_url, role, roles, created_at, last_seen')
+      .select('id, username, display_name, bio, pfp_url, role, roles, created_at, last_seen, is_private, verified, follower_count, following_count')
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error loading profiles:', error);
-      document.getElementById('profile-count').textContent = 'Failed to load';
-      document.getElementById('profile-grid').innerHTML = `
+      const countEl = document.getElementById('profile-count');
+      if (countEl) countEl.textContent = 'Failed to load';
+      const grid = document.getElementById('profile-grid');
+      if (grid) grid.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1;">
           <span class="big"><i class="fas fa-exclamation-triangle"></i></span>
           <div>Failed to load profiles</div>
@@ -680,20 +790,16 @@ async function loadProfiles() {
       return;
     }
 
-    // Filter out dead accounts, then shuffle once per visit
     const alive = (data || []).filter(isAliveProfile);
     allProfiles = shuffle(alive);
 
-    // Pick 1 ad for the profiles placement
     pickAd();
-
     renderProfiles();
   } catch (e) {
     console.error('loadProfiles exception:', e);
   }
 }
 
-// ── PICK AD ──
 function pickAd() {
   currentAd = null;
   if (!window.Ads || typeof window.Ads.getCached !== 'function') return;
@@ -715,35 +821,880 @@ function pickAd() {
   currentAd = pool[pool.length - 1];
 }
 
+// ═══════════════════════════════════════════════════════════
+// ── PROFILE VIEW (Instagram-style) ──
+// ═══════════════════════════════════════════════════════════
+async function loadProfilePage(username) {
+  document.getElementById('profile-loading').style.display = 'flex';
+  document.getElementById('profile-content').style.display = 'none';
+
+  try {
+    // 1. Fetch profile row
+    const { data: p, error } = await window.supabaseClient
+      .from('profiles')
+      .select('id, username, display_name, bio, pfp_url, roles, is_private, verified, banner_url, links, pinned_post_id, location, follower_count, following_count, created_at, last_seen, streak')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (error || !p) {
+      console.error('loadProfilePage:', error);
+      document.getElementById('profile-loading').innerHTML = `
+        <i class="fas fa-user-slash" style="font-size:2rem;color:var(--muted);margin-bottom:12px;"></i>
+        <div>Profile not found</div>
+      `;
+      return;
+    }
+
+    profileData = p;
+    profileUserId = p.id;
+    profileIsPrivate = !!p.is_private;
+
+    const isSelf = window.session && window.session.user.id === p.id;
+
+    // 2. Fetch follow relationship (if not self)
+    profileIsFollowing = false;
+    profileIsPending = false;
+    profileIsFriends = false;
+
+    if (!isSelf && window.session) {
+      const { data: myFollow } = await window.supabaseClient
+        .from('follows')
+        .select('status')
+        .eq('follower_id', window.session.user.id)
+        .eq('following_id', p.id)
+        .maybeSingle();
+
+      if (myFollow) {
+        if (myFollow.status === 'active') profileIsFollowing = true;
+        if (myFollow.status === 'pending') profileIsPending = true;
+      }
+
+      // Check mutual (friends)
+      if (profileIsFollowing) {
+        const { data: theirFollow } = await window.supabaseClient
+          .from('follows')
+          .select('status')
+          .eq('follower_id', p.id)
+          .eq('following_id', window.session.user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        if (theirFollow) profileIsFriends = true;
+      }
+    }
+
+    // 3. Can we view posts?
+    profileCanViewPrivate = !profileIsPrivate || isSelf || profileIsFollowing;
+
+    // 4. Fetch posts (only if we can view)
+    let posts = [];
+    let pinnedPost = null;
+
+    if (profileCanViewPrivate) {
+      const { data: postsData } = await window.supabaseClient
+        .from('posts')
+        .select('id, content, image_url, created_at, likes')
+        .eq('user_id', p.id)
+        .order('created_at', { ascending: false })
+        .limit(60);
+      posts = postsData || [];
+
+      if (p.pinned_post_id) {
+        pinnedPost = posts.find(post => post.id === p.pinned_post_id) || null;
+      }
+    }
+
+    // 5. Fetch CEIN balance (only for self or public — the RPC only returns own)
+    let ceinBalance = null;
+    if (isSelf) {
+      const { data: credits } = await window.supabaseClient.rpc('get_my_credits');
+      if (credits && credits.ok) ceinBalance = credits.balance;
+    }
+
+    // 6. Render everything
+    renderProfilePage(p, { isSelf, posts, pinnedPost, ceinBalance });
+
+    document.getElementById('profile-loading').style.display = 'none';
+    document.getElementById('profile-content').style.display = 'block';
+
+    // 7. Update tab title + page title
+    document.title = (p.display_name || p.username) + ' · CESC Hub';
+    document.body.dataset.pageTitle = p.display_name || p.username;
+  } catch (e) {
+    console.error('loadProfilePage exception:', e);
+    document.getElementById('profile-loading').innerHTML = `
+      <i class="fas fa-triangle-exclamation" style="font-size:2rem;color:var(--danger);margin-bottom:12px;"></i>
+      <div>Something went wrong</div>
+    `;
+  }
+}
+
+function renderProfilePage(p, ctx) {
+  const { isSelf, posts, pinnedPost, ceinBalance } = ctx;
+
+  // ── Banner ──
+  const bannerEl = document.getElementById('profile-banner');
+  bannerEl.innerHTML = '';
+  if (p.banner_url) {
+    const img = document.createElement('img');
+    img.src = p.banner_url;
+    img.alt = '';
+    img.onerror = () => img.remove();
+    bannerEl.appendChild(img);
+  }
+
+  // ── Avatar ──
+  const av = document.getElementById('profile-header-avatar');
+  const initial = (p.username?.[0] || '?').toUpperCase();
+  av.innerHTML = `<span id="profile-header-initial">${initial}</span>`;
+  if (p.pfp_url) {
+    const img = document.createElement('img');
+    img.src = p.pfp_url;
+    img.onload = () => {
+      img.classList.add('loaded');
+      const span = av.querySelector('span');
+      if (span) span.style.display = 'none';
+    };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+
+  // ── Name + username + verified ──
+  document.getElementById('profile-header-name').textContent = p.display_name || p.username;
+  document.getElementById('profile-header-username').textContent = '@' + p.username;
+  document.getElementById('profile-verified-icon').style.display = p.verified ? 'inline-block' : 'none';
+
+  // ── Stats ──
+  document.getElementById('profile-stat-posts').textContent = posts.length;
+  document.getElementById('profile-stat-followers').textContent = p.follower_count || 0;
+  document.getElementById('profile-stat-following').textContent = p.following_count || 0;
+
+  // ── Actions ──
+  renderProfileActions(p, isSelf);
+
+  // ── Bio block ──
+  const bioEl = document.getElementById('profile-bio');
+  if (p.bio && p.bio.trim()) {
+    bioEl.textContent = p.bio;
+    bioEl.style.display = '';
+  } else {
+    bioEl.style.display = 'none';
+  }
+
+  // Location
+  const locEl = document.getElementById('profile-location');
+  if (p.location && p.location.trim()) {
+    locEl.querySelector('span').textContent = p.location;
+    locEl.style.display = '';
+  } else {
+    locEl.style.display = 'none';
+  }
+
+  // Joined
+  const joinEl = document.getElementById('profile-joined');
+  if (p.created_at) {
+    const d = new Date(p.created_at);
+    joinEl.querySelector('span').textContent = 'Joined ' + d.toLocaleDateString([], { month: 'long', year: 'numeric' });
+    joinEl.style.display = '';
+  } else {
+    joinEl.style.display = 'none';
+  }
+
+  // CEIN (only if viewing self)
+  const ceinEl = document.getElementById('profile-cein');
+  if (isSelf && ceinBalance !== null) {
+    ceinEl.querySelector('span').textContent = ceinBalance.toLocaleString() + ' CEIN';
+    ceinEl.style.display = '';
+  } else {
+    ceinEl.style.display = 'none';
+  }
+
+  // Streak
+  const streakEl = document.getElementById('profile-streak');
+  if (p.streak && p.streak > 0) {
+    streakEl.querySelector('span').textContent = p.streak + ' day streak';
+    streakEl.style.display = '';
+  } else {
+    streakEl.style.display = 'none';
+  }
+
+  // ── Links row ──
+  const linksRow = document.getElementById('profile-links-row');
+  linksRow.innerHTML = '';
+  const links = Array.isArray(p.links) ? p.links.filter(l => l && l.label && l.url) : [];
+  if (links.length > 0) {
+    links.slice(0, 3).forEach(l => {
+      const a = document.createElement('a');
+      a.href = l.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.className = 'profile-link-pill';
+      a.innerHTML = `<i class="fas fa-link"></i> ${window.escapeHTML(l.label)}`;
+      linksRow.appendChild(a);
+    });
+    linksRow.style.display = 'flex';
+  } else {
+    linksRow.style.display = 'none';
+  }
+
+  // ── Pinned post ──
+  const pinnedWrap = document.getElementById('profile-pinned-wrap');
+  const pinnedContent = document.getElementById('profile-pinned-content');
+  if (pinnedPost && profileCanViewPrivate) {
+    pinnedWrap.style.display = '';
+    pinnedContent.innerHTML = '';
+    pinnedContent.appendChild(buildPinnedPostPreview(pinnedPost));
+  } else {
+    pinnedWrap.style.display = 'none';
+  }
+
+  // ── Posts grid / private notice ──
+  const postsGrid = document.getElementById('profile-posts-grid');
+  const postsEmpty = document.getElementById('profile-posts-empty');
+  const privateNotice = document.getElementById('profile-private-notice');
+  postsGrid.innerHTML = '';
+
+  if (!profileCanViewPrivate) {
+    postsGrid.style.display = 'none';
+    postsEmpty.style.display = 'none';
+    privateNotice.style.display = 'flex';
+  } else if (posts.length === 0) {
+    postsGrid.style.display = 'none';
+    postsEmpty.style.display = 'flex';
+    privateNotice.style.display = 'none';
+  } else {
+    postsGrid.style.display = 'grid';
+    postsEmpty.style.display = 'none';
+    privateNotice.style.display = 'none';
+
+    posts.forEach(post => {
+      postsGrid.appendChild(buildPostThumb(post));
+    });
+  }
+
+  // ── About list ──
+  renderAboutList(p);
+}
+
+function renderProfileActions(p, isSelf) {
+  const container = document.getElementById('profile-header-actions');
+  container.innerHTML = '';
+
+  if (isSelf) {
+    const editBtn = document.createElement('a');
+    editBtn.href = '/settings';
+    editBtn.className = 'profile-action-btn primary';
+    editBtn.innerHTML = '<i class="fas fa-pen"></i> Edit Profile';
+    container.appendChild(editBtn);
+    return;
+  }
+
+  // Follow / Following / Requested / Friends
+  let followBtnClass = 'profile-action-btn primary';
+  let followBtnHTML = '';
+  let followBtnAction = null;
+
+  if (profileIsFollowing && profileIsFriends) {
+    followBtnClass = 'profile-action-btn secondary';
+    followBtnHTML = '<i class="fas fa-user-check"></i> Friends';
+    followBtnAction = 'unfollow';
+  } else if (profileIsFollowing) {
+    followBtnClass = 'profile-action-btn secondary';
+    followBtnHTML = '<i class="fas fa-check"></i> Following';
+    followBtnAction = 'unfollow';
+  } else if (profileIsPending) {
+    followBtnClass = 'profile-action-btn secondary';
+    followBtnHTML = '<i class="fas fa-clock"></i> Requested';
+    followBtnAction = 'unfollow';
+  } else {
+    followBtnClass = 'profile-action-btn primary';
+    followBtnHTML = profileIsPrivate
+      ? '<i class="fas fa-user-plus"></i> Request to Follow'
+      : '<i class="fas fa-user-plus"></i> Follow';
+    followBtnAction = 'follow';
+  }
+
+  const followBtn = document.createElement('button');
+  followBtn.className = followBtnClass;
+  followBtn.innerHTML = followBtnHTML;
+  followBtn.onclick = () => handleFollowClick(followBtnAction);
+  container.appendChild(followBtn);
+
+  // Message button
+  const msgBtn = document.createElement('a');
+  msgBtn.href = '/chat?c=' + encodeURIComponent(dmSlug(window.currentUser?.username, p.username));
+  msgBtn.className = 'profile-action-btn secondary';
+  msgBtn.innerHTML = '<i class="fas fa-comment"></i> Message';
+  container.appendChild(msgBtn);
+
+  // Report button
+  const reportBtn = document.createElement('button');
+  reportBtn.className = 'profile-action-btn danger';
+  reportBtn.title = 'Report profile';
+  reportBtn.innerHTML = '<i class="fas fa-flag"></i>';
+  reportBtn.onclick = () => {
+    window.openQuickReport('user', p.id, p.username);
+  };
+  container.appendChild(reportBtn);
+}
+
+function dmSlug(a, b) {
+  if (!a || !b) return '';
+  const x = String(a).toLowerCase();
+  const y = String(b).toLowerCase();
+  return x < y ? `${x}_${y}` : `${y}_${x}`;
+}
+
+async function handleFollowClick(action) {
+  if (!profileData) return;
+  const target = profileData.id;
+
+  try {
+    if (action === 'follow') {
+      const { data, error } = await window.supabaseClient.rpc('request_follow', {
+        p_target_user_id: target
+      });
+      if (error || !data || !data.ok) {
+        window.showToast('Could not follow: ' + (error?.message || data?.reason || 'unknown'), 'error');
+        return;
+      }
+
+      if (data.status === 'active') {
+        profileIsFollowing = true;
+        profileIsPending = false;
+        window.showToast('Followed ✅', 'success');
+      } else if (data.status === 'pending') {
+        profileIsPending = true;
+        window.showToast('Follow request sent 📨', 'success');
+      }
+
+      // Update count locally
+      if (profileData) profileData.follower_count = (profileData.follower_count || 0) + 1;
+    } else if (action === 'unfollow') {
+      const { data, error } = await window.supabaseClient.rpc('unfollow', {
+        p_target_user_id: target
+      });
+      if (error || !data || !data.ok) {
+        window.showToast('Could not unfollow', 'error');
+        return;
+      }
+
+      const wasFollowing = profileIsFollowing;
+      profileIsFollowing = false;
+      profileIsPending = false;
+      profileIsFriends = false;
+      window.showToast('Unfollowed', 'info');
+
+      if (wasFollowing && profileData) {
+        profileData.follower_count = Math.max(0, (profileData.follower_count || 1) - 1);
+      }
+    }
+
+    // Re-render actions + stats
+    const isSelf = window.session && window.session.user.id === profileData.id;
+    renderProfileActions(profileData, isSelf);
+    document.getElementById('profile-stat-followers').textContent = profileData.follower_count || 0;
+  } catch (e) {
+    console.error('handleFollowClick:', e);
+    window.showToast('Something went wrong', 'error');
+  }
+}
+
+function buildPinnedPostPreview(post) {
+  const card = document.createElement('div');
+  card.className = 'pinned-post-preview';
+  card.onclick = () => openPostDetail(post.id);
+
+  const text = (post.content || '').slice(0, 220);
+  const hasImage = !!post.image_url;
+
+  card.innerHTML = `
+    <div class="pinned-post-content">
+      ${hasImage ? `<div class="pinned-post-thumb"><img src="${window.escapeHTML(post.image_url)}" loading="lazy" onerror="this.parentElement.remove()"/></div>` : ''}
+      <div class="pinned-post-body">
+        <div class="pinned-post-text">${window.escapeHTML(text)}${(post.content || '').length > 220 ? '…' : ''}</div>
+        <div class="pinned-post-time">${window.timeAgo(post.created_at)}</div>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
+function buildPostThumb(post) {
+  const thumb = document.createElement('div');
+  thumb.className = 'profile-post-thumb';
+  thumb.onclick = () => openPostDetail(post.id);
+
+  const content = post.content || '';
+  const textOnly = !post.image_url;
+
+  if (post.image_url) {
+    thumb.classList.add('has-image');
+    const img = document.createElement('img');
+    img.src = post.image_url;
+    img.loading = 'lazy';
+    img.alt = '';
+    img.onerror = () => {
+      img.remove();
+      thumb.classList.remove('has-image');
+      thumb.classList.add('text-thumb');
+      thumb.innerHTML = buildTextTileContent(content);
+    };
+    thumb.appendChild(img);
+  } else {
+    thumb.classList.add('text-thumb');
+    thumb.innerHTML = buildTextTileContent(content);
+  }
+
+  // Engagement overlay — show likes + comment count if available
+  const overlay = document.createElement('div');
+  overlay.className = 'profile-post-overlay';
+  overlay.innerHTML = `
+    <i class="fas fa-heart"></i> ${post.likes || 0}
+  `;
+  thumb.appendChild(overlay);
+
+  return thumb;
+}
+
+function buildTextTileContent(content) {
+  if (!content || !content.trim()) {
+    return `<div class="text-tile-empty"><i class="fas fa-image"></i></div>`;
+  }
+
+  const trimmed = content.trim();
+  const plainLen = trimmed.length;
+
+  // Pick a size tier based on length
+  let sizeClass = 'text-tile-md';
+  if (plainLen < 40) sizeClass = 'text-tile-lg';
+  else if (plainLen < 100) sizeClass = 'text-tile-md';
+  else if (plainLen < 200) sizeClass = 'text-tile-sm';
+  else sizeClass = 'text-tile-xs';
+
+  // For very long text, truncate the raw source before parsing (parseContent
+  // adds HTML so trimming after would break tags)
+  const maxLen = 320;
+  const truncated = plainLen > maxLen ? trimmed.slice(0, maxLen) : trimmed;
+  const parsed = parseContent(truncated);
+  const ellipsis = plainLen > maxLen ? '<span class="text-tile-ellipsis">…</span>' : '';
+
+  return `
+    <div class="text-tile-inner ${sizeClass}">
+      <div class="text-tile-body rich">${parsed}${ellipsis}</div>
+    </div>
+  `;
+}
+
+function renderAboutList(p) {
+  const container = document.getElementById('profile-about-list');
+  container.innerHTML = '';
+
+  const items = [];
+  if (p.bio) items.push({ icon: 'fa-quote-left', label: 'Bio', value: p.bio });
+  if (p.location) items.push({ icon: 'fa-location-dot', label: 'Location', value: p.location });
+  if (p.created_at) items.push({ icon: 'fa-calendar', label: 'Joined', value: new Date(p.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }) });
+  const rawRoles = Array.isArray(p.roles) ? p.roles : [];
+  if (rawRoles.length > 0) items.push({ icon: 'fa-shield-halved', label: 'Roles', value: rawRoles.join(', ') });
+  if (p.last_seen) items.push({ icon: 'fa-clock', label: 'Last seen', value: formatLastSeen(p.last_seen) });
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="profile-about-empty">No info to show</div>';
+    return;
+  }
+
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'profile-about-item';
+    el.innerHTML = `
+      <div class="profile-about-icon"><i class="fas ${item.icon}"></i></div>
+      <div class="profile-about-info">
+        <div class="profile-about-label">${window.escapeHTML(item.label)}</div>
+        <div class="profile-about-value">${window.escapeHTML(item.value)}</div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+window.switchProfileTab = function(tab) {
+  document.querySelectorAll('.profile-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('profile-posts-view').style.display = tab === 'posts' ? '' : 'none';
+  document.getElementById('profile-about-view').style.display = tab === 'about' ? '' : 'none';
+};
+
+// ═══════════════════════════════════════════════════════════
+// ── POST DETAIL MODAL ──
+// ═══════════════════════════════════════════════════════════
+async function openPostDetail(postId) {
+  const overlay = document.getElementById('post-detail-overlay');
+  const body = document.getElementById('post-detail-body');
+  body.innerHTML = '<div class="loading-spin-ring" style="margin:60px auto;"></div>';
+  overlay.classList.add('show');
+
+  try {
+    const { data: post, error } = await window.supabaseClient
+      .from('posts')
+      .select('*')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (error || !post) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Post not found</div>';
+      return;
+    }
+
+    const myId = window.session?.user?.id;
+    const isOwn = myId === post.user_id;
+
+    const [likesRes, myLikeRes, commentsRes] = await Promise.all([
+      window.supabaseClient.from('likes').select('post_id', { count: 'exact', head: true }).eq('post_id', postId),
+      myId ? window.supabaseClient.from('likes').select('post_id').eq('post_id', postId).eq('user_id', myId).maybeSingle() : Promise.resolve({ data: null }),
+      window.supabaseClient.from('comments').select('post_id', { count: 'exact', head: true }).eq('post_id', postId),
+    ]);
+
+    const likeCount = likesRes.count || 0;
+    const commentCount = commentsRes.count || 0;
+    const isLiked = !!myLikeRes.data;
+
+    body.innerHTML = '';
+
+    // ── Author row ──
+    const author = document.createElement('div');
+    author.className = 'post-detail-author';
+    const displayName = post.display_name || post.username;
+    const pfp = post.pfp_url || window.pfpCache?.[post.username];
+    author.innerHTML = `
+      <div class="post-detail-avatar" style="${pfp ? `background-image:url('${window.escapeHTML(pfp)}');background-size:cover;background-position:center;` : ''}">${pfp ? '' : window.escapeHTML((post.username?.[0] || '?').toUpperCase())}</div>
+      <div>
+        <div class="post-detail-name">${window.escapeHTML(displayName)}</div>
+        <div class="post-detail-time">${window.timeAgo(post.created_at)}</div>
+      </div>
+    `;
+    body.appendChild(author);
+
+    // ── Content (rich) ──
+    if (post.content) {
+      const textEl = document.createElement('div');
+      textEl.className = 'post-detail-text rich';
+      textEl.innerHTML = parseContent(post.content);
+      body.appendChild(textEl);
+    }
+
+    // ── Image ──
+    if (post.image_url) {
+      const imgEl = document.createElement('img');
+      imgEl.className = 'post-detail-image';
+      imgEl.src = post.image_url;
+      imgEl.loading = 'lazy';
+      imgEl.onerror = () => imgEl.remove();
+      body.appendChild(imgEl);
+    }
+
+    // ── Actions row ──
+    const actions = document.createElement('div');
+    actions.className = 'post-detail-actions';
+
+    const likeBtn = document.createElement('button');
+    likeBtn.className = 'post-detail-action' + (isLiked ? ' liked' : '');
+    likeBtn.innerHTML = `<i class="fas fa-heart"></i> <span class="pd-like-count">${likeCount}</span>`;
+    likeBtn.onclick = async () => {
+      if (!myId) { window.showToast('Log in first', 'error'); return; }
+      const liked = likeBtn.classList.contains('liked');
+      const countEl = likeBtn.querySelector('.pd-like-count');
+      const current = parseInt(countEl.textContent) || 0;
+
+      likeBtn.classList.toggle('liked', !liked);
+      countEl.textContent = liked ? Math.max(0, current - 1) : current + 1;
+
+      if (liked) {
+        const { error } = await window.supabaseClient
+          .from('likes').delete().eq('post_id', postId).eq('user_id', myId);
+        if (error) {
+          likeBtn.classList.add('liked');
+          countEl.textContent = current;
+        }
+      } else {
+        const { error } = await window.supabaseClient
+          .from('likes').insert({ post_id: postId, user_id: myId });
+        if (error && error.code !== '23505') {
+          likeBtn.classList.remove('liked');
+          countEl.textContent = current;
+        }
+      }
+    };
+    actions.appendChild(likeBtn);
+
+    const commentBtn = document.createElement('button');
+    commentBtn.className = 'post-detail-action';
+    commentBtn.innerHTML = `<i class="fas fa-comment"></i> <span class="pd-comment-count">${commentCount}</span>`;
+    commentBtn.onclick = () => {
+      const section = document.getElementById('pd-comments-section');
+      if (section) {
+        const isOpen = section.classList.contains('open');
+        section.classList.toggle('open', !isOpen);
+        if (!isOpen) loadPostDetailComments(postId);
+      }
+    };
+    actions.appendChild(commentBtn);
+
+    if (isOwn) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'post-detail-action danger';
+      delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+      delBtn.title = 'Delete post';
+      delBtn.onclick = async () => {
+        if (!confirm('Delete this post? No undo.')) return;
+        const { error } = await window.supabaseClient
+          .from('posts').delete().eq('id', postId).eq('user_id', myId);
+        if (error) {
+          window.showToast('Delete failed: ' + error.message, 'error');
+          return;
+        }
+        window.showToast('Post deleted', 'success');
+        closePostDetail();
+        const u = getProfileFromUrl();
+        if (u) loadProfilePage(u);
+      };
+      actions.appendChild(delBtn);
+    } else {
+      const reportBtn = document.createElement('button');
+      reportBtn.className = 'post-detail-action danger';
+      reportBtn.innerHTML = '<i class="fas fa-flag"></i>';
+      reportBtn.title = 'Report post';
+      reportBtn.onclick = () => {
+        window.openQuickReport('post', postId, (post.content || '').slice(0, 60));
+      };
+      actions.appendChild(reportBtn);
+    }
+
+    body.appendChild(actions);
+
+    // ── Comments section ──
+    const commentsSection = document.createElement('div');
+    commentsSection.className = 'pd-comments-section';
+    commentsSection.id = 'pd-comments-section';
+    commentsSection.innerHTML = `
+      <div class="pd-comment-input-row">
+        <div class="pd-comment-av" id="pd-comment-av"><span>${(window.currentUser?.username?.[0] || '?').toUpperCase()}</span></div>
+        <textarea class="pd-comment-input" id="pd-comment-input-${postId}" placeholder="Add a comment..." rows="1"></textarea>
+        <button class="pd-comment-send" onclick="window.submitPostDetailComment('${postId}')">
+          <i class="fas fa-arrow-up"></i>
+        </button>
+      </div>
+      <div class="pd-comment-list" id="pd-comment-list-${postId}">
+        <div class="pd-comment-loading">Tap the comment icon above to load comments</div>
+      </div>
+    `;
+    body.appendChild(commentsSection);
+
+    if (window.currentUser?.pfp_url) {
+      const av = commentsSection.querySelector('#pd-comment-av');
+      if (av) {
+        const span = av.querySelector('span');
+        const img = document.createElement('img');
+        img.src = window.currentUser.pfp_url;
+        img.onload = () => { img.classList.add('loaded'); if (span) span.style.display = 'none'; };
+        img.onerror = () => img.remove();
+        av.appendChild(img);
+      }
+    }
+  } catch (e) {
+    console.error('openPostDetail:', e);
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--danger)">Something went wrong</div>';
+  }
+}
+
+async function loadPostDetailComments(postId) {
+  const list = document.getElementById(`pd-comment-list-${postId}`);
+  if (!list) return;
+  list.innerHTML = '<div class="pd-comment-loading"><div class="loading-spin-ring" style="width:20px;height:20px;border-width:2px;margin:10px auto;"></div></div>';
+
+  const { data: comments, error } = await window.supabaseClient
+    .from('comments')
+    .select('*')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    list.innerHTML = '<div class="pd-comment-loading">Failed to load</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  if (!comments || comments.length === 0) {
+    list.innerHTML = '<div class="pd-comment-loading">No comments yet — be the first</div>';
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  comments.forEach(c => {
+    frag.appendChild(buildPostDetailCommentItem(c, postId));
+  });
+  list.appendChild(frag);
+}
+
+function buildPostDetailCommentItem(c, postId) {
+  const isOwn = window.currentUser && c.username === window.currentUser.username;
+  const item = document.createElement('div');
+  item.className = 'pd-comment-item';
+
+  const initial = (c.username?.[0] || '?').toUpperCase();
+  const pfp = window.pfpCache?.[c.username];
+
+  item.innerHTML = `
+    <div class="pd-comment-avatar" style="${pfp ? `background-image:url('${window.escapeHTML(pfp)}');background-size:cover;background-position:center;` : ''}">${pfp ? '' : window.escapeHTML(initial)}</div>
+    <div class="pd-comment-body">
+      <div class="pd-comment-head">
+        <span class="pd-comment-who">${window.escapeHTML(c.display_name || c.username)}</span>
+        <button class="pd-comment-report ${isOwn ? 'delete' : ''}">
+          <i class="fas ${isOwn ? 'fa-trash' : 'fa-flag'}"></i>
+        </button>
+      </div>
+      <div class="pd-comment-text">${window.escapeHTML(c.content || '')}</div>
+      <div class="pd-comment-time">${window.timeAgo(c.created_at)}</div>
+    </div>
+  `;
+
+  const btn = item.querySelector('.pd-comment-report');
+  btn.onclick = async (e) => {
+    e.stopPropagation();
+    if (isOwn) {
+      if (!confirm('Delete this comment?')) return;
+      const { error } = await window.supabaseClient
+        .from('comments').delete().eq('id', c.id).eq('user_id', window.session.user.id);
+      if (error) { window.showToast('Delete failed', 'error'); return; }
+      window.showToast('Comment deleted', 'success');
+      await loadPostDetailComments(postId);
+      const countEl = document.querySelector('.pd-comment-count');
+      if (countEl) {
+        const cur = parseInt(countEl.textContent) || 1;
+        countEl.textContent = Math.max(0, cur - 1);
+      }
+    } else {
+      window.openQuickReport('comment', c.id, (c.content || '').slice(0, 60));
+    }
+  };
+
+  return item;
+}
+
+window.submitPostDetailComment = async function(postId) {
+  const input = document.getElementById(`pd-comment-input-${postId}`);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) { window.showToast('Write a comment first', 'error'); return; }
+  if (!window.session) { window.showToast('Log in first', 'error'); return; }
+
+  const btn = input.parentElement.querySelector('.pd-comment-send');
+  btn.disabled = true;
+
+  const displayName = window.currentUser.display_name || window.currentUser.username;
+
+  const { data: inserted, error } = await window.supabaseClient
+    .from('comments')
+    .insert({
+      post_id: postId,
+      user_id: window.session.user.id,
+      username: window.currentUser.username,
+      display_name: displayName,
+      content: text
+    })
+    .select('id')
+    .single();
+
+  btn.disabled = false;
+
+  if (error) {
+    window.showToast('Comment failed: ' + error.message, 'error');
+    return;
+  }
+
+  if (inserted?.id) {
+    try {
+      const { data: cein } = await window.supabaseClient.rpc('award_comment_cein', {
+        p_comment_id: inserted.id
+      });
+      if (cein && cein.ok) {
+        window.showToast(`💬 +${cein.amount} CEIN`, 'success');
+        if (typeof window.loadCEINBalance === 'function') window.loadCEINBalance();
+      }
+    } catch (e) { console.error('award_comment_cein failed:', e); }
+  }
+
+  input.value = '';
+
+  const { data: postRow } = await window.supabaseClient
+    .from('posts').select('user_id').eq('id', postId).single();
+  if (postRow && postRow.user_id !== window.session.user.id) {
+    await window.supabaseClient.from('notifications').insert({
+      recipient_id: postRow.user_id,
+      actor_username: window.currentUser.username,
+      actor_display_name: displayName,
+      actor_pfp_url: window.currentUser.pfp_url || null,
+      type: 'post_comment',
+      ref_id: postId,
+      preview: text.slice(0, 80)
+    });
+  }
+
+  await loadPostDetailComments(postId);
+  const countEl = document.querySelector('.pd-comment-count');
+  if (countEl) {
+    const cur = parseInt(countEl.textContent) || 0;
+    countEl.textContent = cur + 1;
+  }
+};
+
+window.closePostDetail = function(e) {
+  if (e && e.target && e.target.id !== 'post-detail-overlay') return;
+  document.getElementById('post-detail-overlay').classList.remove('show');
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('post-detail-overlay')?.classList.remove('show');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
 // ── RESIZE HANDLER ──
+// ═══════════════════════════════════════════════════════════
 let _resizeTimer = null;
 window.addEventListener('resize', () => {
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => {
-    if (viewMode === 'cards') renderCards(getFilteredList());
+    if (viewMode === 'cards' && document.getElementById('view-browse').style.display !== 'none') {
+      renderCards(getFilteredList());
+    }
   }, 200);
 });
 
+// ═══════════════════════════════════════════════════════════
 // ── PAGE INIT ──
+// ═══════════════════════════════════════════════════════════
 async function pageInit() {
   definePageSteps();
-  nextLoadingStep(); // theme
+  nextLoadingStep();  // theme
 
   loadViewMode();
 
-  // auth + profile + pfp handled by initPage
-
-  nextLoadingStep(); // members
+  nextLoadingStep();  // members
   await loadProfiles();
 
-  // online + notifs handled by initPage
+  nextLoadingStep();  // online
+  nextLoadingStep();  // notifs
+  nextLoadingStep();  // ready
 
-  nextLoadingStep();
-  nextLoadingStep();
-  nextLoadingStep(); // ready
+  // Route check — are we on /profiles?u=username?
+  const u = getProfileFromUrl();
+  if (u) {
+    showProfileView(u);
+  } else {
+    showBrowseView();
+  }
 }
 
-// ── START ──
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initPage(pageInit);

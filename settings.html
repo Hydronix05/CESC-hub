@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CESC Hub — Settings</title>
 
-<!-- ── PWA META TAGS ── -->
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,15 +19,11 @@
 <link rel="stylesheet" href="/css/pages/settings.css"/>
 <link rel="stylesheet" href="/css/ads.css"/>
 
-<!-- Load Supabase CDN first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- Load theme system -->
 <script src="/js/theme-presets.js"></script>
 <script src="/js/theme-engine.js"></script>
-<!-- Load shared.js -->
 <script src="shared.js"></script>
 
-<!-- ── SERVICE WORKER REGISTRATION ── -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -40,8 +35,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 </head>
-<<body data-page-title="Settings">>
-<!-- ── LOADING SCREEN ── -->
+<body data-page-title="Settings">
 <div id="loading-screen">
   <div class="bg-canvas">
     <div class="orb orb1"></div>
@@ -86,18 +80,13 @@ if ('serviceWorker' in navigator) {
 <div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="toast" id="toast"></div>
 
-<!-- ── MOBILE SIDEBAR OVERLAY ── -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
-
-<!-- ── MOBILE MENU HAMBURGER ── -->
 <div class="mobile-menu" onclick="window.toggleSidebar()"><i class="fas fa-bars"></i></div>
 
 <div id="app-header"></div>
-
 <div id="app-sidebar"></div>
 
 
-<!-- ── MAIN ── -->
 <main class="main">
   <div class="page-header">
     <div>
@@ -111,9 +100,7 @@ if ('serviceWorker' in navigator) {
     <div class="section-title"><i class="fas fa-palette" style="color:var(--neon)"></i> Theme</div>
     <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Choose your vibe · Click any theme to apply</p>
     
-    <div class="theme-grid" id="theme-grid">
-      <!-- Themes will be rendered by JavaScript -->
-    </div>
+    <div class="theme-grid" id="theme-grid"></div>
     
     <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
       <span style="font-size:0.75rem;color:var(--muted);font-family:'Space Mono',monospace;">
@@ -176,18 +163,94 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 
+  <!-- ── CEIN WALLET ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-coins" style="color:var(--neon)"></i> CEIN Wallet</div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Your CEIN balance and total earnings</p>
+
+    <div class="cein-balance-card" id="cein-balance-card">
+      <div class="cein-balance-main">
+        <div class="cein-balance-value" id="cein-balance-value">—</div>
+        <div class="cein-balance-label">CEIN balance</div>
+      </div>
+      <div class="cein-balance-stats">
+        <div class="cein-stat">
+          <div class="cein-stat-value" id="cein-total-earned">—</div>
+          <div class="cein-stat-label">Total earned</div>
+        </div>
+        <div class="cein-stat">
+          <div class="cein-stat-value" id="cein-total-spent">—</div>
+          <div class="cein-stat-label">Total spent</div>
+        </div>
+      </div>
+      <a href="/wallet" class="btn" style="margin-top:14px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+        <i class="fas fa-receipt"></i> View Transactions
+      </a>
+    </div>
+
+    <div class="cein-earn-hints">
+      <div class="cein-earn-title"><i class="fas fa-gift"></i> How to earn CEIN</div>
+      <div class="cein-earn-grid">
+        <div class="cein-earn-item">
+          <i class="fas fa-calendar-check"></i>
+          <div><strong>+10</strong> daily login</div>
+        </div>
+        <div class="cein-earn-item">
+          <i class="fas fa-pen"></i>
+          <div><strong>+5</strong> per post (max 3/day)</div>
+        </div>
+        <div class="cein-earn-item">
+          <i class="fas fa-comment"></i>
+          <div><strong>+2</strong> per comment (max 10/day)</div>
+        </div>
+        <div class="cein-earn-item">
+          <i class="fas fa-fire"></i>
+          <div><strong>+50 / +100 / +200</strong> at 7 / 30 / 100-day streaks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRIVACY ── -->
+  <div class="settings-section">
+    <div class="section-title"><i class="fas fa-lock" style="color:var(--neon)"></i> Privacy</div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">Control who can see your profile and posts</p>
+
+    <div class="privacy-toggle-row">
+      <div class="privacy-toggle-text">
+        <div class="privacy-toggle-title">Private account</div>
+        <div class="privacy-toggle-desc">
+          When on, only approved followers can see your profile details, posts, and comments.
+          Your username, display name, and profile picture stay visible to everyone.
+        </div>
+      </div>
+      <label class="privacy-switch">
+        <input type="checkbox" id="private-toggle" onchange="window.togglePrivateAccount()"/>
+        <span class="privacy-switch-slider"></span>
+      </label>
+    </div>
+
+    <div class="privacy-requests-wrap" id="privacy-requests-wrap" style="display:none;">
+      <div class="privacy-requests-title">
+        <i class="fas fa-user-clock"></i> Follow requests
+        <span class="privacy-requests-count" id="privacy-requests-count">0</span>
+      </div>
+      <div class="privacy-requests-list" id="privacy-requests-list">
+        <div class="privacy-requests-empty">Loading...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── PROFILE ── -->
   <div class="settings-section">
     <div class="section-title"><i class="fas fa-user" style="color:var(--neon)"></i> Profile</div>
 
-    <!-- Username (readonly) -->
     <div class="field">
       <label>Username <span>(permanent)</span></label>
       <input type="text" id="username-display" readonly placeholder="loading..."/>
       <div class="locked-note"><i class="fas fa-lock" style="margin-right:4px;"></i> usernames can't be changed</div>
     </div>
 
-    <!-- Display Name + change limit -->
     <div class="display-name-row">
       <div class="field">
         <label>Display Name <span>(shown to others)</span></label>
@@ -198,13 +261,35 @@ if ('serviceWorker' in navigator) {
       </div>
     </div>
 
-    <!-- Bio -->
     <div class="field" style="margin-top:18px;">
       <label>Bio <span>(optional)</span></label>
       <textarea id="bio-input" placeholder="say something about yourself..." maxlength="200"></textarea>
     </div>
 
-    <!-- Profile Picture -->
+    <div class="field" style="margin-top:18px;">
+      <label>Location <span>(optional · school section visible)</span></label>
+      <input type="text" id="location-input" placeholder="e.g. Section B · Dhaka" maxlength="60"/>
+    </div>
+
+    <div class="field" style="margin-top:18px;">
+      <label>Banner Image URL <span>(optional)</span></label>
+      <input type="text" id="banner-url-input" placeholder="https://..." maxlength="500"/>
+      <div class="locked-note" style="margin-top:4px;"><i class="fas fa-info-circle" style="margin-right:4px;"></i> paste a public image URL (from any host)</div>
+    </div>
+
+    <div class="field" style="margin-top:18px;">
+      <label>Profile Links <span>(up to 3 · optional)</span></label>
+      <div class="profile-links-editor" id="profile-links-editor">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:18px;">
+      <label>Pinned Post ID <span>(optional · advanced)</span></label>
+      <input type="text" id="pinned-post-input" placeholder="Paste a post ID to pin it on your profile" maxlength="64"/>
+      <div class="locked-note" style="margin-top:4px;"><i class="fas fa-thumbtack" style="margin-right:4px;"></i> find a post ID from the URL after opening it</div>
+    </div>
+
     <div class="field" style="margin-top:18px;">
       <label>Profile Picture <span>(jpg/png/gif/webp, max 2MB)</span></label>
       <div class="pfp-row">
@@ -286,7 +371,6 @@ if ('serviceWorker' in navigator) {
   </div>
 </main>
 <div id="app-downbar"></div>
-
 <div id="app-downbar-more"></div>
 
 
@@ -295,9 +379,11 @@ if ('serviceWorker' in navigator) {
 const DISPLAY_NAME_STORAGE_KEY = 'cesc_display_name_changes';
 const MAX_DISPLAY_NAME_CHANGES = 2;
 const CHAT_LAYOUT_KEY = 'cesc_chat_layout';
+const MAX_LINKS = 3;
 
 let currentProfile = null;
 let pendingFile = null;
+let currentLinks = [];
 
 // ── LOADING STEPS ──
 function definePageSteps() {
@@ -313,9 +399,7 @@ function definePageSteps() {
   ]);
 }
 
-// ═══════════════════════════════════════════════════════════
-// ── CHAT LAYOUT SETTING ──
-// ═══════════════════════════════════════════════════════════
+// ── CHAT LAYOUT ──
 function loadChatLayoutSetting() {
   let saved = localStorage.getItem(CHAT_LAYOUT_KEY);
   if (saved !== 'discord' && saved !== 'meta') {
@@ -364,14 +448,253 @@ function updateChangeBadge() {
   const remaining = Math.max(0, MAX_DISPLAY_NAME_CHANGES - used);
   const badge = document.getElementById('change-limit-badge');
   const count = document.getElementById('change-count');
-  count.textContent = remaining;
-  badge.className = 'change-limit-badge' + (remaining === 0 ? ' used' : '');
+  if (count) count.textContent = remaining;
+  if (badge) badge.className = 'change-limit-badge' + (remaining === 0 ? ' used' : '');
+}
+
+// ── CEIN WALLET ──
+async function loadCEINWallet() {
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_my_credits');
+    if (error || !data || !data.ok) {
+      console.error('get_my_credits:', error || data);
+      return;
+    }
+    const balEl = document.getElementById('cein-balance-value');
+    const earnedEl = document.getElementById('cein-total-earned');
+    const spentEl = document.getElementById('cein-total-spent');
+    if (balEl) balEl.textContent = data.balance + ' CEIN';
+    if (earnedEl) earnedEl.textContent = data.total_earned;
+    if (spentEl) spentEl.textContent = data.total_spent;
+  } catch (e) {
+    console.error('loadCEINWallet:', e);
+  }
+}
+
+// ── PRIVACY ──
+async function loadPrivacyState() {
+  const { data, error } = await window.supabaseClient
+    .from('profiles')
+    .select('is_private')
+    .eq('id', window.session.user.id)
+    .single();
+
+  if (error) {
+    console.error('loadPrivacyState:', error);
+    return;
+  }
+
+  const toggle = document.getElementById('private-toggle');
+  if (toggle) toggle.checked = !!data.is_private;
+
+  if (data.is_private) {
+    await loadFollowRequests();
+    const wrap = document.getElementById('privacy-requests-wrap');
+    if (wrap) wrap.style.display = 'block';
+  }
+}
+
+window.togglePrivateAccount = async function() {
+  const toggle = document.getElementById('private-toggle');
+  if (!toggle) return;
+  const newValue = toggle.checked;
+
+  toggle.disabled = true;
+
+  const { error } = await window.supabaseClient
+    .from('profiles')
+    .update({ is_private: newValue })
+    .eq('id', window.session.user.id);
+
+  toggle.disabled = false;
+
+  if (error) {
+    console.error('toggle private:', error);
+    toggle.checked = !newValue;
+    window.showToast('Failed to update privacy', 'error');
+    return;
+  }
+
+  // Update local currentUser cache
+  if (window.currentUser) window.currentUser.is_private = newValue;
+
+  window.showToast(newValue ? '🔒 Account is now private' : '🌐 Account is now public', 'success');
+
+  const wrap = document.getElementById('privacy-requests-wrap');
+  if (newValue) {
+    if (wrap) wrap.style.display = 'block';
+    await loadFollowRequests();
+  } else {
+    if (wrap) wrap.style.display = 'none';
+  }
+};
+
+async function loadFollowRequests() {
+  const list = document.getElementById('privacy-requests-list');
+  const countEl = document.getElementById('privacy-requests-count');
+  if (!list) return;
+
+  list.innerHTML = '<div class="privacy-requests-empty">Loading...</div>';
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_pending_follow_requests');
+    if (error) {
+      console.error('get_pending_follow_requests:', error);
+      list.innerHTML = '<div class="privacy-requests-empty">Failed to load requests</div>';
+      return;
+    }
+
+    const requests = data || [];
+    if (countEl) countEl.textContent = requests.length;
+
+    if (requests.length === 0) {
+      list.innerHTML = '<div class="privacy-requests-empty"><i class="fas fa-inbox" style="opacity:0.5;margin-right:6px;"></i>No pending requests</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    requests.forEach(req => {
+      list.appendChild(buildRequestRow(req));
+    });
+  } catch (e) {
+    console.error('loadFollowRequests exception:', e);
+    list.innerHTML = '<div class="privacy-requests-empty">Failed to load requests</div>';
+  }
+}
+
+function buildRequestRow(req) {
+  const row = document.createElement('div');
+  row.className = 'privacy-request-row';
+
+  const av = document.createElement('div');
+  av.className = 'privacy-request-avatar';
+  const span = document.createElement('span');
+  span.textContent = (req.follower_username?.[0] || '?').toUpperCase();
+  av.appendChild(span);
+  if (req.follower_pfp_url) {
+    const img = document.createElement('img');
+    img.src = req.follower_pfp_url;
+    img.onload = () => { img.classList.add('loaded'); span.style.display = 'none'; };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+  row.appendChild(av);
+
+  const info = document.createElement('div');
+  info.className = 'privacy-request-info';
+  const nameEl = document.createElement('div');
+  nameEl.className = 'privacy-request-name';
+  nameEl.textContent = req.follower_display_name || req.follower_username;
+  const userEl = document.createElement('div');
+  userEl.className = 'privacy-request-username';
+  userEl.textContent = '@' + req.follower_username + ' · ' + window.timeAgo(req.requested_at);
+  info.appendChild(nameEl);
+  info.appendChild(userEl);
+  row.appendChild(info);
+
+  const actions = document.createElement('div');
+  actions.className = 'privacy-request-actions';
+
+  const approveBtn = document.createElement('button');
+  approveBtn.className = 'privacy-req-btn approve';
+  approveBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
+  approveBtn.onclick = () => respondToRequest(req.follower_id, true, row);
+
+  const declineBtn = document.createElement('button');
+  declineBtn.className = 'privacy-req-btn decline';
+  declineBtn.innerHTML = '<i class="fas fa-times"></i>';
+  declineBtn.onclick = () => respondToRequest(req.follower_id, false, row);
+
+  actions.appendChild(approveBtn);
+  actions.appendChild(declineBtn);
+  row.appendChild(actions);
+
+  return row;
+}
+
+async function respondToRequest(followerId, approve, rowEl) {
+  const btns = rowEl.querySelectorAll('button');
+  btns.forEach(b => b.disabled = true);
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc('respond_follow_request', {
+      p_follower_id: followerId,
+      p_approve: approve
+    });
+
+    if (error || !data || !data.ok) {
+      console.error('respond_follow_request:', error || data);
+      window.showToast('Failed: ' + (error?.message || data?.reason || 'unknown'), 'error');
+      btns.forEach(b => b.disabled = false);
+      return;
+    }
+
+    rowEl.style.transition = 'opacity 0.3s, transform 0.3s';
+    rowEl.style.opacity = '0';
+    rowEl.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+      rowEl.remove();
+      const countEl = document.getElementById('privacy-requests-count');
+      if (countEl) {
+        const newCount = Math.max(0, parseInt(countEl.textContent || '1') - 1);
+        countEl.textContent = newCount;
+        if (newCount === 0) {
+          const list = document.getElementById('privacy-requests-list');
+          if (list) list.innerHTML = '<div class="privacy-requests-empty"><i class="fas fa-inbox" style="opacity:0.5;margin-right:6px;"></i>No pending requests</div>';
+        }
+      }
+    }, 300);
+
+    window.showToast(approve ? '✅ Approved' : 'Declined', 'success');
+  } catch (e) {
+    console.error('respondToRequest exception:', e);
+    window.showToast('Failed to respond', 'error');
+    btns.forEach(b => b.disabled = false);
+  }
+}
+
+// ── PROFILE LINKS EDITOR ──
+function renderLinksEditor() {
+  const container = document.getElementById('profile-links-editor');
+  if (!container) return;
+  container.innerHTML = '';
+
+  for (let i = 0; i < MAX_LINKS; i++) {
+    const link = currentLinks[i] || { label: '', url: '' };
+
+    const row = document.createElement('div');
+    row.className = 'profile-link-row';
+    row.innerHTML = `
+      <input type="text" class="link-label-input" placeholder="Label" maxlength="30" value="${window.escapeHTML(link.label || '')}"/>
+      <input type="text" class="link-url-input" placeholder="https://..." maxlength="300" value="${window.escapeHTML(link.url || '')}"/>
+      <button class="link-clear-btn" title="Clear" type="button"><i class="fas fa-times"></i></button>
+    `;
+
+    const [labelIn, urlIn] = row.querySelectorAll('input');
+    labelIn.oninput = () => { currentLinks[i] = currentLinks[i] || {}; currentLinks[i].label = labelIn.value; };
+    urlIn.oninput = () => { currentLinks[i] = currentLinks[i] || {}; currentLinks[i].url = urlIn.value; };
+
+    row.querySelector('.link-clear-btn').onclick = () => {
+      currentLinks[i] = { label: '', url: '' };
+      labelIn.value = '';
+      urlIn.value = '';
+    };
+
+    container.appendChild(row);
+  }
+}
+
+function getCleanLinks() {
+  return currentLinks
+    .filter(l => l && l.label && l.label.trim() && l.url && l.url.trim())
+    .slice(0, MAX_LINKS);
 }
 
 // ── PFP ──
 function loadPfpImage(url) {
   const img = document.getElementById('pfp-img');
   const initial = document.getElementById('pfp-initial');
+  if (!img || !initial) return;
   if (!url) {
     img.style.display = 'none';
     initial.style.display = 'block';
@@ -380,9 +703,7 @@ function loadPfpImage(url) {
   img.src = url;
   img.style.display = 'block';
   initial.style.display = 'none';
-  img.onload = () => {
-    img.classList.add('loaded');
-  };
+  img.onload = () => { img.classList.add('loaded'); };
   img.onerror = () => {
     img.style.display = 'none';
     initial.style.display = 'block';
@@ -394,36 +715,40 @@ function loadPfpImage(url) {
 const fileInput = document.getElementById('pfp-file');
 const uploadZone = document.getElementById('upload-zone');
 
-fileInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    window.showToast('image too big — max 2MB 💀', 'error');
-    return;
-  }
-  pendingFile = file;
-  const reader = new FileReader();
-  reader.onload = ev => loadPfpImage(ev.target.result);
-  reader.readAsDataURL(file);
-  document.querySelector('.upload-text strong').textContent = file.name;
-});
+if (fileInput) {
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      window.showToast('image too big — max 2MB 💀', 'error');
+      return;
+    }
+    pendingFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => loadPfpImage(ev.target.result);
+    reader.readAsDataURL(file);
+    const strong = document.querySelector('.upload-text strong');
+    if (strong) strong.textContent = file.name;
+  });
+}
 
-uploadZone.addEventListener('dragover', e => {
-  e.preventDefault();
-  uploadZone.classList.add('dragover');
-});
-uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) {
-    fileInput.files = e.dataTransfer.files;
-    fileInput.dispatchEvent(new Event('change'));
-  }
-});
+if (uploadZone) {
+  uploadZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    }
+  });
+}
 
-// ── UPLOAD PFP ──
 async function uploadPfp(file) {
   const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
   if (userError || !user) {
@@ -434,33 +759,33 @@ async function uploadPfp(file) {
   const progress = document.getElementById('upload-progress');
   const fill = document.getElementById('progress-fill');
   const text = document.getElementById('progress-text');
-  progress.style.display = 'block';
-  fill.style.width = '10%';
-  text.textContent = 'uploading...';
+  if (progress) progress.style.display = 'block';
+  if (fill) fill.style.width = '10%';
+  if (text) text.textContent = 'uploading...';
 
   const ext = file.name.split('.').pop();
   const path = `${user.id}/pfp.${ext}`;
 
-  fill.style.width = '40%';
+  if (fill) fill.style.width = '40%';
   const { error } = await window.supabaseClient.storage.from('avatars').upload(path, file, {
     upsert: true,
     contentType: file.type
   });
 
   if (error) {
-    progress.style.display = 'none';
+    if (progress) progress.style.display = 'none';
     window.showToast('upload failed: ' + error.message, 'error');
     return null;
   }
 
-  fill.style.width = '80%';
-  text.textContent = 'getting URL...';
+  if (fill) fill.style.width = '80%';
+  if (text) text.textContent = 'getting URL...';
   const { data: urlData } = window.supabaseClient.storage.from('avatars').getPublicUrl(path);
-  fill.style.width = '100%';
-  text.textContent = 'done ✅';
+  if (fill) fill.style.width = '100%';
+  if (text) text.textContent = 'done ✅';
   setTimeout(() => {
-    progress.style.display = 'none';
-    fill.style.width = '0%';
+    if (progress) progress.style.display = 'none';
+    if (fill) fill.style.width = '0%';
   }, 1200);
   return urlData.publicUrl;
 }
@@ -480,6 +805,9 @@ window.saveProfile = async function() {
   }
 
   const bio = document.getElementById('bio-input').value.trim();
+  const location = document.getElementById('location-input').value.trim();
+  const bannerUrl = document.getElementById('banner-url-input').value.trim();
+  const pinnedPostId = document.getElementById('pinned-post-input').value.trim();
   const newDisplayName = document.getElementById('display-name-input').value.trim();
 
   if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
@@ -492,7 +820,13 @@ window.saveProfile = async function() {
     }
   }
 
-  const updates = { bio };
+  const updates = {
+    bio,
+    location: location || null,
+    banner_url: bannerUrl || null,
+    links: getCleanLinks(),
+    pinned_post_id: pinnedPostId || null
+  };
 
   if (newDisplayName && newDisplayName !== currentProfile?.display_name) {
     updates.display_name = newDisplayName;
@@ -512,10 +846,6 @@ window.saveProfile = async function() {
     }
   }
 
-  if (!updates.pfp_url && currentProfile?.pfp_url) {
-    delete updates.pfp_url;
-  }
-
   const { error } = await window.supabaseClient
     .from('profiles')
     .update(updates)
@@ -533,18 +863,19 @@ window.saveProfile = async function() {
   }
 
   currentProfile = { ...currentProfile, ...updates };
+  if (window.currentUser) Object.assign(window.currentUser, updates);
 
-  if (pfp_url) {
-    loadPfpImage(pfp_url);
-  }
+  if (pfp_url) loadPfpImage(pfp_url);
 
   window.showToast('✅ profile saved!', 'success');
   saveBtn.disabled = false;
   saveBtn.textContent = '💾 Save Profile';
 
   const displayName = currentProfile?.display_name || currentProfile?.username || 'you';
-  document.getElementById('chip-name').textContent = displayName;
-  document.getElementById('dd-name').textContent = displayName;
+  const chipName = document.getElementById('chip-name');
+  const ddName = document.getElementById('dd-name');
+  if (chipName) chipName.textContent = displayName;
+  if (ddName) ddName.textContent = displayName;
 };
 
 // ── PASSWORD ──
@@ -606,26 +937,21 @@ window.clearLocalData = function() {
   }
 };
 
-// ── THEME FUNCTIONS ──
+// ── THEME CARDS ──
 function renderThemeCards() {
   const grid = document.getElementById('theme-grid');
   const themes = window.THEME_PRESETS || [];
   const current = window.getCurrentTheme();
 
   if (!grid || themes.length === 0) return;
-
   grid.innerHTML = '';
 
   themes.forEach(theme => {
     const card = document.createElement('div');
     card.className = 'theme-card';
     card.dataset.theme = theme.id;
+    if (current && current.id === theme.id) card.classList.add('active');
 
-    if (current && current.id === theme.id) {
-      card.classList.add('active');
-    }
-
-    // Split preview: left half dark, right half light
     const preview = document.createElement('div');
     preview.className = 'theme-preview-split';
 
@@ -658,19 +984,16 @@ function renderThemeCards() {
     preview.appendChild(lightHalf);
     card.appendChild(preview);
 
-    // Name
     const name = document.createElement('div');
     name.className = 'theme-name';
     name.textContent = theme.name;
     card.appendChild(name);
 
-    // Description
     const desc = document.createElement('div');
     desc.className = 'theme-desc';
     desc.textContent = theme.description || '';
     card.appendChild(desc);
 
-    // Active badge with current variant
     if (current && current.id === theme.id) {
       const badge = document.createElement('div');
       badge.className = 'theme-active-badge';
@@ -703,32 +1026,54 @@ function updateCurrentThemeName() {
   }
 }
 
-function updateCurrentThemeName() {
-  const current = window.getCurrentTheme();
-  const el = document.getElementById('current-theme-name');
-  if (el && current) {
-    el.textContent = current.name;
-  } else if (el) {
-    el.textContent = '—';
-  }
+// ── YOUR ROLES ──
+const ROLE_META = {
+  owner:      { label: 'Owner',       icon: 'fa-crown',        color: '#f0c040' },
+  admin:      { label: 'Admin',       icon: 'fa-shield-halved', color: 'var(--neon)' },
+  moderator:  { label: 'Moderator',   icon: 'fa-user-shield',  color: 'var(--info)' },
+  teacher:    { label: 'Teacher',     icon: 'fa-chalkboard-user', color: '#7dd3fc' },
+  advertiser: { label: 'Advertiser',  icon: 'fa-bullhorn',     color: 'var(--purple)' },
+  og:         { label: 'OG',          icon: 'fa-star',         color: '#fbbf24' },
+  vip:        { label: 'VIP',         icon: 'fa-gem',          color: '#f472b6' },
+  user:       { label: 'Member',      icon: 'fa-user',         color: 'var(--muted)' }
+};
+
+function renderUserRoles(roles) {
+  const container = document.getElementById('user-roles-list');
+  if (!container) return;
+
+  const list = Array.isArray(roles) && roles.length > 0 ? roles : ['user'];
+  container.innerHTML = '';
+  const frag = document.createDocumentFragment();
+
+  list.forEach(roleKey => {
+    const meta = ROLE_META[roleKey] || { label: roleKey, icon: 'fa-circle', color: 'var(--muted)' };
+    const chip = document.createElement('div');
+    chip.className = 'user-role-chip';
+    chip.style.setProperty('--role-color', meta.color);
+    chip.innerHTML = `<i class="fas ${meta.icon}"></i><span>${window.escapeHTML(meta.label)}</span>`;
+    frag.appendChild(chip);
+  });
+
+  container.appendChild(frag);
 }
 
 // ── PAGE INIT ──
 async function pageInit() {
   definePageSteps();
   nextLoadingStep(); // theme
-  
+
   loadChatLayoutSetting();
-  
-  nextLoadingStep(); // pfp (already loaded in initPage)
-  
+
+  nextLoadingStep(); // pfp
   nextLoadingStep(); // settings
+
   const sess = window.session;
   if (!sess) return;
 
   const { data: profile, error } = await window.supabaseClient
     .from('profiles')
-    .select('username, display_name, bio, pfp_url, roles')
+    .select('username, display_name, bio, pfp_url, roles, is_private, banner_url, links, pinned_post_id, location')
     .eq('id', sess.user.id)
     .single();
 
@@ -738,17 +1083,36 @@ async function pageInit() {
   }
 
   currentProfile = profile;
+
   renderUserRoles(profile.roles);
+
   const displayName = profile?.display_name || profile?.username || 'you';
   const rawName = profile?.username || 'you';
 
-  document.getElementById('username-display').value = profile.username || '';
-  document.getElementById('display-name-input').value = profile.display_name || '';
-  document.getElementById('bio-input').value = profile.bio || '';
-  document.getElementById('chip-name').textContent = displayName;
-  document.getElementById('chip-initial').textContent = rawName[0].toUpperCase();
-  document.getElementById('dd-name').textContent = displayName;
-  document.getElementById('pfp-initial').textContent = rawName[0].toUpperCase();
+  const usernameDisplay = document.getElementById('username-display');
+  const displayNameInput = document.getElementById('display-name-input');
+  const bioInput = document.getElementById('bio-input');
+  const locationInput = document.getElementById('location-input');
+  const bannerUrlInput = document.getElementById('banner-url-input');
+  const pinnedPostInput = document.getElementById('pinned-post-input');
+  const chipName = document.getElementById('chip-name');
+  const chipInitial = document.getElementById('chip-initial');
+  const ddName = document.getElementById('dd-name');
+  const pfpInitial = document.getElementById('pfp-initial');
+
+  if (usernameDisplay) usernameDisplay.value = profile.username || '';
+  if (displayNameInput) displayNameInput.value = profile.display_name || '';
+  if (bioInput) bioInput.value = profile.bio || '';
+  if (locationInput) locationInput.value = profile.location || '';
+  if (bannerUrlInput) bannerUrlInput.value = profile.banner_url || '';
+  if (pinnedPostInput) pinnedPostInput.value = profile.pinned_post_id || '';
+  if (chipName) chipName.textContent = displayName;
+  if (chipInitial) chipInitial.textContent = rawName[0].toUpperCase();
+  if (ddName) ddName.textContent = displayName;
+  if (pfpInitial) pfpInitial.textContent = rawName[0].toUpperCase();
+
+  currentLinks = Array.isArray(profile.links) ? profile.links.slice(0, MAX_LINKS) : [];
+  renderLinksEditor();
 
   if (profile.pfp_url) loadPfpImage(profile.pfp_url);
 
@@ -758,7 +1122,6 @@ async function pageInit() {
       const initial = chipAv.querySelector('span');
       const existingImg = chipAv.querySelector('img');
       if (existingImg) existingImg.remove();
-      
       const img = document.createElement('img');
       img.src = profile.pfp_url;
       img.onload = () => {
@@ -772,53 +1135,18 @@ async function pageInit() {
   }
 
   updateChangeBadge();
-  
   renderThemeCards();
   updateCurrentThemeName();
-  
-  nextLoadingStep(); // online (handled by initPage)
-  // notifs (handled by initPage)
-  
+
+  // Load CEIN wallet + privacy state
+  await Promise.all([
+    loadCEINWallet(),
+    loadPrivacyState()
+  ]);
+
+  nextLoadingStep(); // online
+  nextLoadingStep(); // notifs
   nextLoadingStep(); // ready
-}
-
-// ── YOUR ROLES ──
-const ROLE_META = {
-  owner:      { label: 'Owner',       icon: 'fa-crown',        color: '#f0c040' },
-  admin:      { label: 'Admin',       icon: 'fa-shield-halved', color: 'var(--neon)' },
-  moderator:  { label: 'Moderator',   icon: 'fa-user-shield',  color: 'var(--info)' },
-  teacher:    { label: 'Teacher',     icon: 'fa-chalkboard-user', color: '#7dd3fc' },
-  advertiser: { label: 'Advertiser',  icon: 'fa-bullhorn',     color: 'var(--purple)' },
-  user:       { label: 'Member',      icon: 'fa-user',         color: 'var(--muted)' }
-};
-
-function renderUserRoles(roles) {
-  const container = document.getElementById('user-roles-list');
-  if (!container) return;
-
-  const list = Array.isArray(roles) && roles.length > 0 ? roles : ['user'];
-
-  container.innerHTML = '';
-  const frag = document.createDocumentFragment();
-
-  list.forEach(roleKey => {
-    const meta = ROLE_META[roleKey] || {
-      label: roleKey,
-      icon: 'fa-circle',
-      color: 'var(--muted)'
-    };
-
-    const chip = document.createElement('div');
-    chip.className = 'user-role-chip';
-    chip.style.setProperty('--role-color', meta.color);
-    chip.innerHTML = `
-      <i class="fas ${meta.icon}"></i>
-      <span>${window.escapeHTML(meta.label)}</span>
-    `;
-    frag.appendChild(chip);
-  });
-
-  container.appendChild(frag);
 }
 
 // ── START ──

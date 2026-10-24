@@ -83,7 +83,7 @@ if ('serviceWorker' in navigator) {
       <div class="onb-progress-fill" id="onb-progress-fill"></div>
     </div>
     <div class="onb-progress-label">
-      <span id="onb-progress-text">1 / 6</span>
+      <span id="onb-progress-text">1 / 7</span>
       <span id="onb-progress-name">Welcome</span>
     </div>
   </div>
@@ -101,13 +101,13 @@ if ('serviceWorker' in navigator) {
 
       <div class="onb-whats-new" id="onb-whats-new" style="display:none">
         <div class="onb-whats-new-title">
-          <i class="fas fa-sparkles"></i> What's new in V3.7
+          <i class="fas fa-sparkles"></i> What's new in V3.8
         </div>
         <ul class="onb-whats-new-list">
-          <li><i class="fas fa-check"></i> <span>Feedback system — report bugs, suggest features, talk to admins directly</span></li>
-          <li><i class="fas fa-check"></i> <span>Timeout system — with a real countdown and a boredom game</span></li>
-          <li><i class="fas fa-check"></i> <span>New About page — full rules, privacy, terms, and guides for every feature</span></li>
-          <li><i class="fas fa-check"></i> <span>Faster navigation, smoother animations, cleaner UI</span></li>
+          <li><i class="fas fa-check"></i> <span>Follow anyone — see their posts in your Following feed</span></li>
+          <li><i class="fas fa-check"></i> <span>Private accounts — approve who follows you</span></li>
+          <li><i class="fas fa-check"></i> <span>CEIN — earn points for posting, commenting, and logging in</span></li>
+          <li><i class="fas fa-check"></i> <span>Profile upgrades — banner, pinned post, links, and more</span></li>
         </ul>
       </div>
 
@@ -120,7 +120,7 @@ if ('serviceWorker' in navigator) {
   <section class="onb-screen" data-screen="2" style="display:none">
     <div class="onb-screen-inner">
       <div class="onb-screen-head">
-        <div class="onb-screen-step">Step 2 of 6</div>
+        <div class="onb-screen-step">Step 2 of 7</div>
         <h2 class="onb-screen-title">About you</h2>
         <p class="onb-screen-sub">This is how the community knows who you are. Required to continue.</p>
       </div>
@@ -193,7 +193,7 @@ if ('serviceWorker' in navigator) {
   <section class="onb-screen" data-screen="3" style="display:none">
     <div class="onb-screen-inner">
       <div class="onb-screen-head">
-        <div class="onb-screen-step">Step 3 of 6</div>
+        <div class="onb-screen-step">Step 3 of 7</div>
         <h2 class="onb-screen-title">Set up your profile</h2>
         <p class="onb-screen-sub">Optional — you can skip this and change it later in Settings.</p>
       </div>
@@ -235,7 +235,39 @@ if ('serviceWorker' in navigator) {
   <section class="onb-screen" data-screen="4" style="display:none">
     <div class="onb-screen-inner">
       <div class="onb-screen-head">
-        <div class="onb-screen-step">Step 4 of 6</div>
+        <div class="onb-screen-step">Step 4 of 7</div>
+        <h2 class="onb-screen-title">Follow your classmates</h2>
+        <p class="onb-screen-sub">Your feed will fill with their posts. Follow 5 to get the best experience — or at least 3 to continue.</p>
+      </div>
+
+      <div class="onb-follow-counter-wrap">
+        <div class="onb-follow-counter" id="onb-follow-counter">
+          <span class="onb-follow-count" id="onb-follow-count">0</span>
+          <span class="onb-follow-count-total">/ 5</span>
+        </div>
+        <div class="onb-follow-hint" id="onb-follow-hint">
+          Follow at least <strong>3</strong> to continue
+        </div>
+      </div>
+
+      <div class="onb-follow-grid" id="onb-follow-grid">
+        <div class="onb-follow-loading">
+          <div class="onb-spinner-sm"></div> Loading students...
+        </div>
+      </div>
+
+      <div class="onb-follow-loadmore-wrap" style="display:none" id="onb-follow-loadmore-wrap">
+        <button class="onb-follow-loadmore" id="onb-follow-loadmore" onclick="window.onbLoadMoreStudents()">
+          <i class="fas fa-arrow-down"></i> Load more
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="onb-screen" data-screen="5" style="display:none">
+    <div class="onb-screen-inner">
+      <div class="onb-screen-head">
+        <div class="onb-screen-step">Step 5 of 7</div>
         <h2 class="onb-screen-title">Pick your vibe</h2>
         <p class="onb-screen-sub">7 theme families, each with dark and light. Change anytime in Settings.</p>
       </div>
@@ -249,10 +281,10 @@ if ('serviceWorker' in navigator) {
     </div>
   </section>
 
-  <section class="onb-screen" data-screen="5" style="display:none">
+  <section class="onb-screen" data-screen="6" style="display:none">
     <div class="onb-screen-inner">
       <div class="onb-screen-head">
-        <div class="onb-screen-step">Step 5 of 6</div>
+        <div class="onb-screen-step">Step 6 of 7</div>
         <h2 class="onb-screen-title">Rules &amp; Privacy</h2>
         <p class="onb-screen-sub">Please read these. You must agree before you can join.</p>
       </div>
@@ -278,14 +310,14 @@ if ('serviceWorker' in navigator) {
         <span>I've read and agree to the Community Rules and Privacy Policy.</span>
       </label>
 
-      <div class="onb-error" id="onb-error-5" style="display:none"></div>
+      <div class="onb-error" id="onb-error-6" style="display:none"></div>
     </div>
   </section>
 
-  <section class="onb-screen" data-screen="6" style="display:none">
+  <section class="onb-screen" data-screen="7" style="display:none">
     <div class="onb-screen-inner">
       <div class="onb-screen-head">
-        <div class="onb-screen-step">Step 6 of 6</div>
+        <div class="onb-screen-step">Step 7 of 7</div>
         <h2 class="onb-screen-title">You're all set</h2>
         <p class="onb-screen-sub">Here's where everything lives. Tap any card to learn more.</p>
       </div>
@@ -366,16 +398,18 @@ if ('serviceWorker' in navigator) {
 // ═══════════════════════════════════════════════════════════
 // ── ONBOARDING PAGE LOGIC ──
 // ═══════════════════════════════════════════════════════════
-// NOTE: `session` is a top-level `let` in shared.js. We use
-// `onbSession` here to avoid the "already declared" syntax error.
 
 const ONB_STATE_KEY = 'cesc_onboarding_state';
-const ONB_TOTAL_SCREENS = 6;
+const ONB_TOTAL_SCREENS = 7;
+const MIN_FOLLOWS_TO_CONTINUE = 3;
+const RECOMMENDED_FOLLOWS = 5;
+const FOLLOW_PAGE_SIZE = 10;
 
 const SCREEN_NAMES = [
   'Welcome',
   'About you',
   'Profile',
+  'Follow',
   'Theme',
   'Rules & Privacy',
   'Getting started'
@@ -424,18 +458,19 @@ let formData = {
 let pendingPfpFile = null;
 let rulesLoaded = false;
 
-// ═══════════════════════════════════════════════════════════
+// Follow screen state
+let followStudents = [];      // full loaded list
+let followVisibleCount = 0;   // how many shown
+let followedUserIds = new Set(); // user_ids we've followed in this session
+
 // ── DEBUG HELPER ──
-// ═══════════════════════════════════════════════════════════
 function setLoadingStep(text) {
   const el = document.getElementById('onb-loading-text');
   if (el) el.textContent = text;
   console.log('[ONB]', text);
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── INIT ──
-// ═══════════════════════════════════════════════════════════
 async function onbInit() {
   setLoadingStep('step 1: starting...');
 
@@ -604,9 +639,7 @@ async function onbInit() {
   setLoadingStep('✅ ready');
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── HEADER CHIP ──
-// ═══════════════════════════════════════════════════════════
 function updateHeaderChip() {
   if (!profile) return;
   const displayName = profile.display_name || profile.username || 'you';
@@ -633,9 +666,7 @@ function updateHeaderChip() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── SCREEN NAVIGATION ──
-// ═══════════════════════════════════════════════════════════
 function showScreen(n) {
   if (n < 1) n = 1;
   if (n > ONB_TOTAL_SCREENS) n = ONB_TOTAL_SCREENS;
@@ -656,17 +687,19 @@ function showScreen(n) {
 
   const backBtn = document.getElementById('onb-back-btn');
   if (backBtn) {
-    backBtn.style.display = (n === 3 || n === 4 || n === 5) ? 'inline-flex' : 'none';
+    // Back allowed on screens 3, 4, 5, 6 (not on welcome, not on finish)
+    backBtn.style.display = (n === 3 || n === 4 || n === 5 || n === 6) ? 'inline-flex' : 'none';
   }
 
   const skipBtn = document.getElementById('onb-skip-btn');
   if (skipBtn) {
-    skipBtn.style.display = (n === 3 || n === 4) ? 'inline-flex' : 'none';
+    // Skip available on Profile (3), Follow (4), Theme (5)
+    skipBtn.style.display = (n === 3 || n === 4 || n === 5) ? 'inline-flex' : 'none';
   }
 
   const nextLabel = document.getElementById('onb-next-label');
   if (nextLabel) {
-    if (n === 6) nextLabel.textContent = "Let's go";
+    if (n === 7) nextLabel.textContent = "Let's go";
     else nextLabel.textContent = 'Continue';
   }
 
@@ -679,9 +712,13 @@ function showScreen(n) {
     if (teacherFields) teacherFields.style.display = isTeacher ? 'block' : 'none';
   }
   if (n === 4) {
-    updateThemeCurrentLabel();
+    if (followStudents.length === 0) loadFollowStudents();
+    renderFollowGrid();
   }
   if (n === 5) {
+    updateThemeCurrentLabel();
+  }
+  if (n === 6) {
     if (!rulesLoaded) loadRulesContent();
   }
 
@@ -702,9 +739,7 @@ function clearProgress() {
   try { localStorage.removeItem(ONB_STATE_KEY); } catch (e) {}
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── NEXT / BACK / SKIP ──
-// ═══════════════════════════════════════════════════════════
 window.onbNext = async function() {
   if (isSubmitting) return;
 
@@ -713,15 +748,21 @@ window.onbNext = async function() {
     if (err) { showOnbError(2, err); return; }
     clearOnbError(2);
   }
-  if (currentScreen === 5) {
-    if (!formData.agreed) {
-      showOnbError(5, 'Please check the box to agree before continuing.');
+  if (currentScreen === 4) {
+    if (followedUserIds.size < MIN_FOLLOWS_TO_CONTINUE) {
+      window.showToast(`Follow at least ${MIN_FOLLOWS_TO_CONTINUE} students to continue`, 'error');
       return;
     }
-    clearOnbError(5);
+  }
+  if (currentScreen === 6) {
+    if (!formData.agreed) {
+      showOnbError(6, 'Please check the box to agree before continuing.');
+      return;
+    }
+    clearOnbError(6);
   }
 
-  if (currentScreen === 6) {
+  if (currentScreen === 7) {
     await finishOnboarding();
     return;
   }
@@ -731,7 +772,7 @@ window.onbNext = async function() {
     if (!ok) return;
   }
 
-  if (currentScreen === 4) {
+  if (currentScreen === 5) {
     if (formData.theme_id) {
       try { window.switchTheme(formData.theme_id); } catch (e) {}
     }
@@ -747,7 +788,9 @@ window.onbBack = function() {
 };
 
 window.onbSkip = function() {
-  if (currentScreen === 3 || currentScreen === 4) {
+  // Skip available on Profile (3), Follow (4), Theme (5)
+  if (currentScreen === 3 || currentScreen === 4 || currentScreen === 5) {
+    // If skipping Follow and they have < 3, still allow (safety valve)
     showScreen(currentScreen + 1);
   }
 };
@@ -764,16 +807,16 @@ function updateNextButtonState() {
     } else {
       canProceed = !!formData.class_number && !!formData.section && !!formData.roll_number;
     }
-  } else if (currentScreen === 5) {
+  } else if (currentScreen === 4) {
+    canProceed = followedUserIds.size >= MIN_FOLLOWS_TO_CONTINUE;
+  } else if (currentScreen === 6) {
     canProceed = formData.agreed === true;
   }
 
   btn.disabled = !canProceed || isSubmitting;
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── SCREEN 2 — VALIDATION + SAVE ──
-// ═══════════════════════════════════════════════════════════
 function validateScreen2() {
   if (isTeacher) {
     if (!formData.level) return 'Please pick your level.';
@@ -835,9 +878,7 @@ function clearOnbError(screen) {
   if (el) el.style.display = 'none';
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── SCREEN 2 — STUDENT CHIPS ──
-// ═══════════════════════════════════════════════════════════
 function setupStudentChips() {
   document.querySelectorAll('#onb-class-options .onb-chip').forEach(btn => {
     btn.onclick = () => {
@@ -899,9 +940,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════
 // ── SCREEN 2 — TEACHER SUBJECTS ──
-// ═══════════════════════════════════════════════════════════
 function setupSubjects() {
   const grid = document.getElementById('onb-subject-grid');
   if (!grid) return;
@@ -958,9 +997,7 @@ function updateSubjectSelection() {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── SCREEN 3 — PROFILE / BIO COUNTER / PFP ──
-// ═══════════════════════════════════════════════════════════
 function setupBioCounter() {
   const bio = document.getElementById('onb-bio');
   const count = document.getElementById('onb-bio-count');
@@ -1016,8 +1053,205 @@ window.onbRemovePfp = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// ── SCREEN 4 — THEME GRID ──
+// ── SCREEN 4 — FOLLOW STUDENTS ──
 // ═══════════════════════════════════════════════════════════
+async function loadFollowStudents() {
+  const grid = document.getElementById('onb-follow-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '<div class="onb-follow-loading"><div class="onb-spinner-sm"></div> Loading students...</div>';
+
+  try {
+    // Fetch candidate students: exclude self, exclude private, exclude already followed
+    const { data: existingFollows } = await window.supabaseClient
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', onbSession.user.id)
+      .eq('status', 'active');
+
+    const alreadyFollowing = new Set((existingFollows || []).map(f => f.following_id));
+    alreadyFollowing.forEach(id => followedUserIds.add(id));
+
+    const { data: students, error } = await window.supabaseClient
+      .from('profiles')
+      .select('id, username, display_name, pfp_url, bio, roles, verified, is_private, last_seen, follower_count')
+      .neq('id', onbSession.user.id)
+      .eq('is_private', false)
+      .order('last_seen', { ascending: false, nullsFirst: false })
+      .order('follower_count', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('loadFollowStudents:', error);
+      grid.innerHTML = '<div class="onb-follow-error"><i class="fas fa-triangle-exclamation"></i> Could not load students</div>';
+      return;
+    }
+
+    // Filter out ones we already follow, and ones without a display name (edge case)
+    const candidates = (students || []).filter(s => s.id && s.username);
+
+    // Sort: with pfp first, then by followers
+    candidates.sort((a, b) => {
+      const aHas = !!a.pfp_url ? 1 : 0;
+      const bHas = !!b.pfp_url ? 1 : 0;
+      if (aHas !== bHas) return bHas - aHas;
+      return (b.follower_count || 0) - (a.follower_count || 0);
+    });
+
+    followStudents = candidates;
+    followVisibleCount = Math.min(FOLLOW_PAGE_SIZE, followStudents.length);
+
+    renderFollowGrid();
+    updateFollowCounters();
+  } catch (e) {
+    console.error('loadFollowStudents exception:', e);
+    grid.innerHTML = '<div class="onb-follow-error"><i class="fas fa-triangle-exclamation"></i> Could not load students</div>';
+  }
+}
+
+function renderFollowGrid() {
+  const grid = document.getElementById('onb-follow-grid');
+  const loadmoreWrap = document.getElementById('onb-follow-loadmore-wrap');
+  if (!grid) return;
+
+  if (followStudents.length === 0) {
+    grid.innerHTML = '<div class="onb-follow-error"><i class="fas fa-users-slash"></i> No students to follow yet</div>';
+    if (loadmoreWrap) loadmoreWrap.style.display = 'none';
+    return;
+  }
+
+  grid.innerHTML = '';
+
+  const visible = followStudents.slice(0, followVisibleCount);
+
+  visible.forEach(student => {
+    grid.appendChild(buildFollowCard(student));
+  });
+
+  if (loadmoreWrap) {
+    loadmoreWrap.style.display = (followVisibleCount < followStudents.length) ? 'flex' : 'none';
+  }
+}
+
+function buildFollowCard(student) {
+  const card = document.createElement('div');
+  card.className = 'onb-follow-card';
+  card.dataset.userId = student.id;
+
+  const isFollowed = followedUserIds.has(student.id);
+  if (isFollowed) card.classList.add('followed');
+
+  const displayName = student.display_name || student.username;
+  const initial = (student.username?.[0] || '?').toUpperCase();
+  const pfp = student.pfp_url;
+
+  card.innerHTML = `
+    <div class="onb-follow-avatar">
+      <span>${escapeHTML(initial)}</span>
+      ${pfp ? `<img src="${escapeHTML(pfp)}" alt="${escapeHTML(student.username)}" onload="this.classList.add('loaded');this.previousElementSibling.style.display='none'" onerror="this.remove()"/>` : ''}
+    </div>
+    <div class="onb-follow-name">${escapeHTML(displayName)}</div>
+    <div class="onb-follow-username">@${escapeHTML(student.username)}</div>
+    <button class="onb-follow-btn ${isFollowed ? 'followed' : ''}" type="button">
+      ${isFollowed ? '<i class="fas fa-check"></i> Following' : '<i class="fas fa-plus"></i> Follow'}
+    </button>
+  `;
+
+  const btn = card.querySelector('.onb-follow-btn');
+  btn.onclick = async (e) => {
+    e.stopPropagation();
+    if (followedUserIds.has(student.id)) {
+      // Unfollow
+      btn.disabled = true;
+      try {
+        const { data, error } = await window.supabaseClient.rpc('unfollow', {
+          p_target_user_id: student.id
+        });
+        if (error || !data || !data.ok) {
+          window.showToast('Could not unfollow', 'error');
+          btn.disabled = false;
+          return;
+        }
+        followedUserIds.delete(student.id);
+        card.classList.remove('followed');
+        btn.classList.remove('followed');
+        btn.innerHTML = '<i class="fas fa-plus"></i> Follow';
+        btn.disabled = false;
+        updateFollowCounters();
+        updateNextButtonState();
+      } catch (e) {
+        console.error('unfollow:', e);
+        btn.disabled = false;
+      }
+    } else {
+      // Follow
+      btn.disabled = true;
+      try {
+        const { data, error } = await window.supabaseClient.rpc('request_follow', {
+          p_target_user_id: student.id
+        });
+        if (error || !data || !data.ok) {
+          window.showToast('Could not follow: ' + (data?.reason || error?.message || 'unknown'), 'error');
+          btn.disabled = false;
+          return;
+        }
+        if (data.status === 'active') {
+          followedUserIds.add(student.id);
+          card.classList.add('followed');
+          btn.classList.add('followed');
+          btn.innerHTML = '<i class="fas fa-check"></i> Following';
+        } else {
+          // Should not happen (we filter private), but just in case
+          window.showToast('Follow request sent', 'success');
+        }
+        btn.disabled = false;
+        updateFollowCounters();
+        updateNextButtonState();
+      } catch (e) {
+        console.error('follow:', e);
+        btn.disabled = false;
+      }
+    }
+  };
+
+  return card;
+}
+
+function updateFollowCounters() {
+  const countEl = document.getElementById('onb-follow-count');
+  const hintEl = document.getElementById('onb-follow-hint');
+  const counterEl = document.getElementById('onb-follow-counter');
+
+  const count = followedUserIds.size;
+
+  if (countEl) countEl.textContent = count;
+
+  if (counterEl) {
+    counterEl.classList.remove('met', 'recommended');
+    if (count >= RECOMMENDED_FOLLOWS) {
+      counterEl.classList.add('recommended');
+    } else if (count >= MIN_FOLLOWS_TO_CONTINUE) {
+      counterEl.classList.add('met');
+    }
+  }
+
+  if (hintEl) {
+    if (count >= RECOMMENDED_FOLLOWS) {
+      hintEl.innerHTML = '🎉 Great — you\'re ready to explore';
+    } else if (count >= MIN_FOLLOWS_TO_CONTINUE) {
+      hintEl.innerHTML = `Follow <strong>${RECOMMENDED_FOLLOWS}</strong> to unlock the best feed experience`;
+    } else {
+      hintEl.innerHTML = `Follow at least <strong>${MIN_FOLLOWS_TO_CONTINUE}</strong> to continue`;
+    }
+  }
+}
+
+window.onbLoadMoreStudents = function() {
+  followVisibleCount = Math.min(followVisibleCount + FOLLOW_PAGE_SIZE, followStudents.length);
+  renderFollowGrid();
+};
+
+// ── SCREEN 5 — THEME GRID ──
 function renderThemeGrid() {
   const grid = document.getElementById('onb-theme-grid');
   const themes = window.THEME_PRESETS || [];
@@ -1079,9 +1313,7 @@ function updateThemeCurrentLabel() {
   if (current) el.textContent = current.name + ' · ' + current.variant;
 }
 
-// ═══════════════════════════════════════════════════════════
-// ── SCREEN 5 — RULES & PRIVACY (fetch from about.html) ──
-// ═══════════════════════════════════════════════════════════
+// ── SCREEN 6 — RULES & PRIVACY ──
 async function loadRulesContent() {
   if (rulesLoaded) return;
   rulesLoaded = true;
@@ -1135,12 +1367,10 @@ window.onbUpdateAgree = function() {
   formData.agreed = !!(cb && cb.checked);
   saveProgress();
   updateNextButtonState();
-  if (formData.agreed) clearOnbError(5);
+  if (formData.agreed) clearOnbError(6);
 };
 
-// ═══════════════════════════════════════════════════════════
 // ── FINISH ──
-// ═══════════════════════════════════════════════════════════
 async function finishOnboarding() {
   if (isSubmitting) return;
   isSubmitting = true;
@@ -1222,9 +1452,7 @@ function showFinishOverlay() {
   document.body.classList.add('onb-finishing');
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── RESTORE FORM VALUES INTO UI ──
-// ═══════════════════════════════════════════════════════════
 function restoreFormToUI() {
   if (formData.class_number) updateChipSelection('#onb-class-options', 'class_number', formData.class_number);
   if (formData.section) updateChipSelection('#onb-section-options', 'section', formData.section);
@@ -1249,12 +1477,10 @@ function restoreFormToUI() {
   if (agree) agree.checked = !!formData.agreed;
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── beforeunload / pagehide guard ──
-// ═══════════════════════════════════════════════════════════
 window.addEventListener('beforeunload', (e) => {
   if (isSubmitting) return;
-  if (currentScreen === 1 || currentScreen === 6) return;
+  if (currentScreen === 1 || currentScreen === 7) return;
   if (document.getElementById('onb-finish-overlay')?.style.display === 'flex') return;
   const startedFilling = !!formData.class_number || !!formData.section || !!formData.level;
   if (!startedFilling && currentScreen === 2) return;
@@ -1267,15 +1493,14 @@ window.addEventListener('pagehide', () => {
   saveProgress();
 });
 
-// ═══════════════════════════════════════════════════════════
 // ── EXPOSE ──
-// ═══════════════════════════════════════════════════════════
 window.onbNext = window.onbNext;
 window.onbBack = window.onbBack;
 window.onbSkip = window.onbSkip;
 window.onbSwitchRulesTab = window.onbSwitchRulesTab;
 window.onbUpdateAgree = window.onbUpdateAgree;
 window.onbRemovePfp = window.onbRemovePfp;
+window.onbLoadMoreStudents = window.onbLoadMoreStudents;
 
 function escapeHTML(s) {
   if (!s) return '';
@@ -1284,9 +1509,7 @@ function escapeHTML(s) {
   }[m]));
 }
 
-// ═══════════════════════════════════════════════════════════
 // ── START ──
-// ═══════════════════════════════════════════════════════════
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', onbInit);
 } else {
