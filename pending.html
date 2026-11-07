@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pending approval — CESC Hub</title>
+
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<meta name="theme-color" content="#4a9eff">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="/shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/shared.js"></script>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+
+<style>
+body.pending-body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg);
+}
+.pending-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 36px 28px 28px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+  text-align: center;
+  animation: pending-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes pending-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pending-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(245,196,0,0.1);
+  border: 1px solid rgba(245,196,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--yellow);
+  margin: 0 auto 18px;
+  position: relative;
+  animation: pending-pulse 2.6s ease-in-out infinite;
+}
+@keyframes pending-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,196,0,0.35); transform: scale(1); }
+  50%      { box-shadow: 0 0 0 10px rgba(245,196,0,0); transform: scale(1.04); }
+}
+.pending-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+.pending-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  line-height: 1.55;
+  margin-bottom: 24px;
+}
+.pending-banner {
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(74,158,255,0.08);
+  border: 1px solid rgba(74,158,255,0.28);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.74rem;
+  color: var(--neon);
+  text-align: left;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.pending-banner i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.pending-timer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 16px 18px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.pending-timer-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.pending-timer {
+  font-family: 'Space Mono', monospace;
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(74,158,255,0.25);
+}
+.pending-timer-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.pending-timer-sub strong { color: var(--text-bright); }
+.pending-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pending-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 20px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.pending-btn.primary {
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+}
+.pending-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(74,158,255,0.4); }
+.pending-btn.primary:active { transform: scale(0.97); }
+.pending-btn.secondary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.pending-btn.secondary:hover {
+  border-color: rgba(74,158,255,0.35);
+  color: var(--neon);
+}
+.pending-btn.danger {
+  background: rgba(255,77,109,0.08);
+  border: 1px solid rgba(255,77,109,0.3);
+  color: var(--danger);
+}
+.pending-btn.danger:hover { background: rgba(255,77,109,0.15); }
+.pending-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.pending-footer {
+  margin-top: 22px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--muted);
+  opacity: 0.7;
+  line-height: 1.5;
+}
+.pending-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 30px 0;
+}
+.pending-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--neon);
+  border-radius: 50%;
+  animation: pending-spin 0.9s linear infinite;
+}
+@keyframes pending-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body class="pending-body">
+
+<div class="bg-canvas">
+  <div class="orb orb1 frozen"></div>
+  <div class="orb orb2 frozen"></div>
+  <div class="orb orb3 frozen"></div>
+</div>
+
+<div class="pending-card" id="pending-card">
+  <div class="pending-loading" id="pending-loading">
+    <div class="pending-spinner"></div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.8rem;color:var(--muted);">checking your status...</div>
+  </div>
+
+  <div id="pending-content" style="display:none;">
+    <div class="pending-icon">
+      <i class="fas fa-hourglass-half"></i>
+    </div>
+
+    <div class="pending-title" id="pending-title">Your account is pending approval</div>
+    <div class="pending-sub" id="pending-sub">
+      An admin needs to review your account before you can join the community. This usually takes up to 48 hours.
+    </div>
+
+    <div class="pending-banner" id="pending-banner">
+      <i class="fas fa-circle-info"></i>
+      <div id="pending-banner-text"></div>
+    </div>
+
+    <div class="pending-timer-card">
+      <div class="pending-timer-label"><i class="fas fa-stopwatch"></i> Waiting for approval</div>
+      <div class="pending-timer" id="pending-timer">00:00:00</div>
+      <div class="pending-timer-sub">
+        Account created <strong id="pending-created">—</strong>
+      </div>
+    </div>
+
+    <div class="pending-actions">
+      <button class="pending-btn primary" id="pending-refresh-btn" onclick="window.refreshStatus()">
+        <i class="fas fa-rotate"></i> Check status again
+      </button>
+      <a href="/" class="pending-btn secondary">
+        <i class="fas fa-newspaper"></i> Go to feed
+      </a>
+      <a href="/feedback" class="pending-btn secondary">
+        <i class="fas fa-comment-dots"></i> Report a problem / send feedback
+      </a>
+      <button class="pending-btn danger" onclick="window.logout()">
+        <i class="fas fa-right-from-bracket"></i> Logout
+      </button>
+    </div>
+
+    <div class="pending-footer">
+      CESC Hub · your wait timer runs from account creation and does not stop until an admin reviews your account.
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── PENDING PAGE LOGIC (Phase 2.1) ──
+// No initPage() here — this is a standalone minimal init like
+// timeout.html. We only need auth + profile + a stopwatch.
+// ═══════════════════════════════════════════════════════════
+
+let _timerInterval = null;
+let _createdAtMs = null;
+
+async function init() {
+  try { if (typeof window.initTheme === 'function') window.initTheme(); } catch (e) {}
+
+  const sess = await window.initAuth();
+  if (!sess) return; // initAuth redirects to login
+
+  const profile = await window.loadUserProfile();
+  if (!profile) {
+    document.getElementById('pending-loading').innerHTML =
+      '<div style="font-family:Space Mono,monospace;color:var(--danger);font-size:0.82rem;">Could not load your profile. Please reload.</div>';
+    return;
+  }
+
+  // Verified users are not allowed on /pending — send them home.
+  if (profile.verification_status === 'verified' || profile.verification_status == null) {
+    window.location.replace('/');
+    return;
+  }
+
+  _createdAtMs = profile.created_at ? new Date(profile.created_at).getTime() : Date.now();
+
+  renderStatus(profile);
+  renderRedirectMessage();
+  startStopwatch();
+
+  document.getElementById('pending-loading').style.display = 'none';
+  document.getElementById('pending-content').style.display = 'block';
+}
+
+function renderStatus(profile) {
+  const isRejected = profile.verification_status === 'rejected';
+  const title = document.getElementById('pending-title');
+  const sub = document.getElementById('pending-sub');
+
+  if (isRejected) {
+    title.textContent = 'Your account was not approved';
+    sub.textContent = 'An admin reviewed your signup and did not approve it. You can send feedback below if you think this is a mistake.';
+    document.querySelector('.pending-icon').style.background = 'rgba(255,77,109,0.1)';
+    document.querySelector('.pending-icon').style.borderColor = 'rgba(255,77,109,0.35)';
+    document.querySelector('.pending-icon').style.color = 'var(--danger)';
+    document.querySelector('.pending-icon i').className = 'fas fa-circle-xmark';
+    document.getElementById('pending-timer-card')?.remove?.();
+    const timerCard = document.querySelector('.pending-timer-card');
+    if (timerCard) timerCard.style.display = 'none';
+  }
+
+  const createdEl = document.getElementById('pending-created');
+  if (createdEl && profile.created_at) {
+    const d = new Date(profile.created_at);
+    createdEl.textContent = d.toLocaleString([], {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+}
+
+function renderRedirectMessage() {
+  let msg = null;
+  try { msg = sessionStorage.getItem('cesc_pending_msg'); } catch (e) {}
+  if (!msg) return;
+  try { sessionStorage.removeItem('cesc_pending_msg'); } catch (e) {}
+  const banner = document.getElementById('pending-banner');
+  const text = document.getElementById('pending-banner-text');
+  if (banner && text) {
+    text.textContent = msg;
+    banner.style.display = 'flex';
+  }
+}
+
+function startStopwatch() {
+  const timerEl = document.getElementById('pending-timer');
+  if (!timerEl || !_createdAtMs) return;
+
+  const tick = () => {
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - _createdAtMs) / 1000));
+    timerEl.textContent = formatElapsed(elapsedSec);
+  };
+
+  tick();
+  if (_timerInterval) clearInterval(_timerInterval);
+  _timerInterval = setInterval(tick, 1000);
+}
+
+function formatElapsed(totalSec) {
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  const pad = n => String(n).padStart(2, '0');
+  const hms = `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+  return days > 0 ? `${days}d ${hms}` : hms;
+}
+
+window.refreshStatus = async function() {
+  const btn = document.getElementById('pending-refresh-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...'; }
+  try {
+    const profile = await window.loadUserProfile();
+    if (!profile) {
+      window.showToast('Could not load status', 'error');
+      return;
+    }
+    if (profile.verification_status === 'verified') {
+      window.showToast('Your account is verified! Redirecting…', 'success');
+      setTimeout(() => window.location.replace('/'), 800);
+      return;
+    }
+    // Update status display in case it changed to rejected
+    renderStatus(profile);
+    window.showToast(profile.verification_status === 'rejected' ? 'Still not approved' : 'Still pending', 'info');
+  } catch (e) {
+    console.error('refreshStatus:', e);
+    window.showToast('Something went wrong', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-rotate"></i> Check status again'; }
+  }
+};
+
+window.addEventListener('beforeunload', () => {
+  if (_timerInterval) clearInterval(_timerInterval);
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>

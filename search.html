@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Hub — Search</title>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="shared.js"></script>
+<link rel="stylesheet" href="/css/pages/search.css"/>
+<link rel="stylesheet" href="/css/ads.css"/>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+<script src="/js/ads.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('✅ Service Worker registered'))
+      .catch(err => console.log('❌ Service Worker failed:', err));
+  });
+}
+</script>
+
+</head>
+<body data-page-title="Explore">
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar"><div class="loading-error-fill"></div></div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  <div class="loading-debug-hint">[ESC] force show</div>
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
+<div class="bg-canvas"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="window.toggleSidebar()"></div>
+<div class="mobile-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<div id="app-header"></div>
+<div id="app-sidebar"></div>
+
+<main class="main">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VIEW: EXPLORE / SEARCH (default when no ?u= in URL)
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="view-explore">
+    <div class="page-header explore-header">
+      <div class="page-header-title">
+        <h1>Explore</h1>
+        <p id="explore-subtitle">Discover posts, people, and games</p>
+      </div>
+      <button class="profiles-view-toggle" id="view-toggle" onclick="window.toggleViewMode()" title="Switch view">
+        <i class="fas fa-list" id="view-toggle-icon"></i>
+        <span id="view-toggle-label">Rows</span>
+      </button>
+    </div>
+
+    <!-- SEARCH BAR -->
+    <div class="explore-search-wrap">
+      <div class="explore-search">
+        <i class="fas fa-search search-icon"></i>
+        <input id="search-input" placeholder="Search posts, people, or games..." oninput="window.debouncedSearch()" autocomplete="off"/>
+        <button class="search-clear" id="search-clear" onclick="window.clearSearch()" title="Clear" style="display:none;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PILLS: Posts / Profiles / Games (only visible during search) -->
+    <div class="explore-pills" id="explore-pills" style="display:none;">
+      <button class="explore-pill active" data-filter="posts" onclick="window.setFilter('posts')">
+        <i class="fas fa-newspaper"></i> <span>Posts</span>
+      </button>
+      <button class="explore-pill" data-filter="profiles" onclick="window.setFilter('profiles')">
+        <i class="fas fa-users"></i> <span>Profiles</span>
+      </button>
+      <button class="explore-pill" data-filter="games" onclick="window.setFilter('games')">
+        <i class="fas fa-gamepad"></i> <span>Games</span>
+      </button>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="explore-status" id="explore-status">
+      <span id="explore-count">—</span>
+    </div>
+
+    <!-- CARDS VIEW -->
+    <div class="explore-grid" id="explore-grid"></div>
+
+    <!-- ROWS VIEW -->
+    <div class="explore-rows-wrap" id="explore-rows" style="display:none;">
+      <div class="explore-rows-list" id="explore-rows-list"></div>
+    </div>
+
+    <!-- LOAD MORE -->
+    <div class="explore-loadmore-wrap" id="explore-loadmore-wrap" style="display:none;">
+      <button class="explore-loadmore-btn" id="explore-loadmore-btn" onclick="window.loadMore()">
+        <i class="fas fa-arrow-down"></i> Load more
+      </button>
+    </div>
+    <div class="explore-end" id="explore-end" style="display:none;">
+      <i class="fas fa-check-circle"></i> You've reached the end
+    </div>
+    <div id="explore-sentinel" style="height:1px;width:100%"></div>
+
+    <!-- Empty state -->
+    <div class="explore-empty" id="explore-empty" style="display:none;">
+      <div class="explore-empty-icon"><i class="fas fa-search"></i></div>
+      <div class="explore-empty-title" id="explore-empty-title">Nothing found</div>
+      <div class="explore-empty-sub" id="explore-empty-sub">Try a different search or filter.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VIEW: PROFILE PAGE (when ?u=username in URL)
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="view-profile" style="display:none;">
+    <button class="profile-back-btn" onclick="window.backToExplore()">
+      <i class="fas fa-arrow-left"></i> Back to Explore
+    </button>
+
+    <div id="profile-loading" class="profile-loading">
+      <div class="loading-spin-ring"></div>
+      <div>Loading profile...</div>
+    </div>
+
+    <div id="profile-content" style="display:none;">
+      <div class="profile-banner" id="profile-banner"></div>
+
+      <div class="profile-header">
+        <div class="profile-header-avatar-wrap">
+          <div class="profile-header-avatar" id="profile-header-avatar">
+            <span id="profile-header-initial">?</span>
+          </div>
+        </div>
+
+        <div class="profile-header-info">
+          <div class="profile-header-top">
+            <h1 class="profile-header-name">
+              <span id="profile-header-name">—</span>
+              <i class="fas fa-circle-check profile-verified-icon" id="profile-verified-icon" style="display:none;" title="Verified"></i>
+            </h1>
+            <div class="profile-header-username" id="profile-header-username">@—</div>
+          </div>
+
+          <div class="profile-header-actions" id="profile-header-actions"></div>
+
+          <div class="profile-header-stats">
+            <div class="profile-stat">
+              <span class="profile-stat-value" id="profile-stat-posts">0</span>
+              <span class="profile-stat-label">posts</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-value" id="profile-stat-followers">0</span>
+              <span class="profile-stat-label">followers</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-value" id="profile-stat-following">0</span>
+              <span class="profile-stat-label">following</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-bio-block">
+        <div class="profile-bio" id="profile-bio" style="display:none;"></div>
+        <div class="profile-meta-row">
+          <span class="profile-meta-item" id="profile-location" style="display:none;">
+            <i class="fas fa-location-dot"></i> <span></span>
+          </span>
+          <span class="profile-meta-item" id="profile-joined" style="display:none;">
+            <i class="fas fa-calendar"></i> <span></span>
+          </span>
+          <span class="profile-meta-item profile-meta-cein" id="profile-cein" style="display:none;">
+            <i class="fas fa-coins"></i> <span></span>
+          </span>
+          <span class="profile-meta-item profile-meta-streak" id="profile-streak" style="display:none;">
+            <i class="fas fa-fire"></i> <span></span>
+          </span>
+        </div>
+        <div class="profile-links-row" id="profile-links-row" style="display:none;"></div>
+      </div>
+
+      <div class="profile-pinned-wrap" id="profile-pinned-wrap" style="display:none;">
+        <div class="profile-section-label"><i class="fas fa-thumbtack"></i> Pinned</div>
+        <div id="profile-pinned-content"></div>
+      </div>
+
+      <div class="profile-tabs">
+        <button class="profile-tab active" data-tab="posts" onclick="window.switchProfileTab('posts')">
+          <i class="fas fa-table-cells"></i> Posts
+        </button>
+        <button class="profile-tab" data-tab="following" onclick="window.switchProfileTab('following')">
+          <i class="fas fa-user-plus"></i> Following
+        </button>
+        <button class="profile-tab" data-tab="followers" onclick="window.switchProfileTab('followers')">
+          <i class="fas fa-users"></i> Followers
+        </button>
+        <button class="profile-tab" data-tab="about" onclick="window.switchProfileTab('about')">
+          <i class="fas fa-circle-info"></i> About
+        </button>
+      </div>
+
+      <div class="profile-posts-view" id="profile-posts-view">
+        <div class="profile-posts-grid" id="profile-posts-grid"></div>
+        <div class="profile-posts-empty" id="profile-posts-empty" style="display:none;">
+          <i class="fas fa-camera"></i>
+          <div>No posts yet</div>
+        </div>
+        <div class="profile-private-notice" id="profile-private-notice" style="display:none;">
+          <i class="fas fa-lock"></i>
+          <div class="profile-private-title">This account is private</div>
+          <div class="profile-private-desc">Follow this account to see their posts.</div>
+        </div>
+      </div>
+
+      <div class="profile-follow-view" id="profile-following-view" style="display:none;">
+        <div class="profile-follow-list" id="profile-following-list">
+          <div class="profile-follow-loading"><div class="loading-spin-ring"></div> Loading following...</div>
+        </div>
+      </div>
+
+      <div class="profile-follow-view" id="profile-followers-view" style="display:none;">
+        <div class="profile-follow-list" id="profile-followers-list">
+          <div class="profile-follow-loading"><div class="loading-spin-ring"></div> Loading followers...</div>
+        </div>
+      </div>
+
+      <div class="profile-about-view" id="profile-about-view" style="display:none;">
+        <div class="profile-about-list" id="profile-about-list"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="post-detail-overlay" id="post-detail-overlay" onclick="window.closePostDetail(event)">
+  <div class="post-detail-card" onclick="event.stopPropagation()">
+    <button class="post-detail-close" onclick="window.closePostDetail()">
+      <i class="fas fa-times"></i>
+    </button>
+    <div id="post-detail-body"></div>
+  </div>
+</div>
+
+<div id="app-downbar"></div>
+<div id="app-downbar-more"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ── EXPLORE + PROFILE PAGE (V3.8.2) ──
+// ═══════════════════════════════════════════════════════════
+
+const VIEW_KEY = 'cesc_profiles_view';
+const PAGE_SIZE = 20;
+const ADS_PER_PAGE = 1;
+
+let viewMode = 'cards';
+let currentFilter = 'posts';     // default filter is Posts (no All)
+let searchQuery = '';
+let allPosts = [];
+let allProfiles = [];
+let allGames = [];
+let combinedResults = [];
+let visibleCount = 0;      // how many items of combinedResults are rendered
+let loading = false;
+let isLoadingMore = false;
+let sentinelObserver = null;
+
+// Profile page state
+let profileUserId = null;
+let profileData = null;
+let profileIsFollowing = false;
+let profileIsPending = false;
+let profileIsFriends = false;
+let profileIsPrivate = false;
+let profileCanViewPrivate = false;
+
+let searchTimeout = null;
+let scrollCooldown = false;
+
+// ── LOADING STEPS ──
+function definePageSteps() {
+  defineLoadingSteps([
+    { id: 'theme', label: 'Loading theme...', technical: 'Applying saved theme preferences' },
+    { id: 'auth', label: 'Connecting to Supabase...', technical: 'Checking authentication' },
+    { id: 'profile', label: 'Loading your profile...', technical: 'Fetching user data' },
+    { id: 'pfp', label: 'Loading profile pictures...', technical: 'Caching avatars' },
+    { id: 'content', label: 'Loading explore...', technical: 'Fetching posts, profiles, games' },
+    { id: 'online', label: 'Loading online users...', technical: 'Counting active users' },
+    { id: 'notifs', label: 'Loading notifications...', technical: 'Checking unread count' },
+    { id: 'ready', label: 'Done! ✨', technical: 'Explore ready' }
+  ]);
+}
+
+// ── ROUTING ──
+function getProfileFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('u');
+}
+
+function pushProfileUrl(username) {
+  const newPath = username ? `/search?u=${encodeURIComponent(username)}` : '/search';
+  if (window.location.pathname + window.location.search !== newPath) {
+    history.pushState({ u: username }, '', newPath);
+  }
+}
+
+window.addEventListener('popstate', () => {
+  const u = getProfileFromUrl();
+  if (u) showProfileView(u);
+  else showExploreView();
+});
+
+function showExploreView() {
+  document.getElementById('view-explore').style.display = '';
+  document.getElementById('view-profile').style.display = 'none';
+  document.body.dataset.pageTitle = 'Explore';
+  document.title = 'CESC Hub — Explore';
+}
+
+function showProfileView(username) {
+  document.getElementById('view-explore').style.display = 'none';
+  document.getElementById('view-profile').style.display = '';
+  loadProfilePage(username);
+}
+
+window.backToExplore = function() {  // keep old name — button still calls this
+  pushProfileUrl(null);
+  showExploreView();
+};
+
+// Alias for clarity
+window.backToSearch = window.backToExplore;
+
+// ── VIEW MODE ──
+function loadViewMode() {
+  const saved = localStorage.getItem(VIEW_KEY);
+  viewMode = saved === 'rows' ? 'rows' : 'cards';
+  applyViewMode();
+}
+
+function applyViewMode() {
+  const grid = document.getElementById('explore-grid');
+  const rows = document.getElementById('explore-rows');
+  const label = document.getElementById('view-toggle-label');
+  const icon = document.getElementById('view-toggle-icon');
+  if (!grid || !rows) return;
+  if (viewMode === 'cards') {
+    grid.style.display = '';
+    rows.style.display = 'none';
+    if (label) label.textContent = 'Rows';
+    if (icon) icon.className = 'fas fa-list';
+  } else {
+    grid.style.display = 'none';
+    rows.style.display = 'block';
+    if (label) label.textContent = 'Cards';
+    if (icon) icon.className = 'fas fa-table-cells-large';
+  }
+}
+
+window.toggleViewMode = function() {
+  viewMode = viewMode === 'cards' ? 'rows' : 'cards';
+  localStorage.setItem(VIEW_KEY, viewMode);
+  applyViewMode();
+
+  // Re-render everything currently visible from scratch in the new view
+  // (easier than trying to convert existing DOM nodes)
+  const grid = document.getElementById('explore-grid');
+  const rowsList = document.getElementById('explore-rows-list');
+  if (grid) grid.innerHTML = '';
+  if (rowsList) rowsList.innerHTML = '';
+
+  // Temporarily reset the rendered count so renderVisibleItems re-appends all
+  if (visibleCount > 0) {
+    const savedCount = visibleCount;
+    visibleCount = 0;
+    // re-add everything up to savedCount
+    while (visibleCount < savedCount) {
+      const next = Math.min(visibleCount + PAGE_SIZE, savedCount);
+      // Cheat: append in one go by setting visibleCount = savedCount then calling
+      // renderVisibleItems with a fresh empty container. Since renderedReal is 0
+      // after the innerHTML clears, it'll append from 0 to savedCount.
+      visibleCount = savedCount;
+      renderVisibleItems();
+      break;
+    }
+    updateCount();
+    if (visibleCount >= combinedResults.length) {
+      document.getElementById('explore-loadmore-wrap').style.display = 'none';
+      document.getElementById('explore-end').style.display = 'flex';
+    } else {
+      document.getElementById('explore-loadmore-wrap').style.display = 'flex';
+      document.getElementById('explore-end').style.display = 'none';
+    }
+  }
+};
+
+// ── FILTER PILLS ──
+window.setFilter = function(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.explore-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.filter === filter);
+  });
+  visibleCount = 0;
+  buildResults();
+};
+
+// ── SEARCH ──
+window.debouncedSearch = function() {
+  const input = document.getElementById('search-input');
+  const clearBtn = document.getElementById('search-clear');
+  const pills = document.getElementById('explore-pills');
+  if (clearBtn) clearBtn.style.display = input.value ? 'flex' : 'none';
+
+  // Pills only show while there is text in the search bar
+  if (pills) {
+    pills.style.display = input.value.trim() ? 'flex' : 'none';
+  }
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchQuery = input.value.trim().toLowerCase();
+    visibleCount = 0;
+    // If the search is cleared, reset filter to Posts (default view)
+    if (!searchQuery) {
+      currentFilter = 'posts';
+      document.querySelectorAll('.explore-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.filter === 'posts');
+      });
+    }
+    buildResults();
+  }, 300);
+};
+
+window.clearSearch = function() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  const pills = document.getElementById('explore-pills');
+  if (pills) pills.style.display = 'none';
+
+  searchQuery = '';
+  visibleCount = 0;
+  currentFilter = 'posts';   // back to default
+  document.querySelectorAll('.explore-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.filter === 'posts');
+  });
+  buildResults();
+};
+
+// ── DATA LOAD ──
+async function loadAllContent() {
+  const [
+    { data: imagePosts },
+    { data: allPostsForSearch },
+    { data: profiles },
+    { data: games }
+  ] = await Promise.all([
+    // Default Explore view: image-only posts
+    window.supabaseClient
+      .from('posts')
+      .select('id, user_id, username, display_name, content, image_url, likes, created_at')
+      .not('image_url', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(500),
+    // Search superset: ALL posts (image + text-only)
+    window.supabaseClient
+      .from('posts')
+      .select('id, user_id, username, display_name, content, image_url, likes, created_at')
+      .order('created_at', { ascending: false })
+      .limit(500),
+    window.supabaseClient
+      .from('profiles')
+      .select('id, username, display_name, pfp_url, bio, is_private, verified, follower_count, following_count, last_seen, roles, created_at')
+      .order('created_at', { ascending: false }),
+    window.supabaseClient
+      .from('games')
+      .select('id, slug, title, description, thumbnail_url, category, icon, accent_color, plays')
+      .eq('active', true)
+  ]);
+
+  allPosts = imagePosts || [];
+  allProfiles = profiles || [];
+  allGames = games || [];
+
+  // Enrich posts with pfp
+  const pfpByUsername = {};
+  allProfiles.forEach(p => { if (p.pfp_url) pfpByUsername[p.username] = p.pfp_url; });
+  allPosts.forEach(p => { if (pfpByUsername[p.username]) p.pfp_url = pfpByUsername[p.username]; });
+
+  const searchPosts = allPostsForSearch || [];
+  searchPosts.forEach(p => { if (pfpByUsername[p.username]) p.pfp_url = pfpByUsername[p.username]; });
+  window._allSearchablePosts = searchPosts;
+}
+
+// ── BUILD COMBINED RESULTS ──
+// - No search text: only posts that have an image (default Explore view)
+// - With search text: posts (image OR text-only), profiles, games
+//   filtered by the active pill (Posts / Profiles / Games)
+function buildResults() {
+  const q = searchQuery;
+  const filter = currentFilter;
+  const results = [];
+
+  // ── DEFAULT (no search): only image posts ──
+  if (!q) {
+    const imagePosts = allPosts.filter(p => !!p.image_url);
+    imagePosts.forEach(p => results.push({ type: 'post', data: p }));
+    combinedResults = results;
+    visibleCount = 0;
+    renderInitialPage();
+    return;
+  }
+
+  // ── SEARCH MODE ──
+  // The query `allPosts` in loadAllContent filters to image-only.
+  // But search should include text-only posts too. So we need to
+  // filter allPosts again from a fresh fetch that includes text-only
+  // — but we already loaded 500 image posts. Text-only are excluded.
+  // Fix: search builds its own superset by re-querying. See below.
+  //
+  // For the profile/explore rewrite, `allPosts` was loaded with
+  // `.not('image_url', 'is', null)`. Search needs the full set.
+  // So we expose `allSearchablePosts` that `loadAllContent` also fills.
+  // See Patch 1f — a new fetch of all posts (image or text-only).
+
+  const searchPosts = (window._allSearchablePosts || []);
+  const posts = searchPosts.filter(p =>
+    (p.content || '').toLowerCase().includes(q) ||
+    (p.username || '').toLowerCase().includes(q) ||
+    (p.display_name || '').toLowerCase().includes(q)
+  );
+
+  const profiles = allProfiles.filter(p =>
+    (p.username || '').toLowerCase().includes(q) ||
+    (p.display_name || '').toLowerCase().includes(q) ||
+    (p.bio || '').toLowerCase().includes(q)
+  );
+
+  const games = allGames.filter(g =>
+    (g.title || '').toLowerCase().includes(q) ||
+    (g.description || '').toLowerCase().includes(q) ||
+    (g.category || '').toLowerCase().includes(q)
+  );
+
+  if (filter === 'posts') {
+    posts.forEach(p => results.push({ type: 'post', data: p }));
+  } else if (filter === 'profiles') {
+    profiles.forEach(p => results.push({ type: 'profile', data: p }));
+  } else if (filter === 'games') {
+    games.forEach(g => results.push({ type: 'game', data: g }));
+  }
+
+  combinedResults = results;
+  visibleCount = 0;
+  renderInitialPage();
+}
+
+// ── RENDER INITIAL PAGE ──
+// Clears the view, resets visibleCount to PAGE_SIZE, renders page 1.
+function renderInitialPage() {
+  const total = combinedResults.length;
+  const emptyEl = document.getElementById('explore-empty');
+  const grid = document.getElementById('explore-grid');
+  const rowsList = document.getElementById('explore-rows-list');
+
+  grid.innerHTML = '';
+  rowsList.innerHTML = '';
+
+  if (total === 0) {
+    emptyEl.style.display = 'flex';
+    document.getElementById('explore-empty-title').textContent =
+      searchQuery ? 'No results' : 'Nothing to explore yet';
+    document.getElementById('explore-empty-sub').textContent =
+      searchQuery ? `Nothing matches "${searchQuery}"` : 'Check back later.';
+    document.getElementById('explore-count').textContent = 'No results';
+    document.getElementById('explore-loadmore-wrap').style.display = 'none';
+    document.getElementById('explore-end').style.display = 'none';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  visibleCount = Math.min(PAGE_SIZE, total);
+  renderVisibleItems();
+  updateCount();
+
+  // Show/hide end-of-list indicator
+  if (visibleCount >= total) {
+    document.getElementById('explore-loadmore-wrap').style.display = 'none';
+    document.getElementById('explore-end').style.display = 'flex';
+  } else {
+    document.getElementById('explore-loadmore-wrap').style.display = 'flex';
+    document.getElementById('explore-end').style.display = 'none';
+  }
+}
+
+// ── RENDER VISIBLE ITEMS ──
+// Appends only the slice from the previous visibleCount up to the new one.
+// Used by both the initial render (0 → PAGE_SIZE) and loadMore.
+function renderVisibleItems() {
+  const total = combinedResults.length;
+  const grid = document.getElementById('explore-grid');
+  const rowsList = document.getElementById('explore-rows-list');
+
+  // Track what we've already rendered to avoid re-appending
+  const alreadyRendered = document.querySelectorAll('#explore-grid > *, #explore-rows-list > *').length;
+
+  // Count how many "real items" (not ads) have been rendered.
+  // Ads don't count toward visibleCount, so we need to slice from the
+  // position of the last rendered real item.
+  let renderedReal = 0;
+  const renderedEls = viewMode === 'cards'
+    ? grid.querySelectorAll(':scope > *')
+    : rowsList.querySelectorAll(':scope > *');
+  renderedEls.forEach(el => {
+    if (!el.classList.contains('explore-card-ad') && !el.classList.contains('explore-row-ad')) {
+      renderedReal++;
+    }
+  });
+
+  const start = renderedReal;
+  const end = visibleCount;
+  const slice = combinedResults.slice(start, end);
+  if (!slice.length) return;
+
+  const withAds = insertAds(slice);
+  const container = viewMode === 'cards' ? grid : rowsList;
+
+  withAds.forEach(item => {
+    if (viewMode === 'cards') {
+      if (item.type === 'ad') container.appendChild(buildExploreAdCard(item.data));
+      else if (item.type === 'post') container.appendChild(buildExplorePostCard(item.data));
+      else if (item.type === 'profile') container.appendChild(buildExploreProfileCard(item.data));
+      else if (item.type === 'game') container.appendChild(buildExploreGameCard(item.data));
+    } else {
+      if (item.type === 'ad') container.appendChild(buildExploreAdRow(item.data));
+      else if (item.type === 'post') container.appendChild(buildExplorePostRow(item.data));
+      else if (item.type === 'profile') container.appendChild(buildExploreProfileRow(item.data));
+      else if (item.type === 'game') container.appendChild(buildExploreGameRow(item.data));
+    }
+  });
+}
+
+function updateCount() {
+  const total = combinedResults.length;
+  document.getElementById('explore-count').textContent =
+    total === 0
+      ? 'No results'
+      : `Showing ${visibleCount} of ${total}`;
+}
+
+// ── LOAD MORE ──
+window.loadMore = function() {
+  if (isLoadingMore) return;
+  const total = combinedResults.length;
+  if (visibleCount >= total) return;
+
+  isLoadingMore = true;
+  const btn = document.getElementById('explore-loadmore-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+  }
+
+  visibleCount = Math.min(visibleCount + PAGE_SIZE, total);
+  renderVisibleItems();
+  updateCount();
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-arrow-down"></i> Load more';
+  }
+
+  if (visibleCount >= total) {
+    document.getElementById('explore-loadmore-wrap').style.display = 'none';
+    document.getElementById('explore-end').style.display = 'flex';
+  }
+
+  isLoadingMore = false;
+};
+
+// ── AD INSERTION (unchanged logic, renamed constant) ──
+function insertAds(slice) {
+  if (!window.Ads || typeof window.Ads.getCached !== 'function') return slice;
+  const ads = window.Ads.getCached() || [];
+  if (!ads.length) return slice;
+
+  const result = [];
+  let sinceLastAd = 0;
+  let adsUsed = 0;
+
+  slice.forEach((item, i) => {
+    result.push(item);
+    sinceLastAd++;
+    if (sinceLastAd >= 10 && adsUsed < ADS_PER_PAGE && i < slice.length - 1) {
+      const ad = ads[Math.floor(Math.random() * ads.length)];
+      result.push({ type: 'ad', data: ad });
+      sinceLastAd = 0;
+      adsUsed++;
+    }
+  });
+
+  return result;
+}
+
+// ── POST CARD ──
+function buildExplorePostCard(post) {
+  const card = document.createElement('div');
+  card.className = 'explore-card explore-card-post';
+
+  const img = document.createElement('img');
+  img.src = post.image_url;
+  img.alt = post.content || 'post';
+  img.loading = 'lazy';
+  img.onerror = () => card.remove();
+  card.appendChild(img);
+
+  // user overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'explore-card-user';
+  const av = window.buildAvatar(post.username, post.pfp_url, 32, 'explore-card-av');
+  const name = document.createElement('span');
+  name.className = 'explore-card-name';
+  name.textContent = post.display_name || post.username;
+  overlay.appendChild(av);
+  overlay.appendChild(name);
+  card.appendChild(overlay);
+
+  // engagement overlay (bottom)
+  const stats = document.createElement('div');
+  stats.className = 'explore-card-stats';
+  stats.innerHTML = `<i class="fas fa-heart"></i> ${post.likes || 0}`;
+  card.appendChild(stats);
+
+  card.onclick = () => openPostDetail(post.id);
+  return card;
+}
+
+// ── PROFILE CARD ──
+function buildExploreProfileCard(profile) {
+  const card = document.createElement('div');
+  card.className = 'explore-card explore-card-profile';
+
+  const av = window.buildAvatar(profile.username, profile.pfp_url, 80, 'explore-profile-av');
+  card.appendChild(av);
+
+  const name = document.createElement('div');
+  name.className = 'explore-profile-name';
+  name.innerHTML = window.escapeHTML(profile.display_name || profile.username) +
+    (profile.verified ? ' <i class="fas fa-circle-check" style="color:var(--neon);font-size:0.75rem"></i>' : '') +
+    (profile.is_private ? ' <i class="fas fa-lock" style="color:var(--muted);font-size:0.7rem"></i>' : '');
+  card.appendChild(name);
+
+  const username = document.createElement('div');
+  username.className = 'explore-profile-username';
+  username.textContent = '@' + profile.username;
+  card.appendChild(username);
+
+  if (profile.bio) {
+    const bio = document.createElement('div');
+    bio.className = 'explore-profile-bio';
+    bio.textContent = profile.bio.length > 80 ? profile.bio.slice(0, 80) + '…' : profile.bio;
+    card.appendChild(bio);
+  }
+
+  const stats = document.createElement('div');
+  stats.className = 'explore-profile-stats';
+  stats.innerHTML = `<span><strong>${profile.follower_count || 0}</strong> followers</span><span><strong>${profile.following_count || 0}</strong> following</span>`;
+  card.appendChild(stats);
+
+  card.onclick = () => {
+    pushProfileUrl(profile.username);
+    showProfileView(profile.username);
+  };
+  return card;
+}
+
+// ── GAME CARD ──
+function buildExploreGameCard(game) {
+  const card = document.createElement('div');
+  card.className = 'explore-card explore-card-game';
+
+  const thumb = document.createElement('div');
+  thumb.className = 'explore-game-thumb';
+  if (game.thumbnail_url) {
+    thumb.style.backgroundImage = `url('${window.escapeHTML(game.thumbnail_url)}')`;
+  } else {
+    thumb.style.background = game.accent_color || 'linear-gradient(135deg, #4a9eff, #6c5ce7)';
+    thumb.innerHTML = `<i class="fas ${game.icon || 'fa-gamepad'}" style="font-size:2rem;color:#000"></i>`;
+  }
+  card.appendChild(thumb);
+
+  const body = document.createElement('div');
+  body.className = 'explore-game-body';
+  body.innerHTML = `
+    <div class="explore-game-title">${window.escapeHTML(game.title)}</div>
+    <div class="explore-game-desc">${window.escapeHTML(game.description || '')}</div>
+    <div class="explore-game-meta">
+      <span><i class="fas fa-play"></i> ${game.plays || 0}</span>
+      <span class="explore-game-cat">${window.escapeHTML(game.category || 'arcade')}</span>
+    </div>
+  `;
+  card.appendChild(body);
+
+  card.onclick = () => {
+    window.location.href = `/games/play.html?slug=${encodeURIComponent(game.slug)}`;
+  };
+  return card;
+}
+
+// ── AD CARD ──
+function buildExploreAdCard(ad) {
+  const card = document.createElement('div');
+  card.className = 'explore-card explore-card-ad';
+
+  const displayName = ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
+  card.innerHTML = `
+    <div class="explore-ad-badge">Ad</div>
+    <div class="explore-ad-img">
+      <img src="${window.escapeHTML(ad.image_wide_url || ad.image_square_url || '')}" alt="${window.escapeHTML(ad.title || '')}" loading="lazy" onerror="this.parentElement.style.display='none'"/>
+    </div>
+    <div class="explore-ad-name">${window.escapeHTML(displayName)}</div>
+    <div class="explore-ad-title">${window.escapeHTML(ad.title || '')}</div>
+    <button class="explore-ad-cta" type="button">Learn more <i class="fas fa-arrow-right"></i></button>
+  `;
+
+  card.onclick = () => {
+    if (window.Ads && typeof window.Ads.logClick === 'function') {
+      window.Ads.logClick(ad.id, 'profiles');
+    }
+    try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
+  };
+
+  return card;
+}
+
+// ── ROW BUILDERS ──
+function buildExplorePostRow(post) {
+  const row = document.createElement('div');
+  row.className = 'explore-row explore-row-post';
+  const av = window.buildAvatar(post.username, post.pfp_url, 36, 'explore-row-av');
+  row.appendChild(av);
+  const body = document.createElement('div');
+  body.className = 'explore-row-body';
+  body.innerHTML = `
+    <div class="explore-row-name">${window.escapeHTML(post.display_name || post.username)} <span class="explore-row-username">@${window.escapeHTML(post.username)}</span></div>
+    <div class="explore-row-text">${window.escapeHTML((post.content || '').slice(0, 100))}${(post.content || '').length > 100 ? '…' : ''}</div>
+  `;
+  row.appendChild(body);
+  if (post.image_url) {
+    const thumb = document.createElement('div');
+    thumb.className = 'explore-row-thumb';
+    thumb.style.backgroundImage = `url('${window.escapeHTML(post.image_url)}')`;
+    row.appendChild(thumb);
+  }
+  row.onclick = () => openPostDetail(post.id);
+  return row;
+}
+
+function buildExploreProfileRow(profile) {
+  const row = document.createElement('div');
+  row.className = 'explore-row explore-row-profile';
+  const av = window.buildAvatar(profile.username, profile.pfp_url, 36, 'explore-row-av');
+  row.appendChild(av);
+  const body = document.createElement('div');
+  body.className = 'explore-row-body';
+  body.innerHTML = `
+    <div class="explore-row-name">${window.escapeHTML(profile.display_name || profile.username)} ${profile.verified ? '<i class="fas fa-circle-check" style="color:var(--neon);font-size:0.7rem"></i>' : ''}${profile.is_private ? ' <i class="fas fa-lock" style="color:var(--muted);font-size:0.65rem"></i>' : ''}</div>
+    <div class="explore-row-text">@${window.escapeHTML(profile.username)}${profile.bio ? ' · ' + window.escapeHTML(profile.bio.slice(0, 70)) : ''}</div>
+  `;
+  row.appendChild(body);
+  const stats = document.createElement('div');
+  stats.className = 'explore-row-stats';
+  stats.innerHTML = `<span><strong>${profile.follower_count || 0}</strong> followers</span>`;
+  row.appendChild(stats);
+  row.onclick = () => {
+    pushProfileUrl(profile.username);
+    showProfileView(profile.username);
+  };
+  return row;
+}
+
+function buildExploreGameRow(game) {
+  const row = document.createElement('div');
+  row.className = 'explore-row explore-row-game';
+  const thumb = document.createElement('div');
+  thumb.className = 'explore-row-thumb explore-row-thumb-game';
+  if (game.thumbnail_url) {
+    thumb.style.backgroundImage = `url('${window.escapeHTML(game.thumbnail_url)}')`;
+  } else {
+    thumb.style.background = game.accent_color || 'linear-gradient(135deg, #4a9eff, #6c5ce7)';
+    thumb.innerHTML = `<i class="fas ${game.icon || 'fa-gamepad'}" style="color:#000"></i>`;
+  }
+  row.appendChild(thumb);
+  const body = document.createElement('div');
+  body.className = 'explore-row-body';
+  body.innerHTML = `
+    <div class="explore-row-name">${window.escapeHTML(game.title)}</div>
+    <div class="explore-row-text">${window.escapeHTML((game.description || '').slice(0, 100))}</div>
+  `;
+  row.appendChild(body);
+  const stats = document.createElement('div');
+  stats.className = 'explore-row-stats';
+  stats.innerHTML = `<span><i class="fas fa-play"></i> ${game.plays || 0}</span>`;
+  row.appendChild(stats);
+  row.onclick = () => {
+    window.location.href = `/games/play.html?slug=${encodeURIComponent(game.slug)}`;
+  };
+  return row;
+}
+
+function buildExploreAdRow(ad) {
+  const row = document.createElement('div');
+  row.className = 'explore-row explore-row-ad';
+  const thumb = document.createElement('div');
+  thumb.className = 'explore-row-thumb';
+  if (ad.image_square_url || ad.image_wide_url) {
+    thumb.style.backgroundImage = `url('${window.escapeHTML(ad.image_square_url || ad.image_wide_url)}')`;
+  }
+  row.appendChild(thumb);
+  const body = document.createElement('div');
+  body.className = 'explore-row-body';
+  body.innerHTML = `
+    <div class="explore-row-name">${window.escapeHTML(ad.title || 'Sponsored')}</div>
+    <div class="explore-row-text">${window.escapeHTML(ad.advertiser_display_name || ad.advertiser_username || 'Ad')}</div>
+  `;
+  row.appendChild(body);
+  const badge = document.createElement('div');
+  badge.className = 'explore-row-ad-badge';
+  badge.textContent = 'Ad';
+  row.appendChild(badge);
+  row.onclick = () => {
+    if (window.Ads && typeof window.Ads.logClick === 'function') {
+      window.Ads.logClick(ad.id, 'profiles');
+    }
+    try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
+  };
+  return row;
+}
+
+// ── INFINITE SCROLL (auto-load more when near bottom) ──
+// Uses an IntersectionObserver on a 1px sentinel at the bottom of the list.
+// When the sentinel becomes visible, loadMore fires. Falls back to the
+// "Load more" button if IntersectionObserver isn't available.
+function setupInfiniteScroll() {
+  if (!('IntersectionObserver' in window)) return; // button fallback works
+
+  const sentinel = document.getElementById('explore-sentinel');
+  if (!sentinel) return;
+
+  if (sentinelObserver) sentinelObserver.disconnect();
+
+  sentinelObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const total = combinedResults.length;
+        if (visibleCount < total && !isLoadingMore) {
+          window.loadMore();
+        }
+      }
+    });
+  }, { rootMargin: '300px' });
+
+  sentinelObserver.observe(sentinel);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── PROFILE PAGE (unchanged behavior) ──
+// ═══════════════════════════════════════════════════════════
+
+async function loadProfilePage(username) {
+  document.getElementById('profile-loading').style.display = 'flex';
+  document.getElementById('profile-content').style.display = 'none';
+
+  try {
+    const { data: p, error } = await window.supabaseClient
+      .from('profiles')
+      .select('id, username, display_name, bio, pfp_url, roles, is_private, verified, banner_url, links, pinned_post_id, location, follower_count, following_count, created_at, last_seen, streak')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (error || !p) {
+      document.getElementById('profile-loading').innerHTML = `
+        <i class="fas fa-user-slash" style="font-size:2rem;color:var(--muted);margin-bottom:12px;"></i>
+        <div>Profile not found</div>
+      `;
+      return;
+    }
+
+    profileData = p;
+    profileUserId = p.id;
+    profileIsPrivate = !!p.is_private;
+
+    const isSelf = window.session && window.session.user.id === p.id;
+
+    profileIsFollowing = false;
+    profileIsPending = false;
+    profileIsFriends = false;
+
+    if (!isSelf && window.session) {
+      const { data: myFollow } = await window.supabaseClient
+        .from('follows')
+        .select('status')
+        .eq('follower_id', window.session.user.id)
+        .eq('following_id', p.id)
+        .maybeSingle();
+
+      if (myFollow) {
+        if (myFollow.status === 'active') profileIsFollowing = true;
+        if (myFollow.status === 'pending') profileIsPending = true;
+      }
+
+      if (profileIsFollowing) {
+        const { data: theirFollow } = await window.supabaseClient
+          .from('follows')
+          .select('status')
+          .eq('follower_id', p.id)
+          .eq('following_id', window.session.user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        if (theirFollow) profileIsFriends = true;
+      }
+    }
+
+    profileCanViewPrivate = !profileIsPrivate || isSelf || profileIsFollowing;
+
+    let posts = [];
+    let pinnedPost = null;
+
+    if (profileCanViewPrivate) {
+      const { data: postsData } = await window.supabaseClient
+        .from('posts')
+        .select('id, content, image_url, created_at, likes')
+        .eq('user_id', p.id)
+        .order('created_at', { ascending: false })
+        .limit(60);
+      posts = postsData || [];
+
+      if (p.pinned_post_id) {
+        pinnedPost = posts.find(post => post.id === p.pinned_post_id) || null;
+      }
+    }
+
+    let ceinBalance = null;
+    if (isSelf) {
+      const { data: credits } = await window.supabaseClient.rpc('get_my_credits');
+      if (credits && credits.ok) ceinBalance = credits.balance;
+    }
+
+    renderProfilePage(p, { isSelf, posts, pinnedPost, ceinBalance });
+
+    document.getElementById('profile-loading').style.display = 'none';
+    document.getElementById('profile-content').style.display = 'block';
+
+    // Reset tabs to Posts whenever a new profile is loaded
+    document.querySelectorAll('.profile-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === 'posts');
+    });
+    document.getElementById('profile-posts-view').style.display = '';
+    document.getElementById('profile-following-view').style.display = 'none';
+    document.getElementById('profile-followers-view').style.display = 'none';
+    document.getElementById('profile-about-view').style.display = 'none';
+
+    document.title = (p.display_name || p.username) + ' · CESC Hub';
+    document.body.dataset.pageTitle = p.display_name || p.username;
+  } catch (e) {
+    console.error('loadProfilePage exception:', e);
+    document.getElementById('profile-loading').innerHTML = `
+      <i class="fas fa-triangle-exclamation" style="font-size:2rem;color:var(--danger);margin-bottom:12px;"></i>
+      <div>Something went wrong</div>
+    `;
+  }
+}
+
+function renderProfilePage(p, ctx) {
+  const { isSelf, posts, pinnedPost, ceinBalance } = ctx;
+
+  const bannerEl = document.getElementById('profile-banner');
+  bannerEl.innerHTML = '';
+  if (p.banner_url) {
+    const img = document.createElement('img');
+    img.src = p.banner_url;
+    img.onerror = () => img.remove();
+    bannerEl.appendChild(img);
+  }
+
+  const av = document.getElementById('profile-header-avatar');
+  const initial = (p.username?.[0] || '?').toUpperCase();
+  av.innerHTML = `<span id="profile-header-initial">${initial}</span>`;
+  if (p.pfp_url) {
+    const img = document.createElement('img');
+    img.src = p.pfp_url;
+    img.onload = () => {
+      img.classList.add('loaded');
+      const span = av.querySelector('span');
+      if (span) span.style.display = 'none';
+    };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+
+  document.getElementById('profile-header-name').textContent = p.display_name || p.username;
+  document.getElementById('profile-header-username').textContent = '@' + p.username;
+  document.getElementById('profile-verified-icon').style.display = p.verified ? 'inline-block' : 'none';
+
+  document.getElementById('profile-stat-posts').textContent = posts.length;
+  document.getElementById('profile-stat-followers').textContent = p.follower_count || 0;
+  document.getElementById('profile-stat-following').textContent = p.following_count || 0;
+
+  renderProfileActions(p, isSelf);
+
+  const bioEl = document.getElementById('profile-bio');
+  if (p.bio && p.bio.trim()) {
+    bioEl.textContent = p.bio;
+    bioEl.style.display = '';
+  } else {
+    bioEl.style.display = 'none';
+  }
+
+  const locEl = document.getElementById('profile-location');
+  if (p.location && p.location.trim()) {
+    locEl.querySelector('span').textContent = p.location;
+    locEl.style.display = '';
+  } else {
+    locEl.style.display = 'none';
+  }
+
+  const joinEl = document.getElementById('profile-joined');
+  if (p.created_at) {
+    const d = new Date(p.created_at);
+    joinEl.querySelector('span').textContent = 'Joined ' + d.toLocaleDateString([], { month: 'long', year: 'numeric' });
+    joinEl.style.display = '';
+  } else {
+    joinEl.style.display = 'none';
+  }
+
+  const ceinEl = document.getElementById('profile-cein');
+  if (isSelf && ceinBalance !== null) {
+    ceinEl.querySelector('span').textContent = ceinBalance.toLocaleString() + ' CEIN';
+    ceinEl.style.display = '';
+  } else {
+    ceinEl.style.display = 'none';
+  }
+
+  const streakEl = document.getElementById('profile-streak');
+  if (p.streak && p.streak > 0) {
+    streakEl.querySelector('span').textContent = p.streak + ' day streak';
+    streakEl.style.display = '';
+  } else {
+    streakEl.style.display = 'none';
+  }
+
+  const linksRow = document.getElementById('profile-links-row');
+  linksRow.innerHTML = '';
+  const links = Array.isArray(p.links) ? p.links.filter(l => l && l.label && l.url) : [];
+  if (links.length > 0) {
+    links.slice(0, 3).forEach(l => {
+      const a = document.createElement('a');
+      a.href = l.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.className = 'profile-link-pill';
+      a.innerHTML = `<i class="fas fa-link"></i> ${window.escapeHTML(l.label)}`;
+      linksRow.appendChild(a);
+    });
+    linksRow.style.display = 'flex';
+  } else {
+    linksRow.style.display = 'none';
+  }
+
+  const pinnedWrap = document.getElementById('profile-pinned-wrap');
+  const pinnedContent = document.getElementById('profile-pinned-content');
+  if (pinnedPost && profileCanViewPrivate) {
+    pinnedWrap.style.display = '';
+    pinnedContent.innerHTML = '';
+    pinnedContent.appendChild(buildPinnedPostPreview(pinnedPost));
+  } else {
+    pinnedWrap.style.display = 'none';
+  }
+
+  const postsGrid = document.getElementById('profile-posts-grid');
+  const postsEmpty = document.getElementById('profile-posts-empty');
+  const privateNotice = document.getElementById('profile-private-notice');
+  postsGrid.innerHTML = '';
+
+  if (!profileCanViewPrivate) {
+    postsGrid.style.display = 'none';
+    postsEmpty.style.display = 'none';
+    privateNotice.style.display = 'flex';
+  } else if (posts.length === 0) {
+    postsGrid.style.display = 'none';
+    postsEmpty.style.display = 'flex';
+    privateNotice.style.display = 'none';
+  } else {
+    postsGrid.style.display = 'grid';
+    postsEmpty.style.display = 'none';
+    privateNotice.style.display = 'none';
+
+    posts.forEach(post => {
+      postsGrid.appendChild(buildPostThumb(post));
+    });
+  }
+
+  renderAboutList(p);
+}
+
+function renderProfileActions(p, isSelf) {
+  const container = document.getElementById('profile-header-actions');
+  container.innerHTML = '';
+
+  if (isSelf) {
+    const editBtn = document.createElement('a');
+    editBtn.href = '/settings';
+    editBtn.className = 'profile-action-btn primary';
+    editBtn.innerHTML = '<i class="fas fa-pen"></i> Edit Profile';
+    container.appendChild(editBtn);
+    return;
+  }
+
+  let followBtnClass = 'profile-action-btn primary';
+  let followBtnHTML = '';
+  let followBtnAction = null;
+
+  if (profileIsFollowing && profileIsFriends) {
+    followBtnClass = 'profile-action-btn secondary';
+    followBtnHTML = '<i class="fas fa-user-check"></i> Friends';
+    followBtnAction = 'unfollow';
+  } else if (profileIsFollowing) {
+    followBtnClass = 'profile-action-btn secondary';
+    followBtnHTML = '<i class="fas fa-check"></i> Following';
+    followBtnAction = 'unfollow';
+  } else if (profileIsPending) {
+    followBtnClass = 'profile-action-btn secondary';
+    followBtnHTML = '<i class="fas fa-clock"></i> Requested';
+    followBtnAction = 'unfollow';
+  } else {
+    followBtnClass = 'profile-action-btn primary';
+    followBtnHTML = profileIsPrivate
+      ? '<i class="fas fa-user-plus"></i> Request to Follow'
+      : '<i class="fas fa-user-plus"></i> Follow';
+    followBtnAction = 'follow';
+  }
+
+  const followBtn = document.createElement('button');
+  followBtn.className = followBtnClass;
+  followBtn.innerHTML = followBtnHTML;
+  followBtn.onclick = () => handleFollowClick(followBtnAction);
+  container.appendChild(followBtn);
+
+  const msgBtn = document.createElement('a');
+  msgBtn.href = '/chat?c=' + encodeURIComponent(dmSlug(window.currentUser?.username, p.username));
+  msgBtn.className = 'profile-action-btn secondary';
+  msgBtn.innerHTML = '<i class="fas fa-comment"></i> Message';
+  container.appendChild(msgBtn);
+
+  const reportBtn = document.createElement('button');
+  reportBtn.className = 'profile-action-btn danger';
+  reportBtn.title = 'Report profile';
+  reportBtn.innerHTML = '<i class="fas fa-flag"></i>';
+  reportBtn.onclick = () => {
+    window.openQuickReport('user', p.id, p.username);
+  };
+  container.appendChild(reportBtn);
+}
+
+function dmSlug(a, b) {
+  if (!a || !b) return '';
+  const x = String(a).toLowerCase();
+  const y = String(b).toLowerCase();
+  return x < y ? `${x}_${y}` : `${y}_${x}`;
+}
+
+async function handleFollowClick(action) {
+  if (!profileData) return;
+  const target = profileData.id;
+
+  try {
+    if (action === 'follow') {
+      const { data, error } = await window.supabaseClient.rpc('request_follow', {
+        p_target_user_id: target
+      });
+      if (error || !data || !data.ok) {
+        window.showToast('Could not follow: ' + (error?.message || data?.reason || 'unknown'), 'error');
+        return;
+      }
+
+      if (data.status === 'active') {
+        profileIsFollowing = true;
+        profileIsPending = false;
+        window.showToast('Followed ✅', 'success');
+      } else if (data.status === 'pending') {
+        profileIsPending = true;
+        window.showToast('Follow request sent 📨', 'success');
+      }
+
+      if (profileData) profileData.follower_count = (profileData.follower_count || 0) + 1;
+    } else if (action === 'unfollow') {
+      const { data, error } = await window.supabaseClient.rpc('unfollow', {
+        p_target_user_id: target
+      });
+      if (error || !data || !data.ok) {
+        window.showToast('Could not unfollow', 'error');
+        return;
+      }
+
+      const wasFollowing = profileIsFollowing;
+      profileIsFollowing = false;
+      profileIsPending = false;
+      profileIsFriends = false;
+      window.showToast('Unfollowed', 'info');
+
+      if (wasFollowing && profileData) {
+        profileData.follower_count = Math.max(0, (profileData.follower_count || 1) - 1);
+      }
+    }
+
+    const isSelf = window.session && window.session.user.id === profileData.id;
+    renderProfileActions(profileData, isSelf);
+    document.getElementById('profile-stat-followers').textContent = profileData.follower_count || 0;
+  } catch (e) {
+    console.error('handleFollowClick:', e);
+    window.showToast('Something went wrong', 'error');
+  }
+}
+
+function buildPinnedPostPreview(post) {
+  const card = document.createElement('div');
+  card.className = 'pinned-post-preview';
+  card.onclick = () => openPostDetail(post.id);
+
+  const text = (post.content || '').slice(0, 220);
+  const hasImage = !!post.image_url;
+
+  card.innerHTML = `
+    <div class="pinned-post-content">
+      ${hasImage ? `<div class="pinned-post-thumb"><img src="${window.escapeHTML(post.image_url)}" loading="lazy" onerror="this.parentElement.remove()"/></div>` : ''}
+      <div class="pinned-post-body">
+        <div class="pinned-post-text">${window.escapeHTML(text)}${(post.content || '').length > 220 ? '…' : ''}</div>
+        <div class="pinned-post-time">${window.timeAgo(post.created_at)}</div>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
+function buildPostThumb(post) {
+  const thumb = document.createElement('div');
+  thumb.className = 'profile-post-thumb';
+  thumb.onclick = () => openPostDetail(post.id);
+
+  const content = post.content || '';
+  const textOnly = !post.image_url;
+
+  if (post.image_url) {
+    thumb.classList.add('has-image');
+    const img = document.createElement('img');
+    img.src = post.image_url;
+    img.loading = 'lazy';
+    img.alt = '';
+    img.onerror = () => {
+      img.remove();
+      thumb.classList.remove('has-image');
+      thumb.classList.add('text-thumb');
+      thumb.innerHTML = `<div style="padding:12px;font-size:0.7rem;text-align:center;color:var(--text)">${window.escapeHTML(content.slice(0, 100))}</div>`;
+    };
+    thumb.appendChild(img);
+  } else {
+    thumb.classList.add('text-thumb');
+    thumb.innerHTML = `<div style="padding:12px;font-size:0.7rem;text-align:center;color:var(--text)">${window.escapeHTML(content.slice(0, 100))}</div>`;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'profile-post-overlay';
+  overlay.innerHTML = `<i class="fas fa-heart"></i> ${post.likes || 0}`;
+  thumb.appendChild(overlay);
+
+  return thumb;
+}
+
+// ── FOLLOWING / FOLLOWERS LISTS ──
+async function loadFollowList(kind) {
+  if (!profileData) return;
+  const listId = kind === 'following' ? 'profile-following-list' : 'profile-followers-list';
+  const list = document.getElementById(listId);
+  if (!list) return;
+
+  // Access check: private account + viewer is not self + viewer is not a follower
+  const isSelf = window.session && window.session.user.id === profileData.id;
+  if (profileIsPrivate && !isSelf && !profileIsFollowing) {
+    list.innerHTML = `
+      <div class="profile-follow-empty">
+        <i class="fas fa-lock"></i>
+        <div class="profile-follow-empty-title">This account is private</div>
+        <div class="profile-follow-empty-desc">Follow to see their ${kind}.</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = `<div class="profile-follow-loading"><div class="loading-spin-ring"></div> Loading ${kind}...</div>`;
+
+  try {
+    // Query follows in the correct direction
+    let rows = [];
+    if (kind === 'following') {
+      // Who does this profile follow?
+      const { data, error } = await window.supabaseClient
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', profileData.id)
+        .eq('status', 'active');
+      if (error) throw error;
+      rows = data || [];
+    } else {
+      // Who follows this profile?
+      const { data, error } = await window.supabaseClient
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', profileData.id)
+        .eq('status', 'active');
+      if (error) throw error;
+      rows = data || [];
+    }
+
+    const ids = rows.map(r => kind === 'following' ? r.following_id : r.follower_id).filter(Boolean);
+    if (ids.length === 0) {
+      list.innerHTML = `
+        <div class="profile-follow-empty">
+          <i class="fas fa-user-group"></i>
+          <div class="profile-follow-empty-title">Nobody ${kind === 'following' ? 'followed' : 'following'} yet</div>
+        </div>`;
+      return;
+    }
+
+    // Fetch profile info for those IDs
+    const { data: profilesData, error: pErr } = await window.supabaseClient
+      .from('profiles')
+      .select('id, username, display_name, pfp_url, bio, is_private, verified')
+      .in('id', ids);
+    if (pErr) throw pErr;
+
+    list.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    (profilesData || []).forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'profile-follow-row';
+      row.onclick = () => {
+        pushProfileUrl(p.username);
+        showProfileView(p.username);
+        // Ensure the tabs reset to posts when opening a new profile
+        setTimeout(() => {
+          document.querySelectorAll('.profile-tab').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === 'posts');
+          });
+          document.getElementById('profile-posts-view').style.display = '';
+          document.getElementById('profile-following-view').style.display = 'none';
+          document.getElementById('profile-followers-view').style.display = 'none';
+          document.getElementById('profile-about-view').style.display = 'none';
+        }, 100);
+      };
+
+      const av = window.buildAvatar(p.username, p.pfp_url, 42, 'profile-follow-av');
+      row.appendChild(av);
+
+      const info = document.createElement('div');
+      info.className = 'profile-follow-info';
+      info.innerHTML = `
+        <div class="profile-follow-name">
+          ${window.escapeHTML(p.display_name || p.username)}
+          ${p.verified ? '<i class="fas fa-circle-check" style="color:var(--neon);font-size:0.7rem;margin-left:4px;"></i>' : ''}
+          ${p.is_private ? '<i class="fas fa-lock" style="color:var(--muted);font-size:0.65rem;margin-left:4px;"></i>' : ''}
+        </div>
+        <div class="profile-follow-username">@${window.escapeHTML(p.username)}</div>
+      `;
+      row.appendChild(info);
+
+      const arrow = document.createElement('div');
+      arrow.className = 'profile-follow-arrow';
+      arrow.innerHTML = '<i class="fas fa-chevron-right"></i>';
+      row.appendChild(arrow);
+
+      frag.appendChild(row);
+    });
+    list.appendChild(frag);
+  } catch (e) {
+    console.error('loadFollowList:', e);
+    list.innerHTML = `<div class="profile-follow-empty"><i class="fas fa-triangle-exclamation"></i> Could not load ${kind}.</div>`;
+  }
+}
+
+function renderAboutList(p) {
+  const container = document.getElementById('profile-about-list');
+  container.innerHTML = '';
+
+  const items = [];
+  if (p.bio) items.push({ icon: 'fa-quote-left', label: 'Bio', value: p.bio });
+  if (p.location) items.push({ icon: 'fa-location-dot', label: 'Location', value: p.location });
+  if (p.created_at) items.push({ icon: 'fa-calendar', label: 'Joined', value: new Date(p.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }) });
+  const rawRoles = Array.isArray(p.roles) ? p.roles : [];
+  if (rawRoles.length > 0) items.push({ icon: 'fa-shield-halved', label: 'Roles', value: rawRoles.join(', ') });
+  if (p.last_seen) items.push({ icon: 'fa-clock', label: 'Last seen', value: timeAgo(p.last_seen) });
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="profile-about-empty">No info to show</div>';
+    return;
+  }
+
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'profile-about-item';
+    el.innerHTML = `
+      <div class="profile-about-icon"><i class="fas ${item.icon}"></i></div>
+      <div class="profile-about-info">
+        <div class="profile-about-label">${window.escapeHTML(item.label)}</div>
+        <div class="profile-about-value">${window.escapeHTML(item.value)}</div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+window.switchProfileTab = function(tab) {
+  document.querySelectorAll('.profile-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+
+  document.getElementById('profile-posts-view').style.display = tab === 'posts' ? '' : 'none';
+  document.getElementById('profile-following-view').style.display = tab === 'following' ? '' : 'none';
+  document.getElementById('profile-followers-view').style.display = tab === 'followers' ? '' : 'none';
+  document.getElementById('profile-about-view').style.display = tab === 'about' ? '' : 'none';
+
+  if (tab === 'following') loadFollowList('following');
+  if (tab === 'followers') loadFollowList('followers');
+};
+
+async function openPostDetail(postId) {
+  const overlay = document.getElementById('post-detail-overlay');
+  const body = document.getElementById('post-detail-body');
+  body.innerHTML = '<div class="loading-spin-ring" style="margin:60px auto;"></div>';
+  overlay.classList.add('show');
+
+  try {
+    const { data: post, error } = await window.supabaseClient
+      .from('posts')
+      .select('*')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (error || !post) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Post not found</div>';
+      return;
+    }
+
+    const myId = window.session?.user?.id;
+    const isOwn = myId === post.user_id;
+
+    const [likesRes, myLikeRes, commentsRes] = await Promise.all([
+      window.supabaseClient.from('likes').select('post_id', { count: 'exact', head: true }).eq('post_id', postId),
+      myId ? window.supabaseClient.from('likes').select('post_id').eq('post_id', postId).eq('user_id', myId).maybeSingle() : Promise.resolve({ data: null }),
+      window.supabaseClient.from('comments').select('post_id', { count: 'exact', head: true }).eq('post_id', postId),
+    ]);
+
+    const likeCount = likesRes.count || 0;
+    const commentCount = commentsRes.count || 0;
+    const isLiked = !!myLikeRes.data;
+
+    body.innerHTML = '';
+
+    const author = document.createElement('div');
+    author.className = 'post-detail-author';
+    const displayName = post.display_name || post.username;
+    const pfp = post.pfp_url || window.pfpCache?.[post.username];
+    author.innerHTML = `
+      <div class="post-detail-avatar" style="${pfp ? `background-image:url('${window.escapeHTML(pfp)}');background-size:cover;background-position:center;` : ''}">${pfp ? '' : window.escapeHTML((post.username?.[0] || '?').toUpperCase())}</div>
+      <div>
+        <div class="post-detail-name">${window.escapeHTML(displayName)}</div>
+        <div class="post-detail-time">${window.timeAgo(post.created_at)}</div>
+      </div>
+    `;
+    body.appendChild(author);
+
+    if (post.content) {
+      const textEl = document.createElement('div');
+      textEl.className = 'post-detail-text rich';
+      textEl.textContent = post.content;
+      body.appendChild(textEl);
+    }
+
+    if (post.image_url) {
+      const imgEl = document.createElement('img');
+      imgEl.className = 'post-detail-image';
+      imgEl.src = post.image_url;
+      imgEl.loading = 'lazy';
+      imgEl.onerror = () => imgEl.remove();
+      body.appendChild(imgEl);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'post-detail-actions';
+
+    const likeBtn = document.createElement('button');
+    likeBtn.className = 'post-detail-action' + (isLiked ? ' liked' : '');
+    likeBtn.innerHTML = `<i class="fas fa-heart"></i> <span class="pd-like-count">${likeCount}</span>`;
+    likeBtn.onclick = async () => {
+      if (!myId) { window.showToast('Log in first', 'error'); return; }
+      if (window.guardPendingAction('like posts')) return;
+      const liked = likeBtn.classList.contains('liked');
+      const countEl = likeBtn.querySelector('.pd-like-count');
+      const current = parseInt(countEl.textContent) || 0;
+
+      likeBtn.classList.toggle('liked', !liked);
+      countEl.textContent = liked ? Math.max(0, current - 1) : current + 1;
+
+      if (liked) {
+        const { error } = await window.supabaseClient
+          .from('likes').delete().eq('post_id', postId).eq('user_id', myId);
+        if (error) {
+          likeBtn.classList.add('liked');
+          countEl.textContent = current;
+        }
+      } else {
+        const { error } = await window.supabaseClient
+          .from('likes').insert({ post_id: postId, user_id: myId });
+        if (error && error.code !== '23505') {
+          likeBtn.classList.remove('liked');
+          countEl.textContent = current;
+        }
+      }
+    };
+    actions.appendChild(likeBtn);
+
+    const commentBtn = document.createElement('button');
+    commentBtn.className = 'post-detail-action';
+    commentBtn.innerHTML = `<i class="fas fa-comment"></i> <span class="pd-comment-count">${commentCount}</span>`;
+    actions.appendChild(commentBtn);
+
+    if (isOwn) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'post-detail-action danger';
+      delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+      delBtn.onclick = async () => {
+        if (!confirm('Delete this post? No undo.')) return;
+        const { error } = await window.supabaseClient
+          .from('posts').delete().eq('id', postId).eq('user_id', myId);
+        if (error) {
+          window.showToast('Delete failed: ' + error.message, 'error');
+          return;
+        }
+        window.showToast('Post deleted', 'success');
+        window.closePostDetail();
+      };
+      actions.appendChild(delBtn);
+    }
+
+    body.appendChild(actions);
+  } catch (e) {
+    console.error('openPostDetail:', e);
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--danger)">Something went wrong</div>';
+  }
+}
+
+window.closePostDetail = function(e) {
+  if (e && e.target && e.target.id !== 'post-detail-overlay') return;
+  document.getElementById('post-detail-overlay').classList.remove('show');
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('post-detail-overlay')?.classList.remove('show');
+  }
+});
+
+// ── PAGE INIT ──
+async function pageInit() {
+  definePageSteps();
+  nextLoadingStep();  // theme
+
+  loadViewMode();
+
+  nextLoadingStep();  // pfp
+  nextLoadingStep();  // content
+
+  await loadAllContent();
+  buildResults();
+
+  nextLoadingStep();  // online
+  nextLoadingStep();  // notifs
+  nextLoadingStep();  // ready
+
+  setupInfiniteScroll();
+
+  // Route
+  const u = getProfileFromUrl();
+  if (u) {
+    showProfileView(u);
+  } else {
+    showExploreView();
+  }
+
+  // Resolve the header "My Profile" dropdown link to this user's actual profile.
+  // Before this line runs, the link is just "/search" (safe fallback).
+  // After this line, it points to "/search?u=<your username>".
+  const myProfileLink = document.getElementById('dd-my-profile');
+  if (myProfileLink && window.currentUser?.username) {
+    myProfileLink.href = '/search?u=' + encodeURIComponent(window.currentUser.username);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initPage(pageInit);
+  });
+} else {
+  initPage(pageInit);
+}
+</script>
+</body>
+</html>

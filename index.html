@@ -117,12 +117,20 @@ window.addEventListener('appinstalled', () => {
     </div>
   </div>
 
+  <div id="pending-banner" style="display:none;background:rgba(245,196,0,0.08);border:1px solid rgba(245,196,0,0.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;align-items:center;gap:10px;">
+    <i class="fas fa-lock" style="color:var(--yellow);font-size:1rem;"></i>
+    <div style="flex:1;font-family:'Space Mono',monospace;font-size:0.78rem;color:var(--yellow);line-height:1.4;">
+      <strong style="color:var(--text-bright);">Read-only mode</strong> — your account is pending approval. You can browse posts, but you can't post, comment, or like until verified.
+    </div>
+    <a href="/pending" style="padding:6px 12px;border-radius:8px;background:rgba(245,196,0,0.15);border:1px solid rgba(245,196,0,0.3);color:var(--yellow);text-decoration:none;font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;white-space:nowrap;">View status →</a>
+  </div>
+
   <div class="page-header">
-    <div>
+    <div class="page-header-title">
       <h1>Feed</h1>
       <p id="feed-subtitle">Loading posts...</p>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+    <div class="page-header-controls">
       <div class="feed-tabs" id="feed-tabs">
         <button class="feed-tab active" data-feed="following" onclick="window.switchFeedTab('following')">
           <i class="fas fa-user-check"></i>
@@ -133,12 +141,14 @@ window.addEventListener('appinstalled', () => {
           <span>Explore</span>
         </button>
       </div>
-      <button class="create-post-btn" onclick="openPostModal()">
-        <i class="fas fa-plus"></i> <span>Create Post</span>
-      </button>
-      <button class="refresh-btn" id="refresh-btn" onclick="refreshFeed()">
-        <span class="spin"><i class="fas fa-sync-alt"></i></span> Refresh
-      </button>
+      <div class="page-header-buttons">
+        <button class="create-post-btn" onclick="openPostModal()" title="Create Post">
+          <i class="fas fa-plus"></i> <span>Create Post</span>
+        </button>
+        <button class="refresh-btn" id="refresh-btn" onclick="refreshFeed()" title="Refresh">
+          <span class="spin"><i class="fas fa-sync-alt"></i></span> <span>Refresh</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -663,6 +673,7 @@ async function uploadImage(file) {
 }
 
 async function submitPost() {
+  if (window.guardPendingAction('post')) return;
   const text = document.getElementById('post-ta').value.trim();
   if (!text && !pendingImageFile) {
     window.showToast('write something or add an image', 'error');
@@ -972,18 +983,37 @@ async function loadFollowingGraph() {
   if (!window.session) return;
 
   try {
-    const { data } = await window.supabaseClient
+    // Query 1: who do I follow?
+    const { data: rows, error } = await window.supabaseClient
       .from('follows')
-      .select('following_id, profiles:following_id(username)')
+      .select('following_id')
       .eq('follower_id', window.session.user.id)
       .eq('status', 'active');
 
-    (data || []).forEach(row => {
-      if (row.following_id) followingIds.add(row.following_id);
-      if (row.profiles?.username) followingUsernames.add(row.profiles.username);
-    });
+    if (error) {
+      console.error('loadFollowingGraph follows:', error);
+      return;
+    }
+    if (!rows || rows.length === 0) return;
+
+    const ids = rows.map(r => r.following_id).filter(Boolean);
+    ids.forEach(id => followingIds.add(id));
+
+    // Query 2: get their usernames (only needed for explore scoring)
+    const { data: profiles, error: pErr } = await window.supabaseClient
+      .from('profiles')
+      .select('id, username')
+      .in('id', ids);
+
+    if (pErr) {
+      console.error('loadFollowingGraph profiles:', pErr);
+    } else if (profiles) {
+      profiles.forEach(p => {
+        if (p.username) followingUsernames.add(p.username);
+      });
+    }
   } catch (e) {
-    console.error('loadFollowingGraph:', e);
+    console.error('loadFollowingGraph exception:', e);
   }
 }
 
@@ -1429,6 +1459,7 @@ async function deletePost(postId) {
 }
 
 async function toggleLike(postId, btn) {
+  if (window.guardPendingAction('like posts')) return;
   if (!window.session || !window.session.user) {
     window.showToast('You must be logged in', 'error');
     return;
@@ -1583,6 +1614,7 @@ async function deleteComment(commentId, postId) {
 }
 
 async function submitComment(postId) {
+  if (window.guardPendingAction('comment')) return;
   const input = document.getElementById('ci-' + postId);
   const text = input.value.trim();
   
@@ -1730,6 +1762,13 @@ async function pageInit() {
   nextLoadingStep();  // theme
   nextLoadingStep();  // auth
   nextLoadingStep();  // profile
+
+  // Show pending banner for pending/rejected users
+  if (window.currentUser && window.currentUser.verification_status &&
+      window.currentUser.verification_status !== 'verified') {
+    const banner = document.getElementById('pending-banner');
+    if (banner) banner.style.display = 'flex';
+  }
 
   // Load following graph so we know what to filter
   await loadFollowingGraph();

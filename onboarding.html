@@ -1429,8 +1429,21 @@ async function finishOnboarding() {
     clearProgress();
     showFinishOverlay();
 
-    setTimeout(() => {
-      window.location.href = '/';
+    setTimeout(async () => {
+      let target = '/';
+      try {
+        const { data } = await window.supabaseClient
+          .from('profiles')
+          .select('verification_status')
+          .eq('id', onbSession.user.id)
+          .single();
+        if (data && data.verification_status && data.verification_status !== 'verified') {
+          target = '/pending';
+        }
+      } catch (e) {
+        console.warn('finishOnboarding: could not re-check verification_status, defaulting to /', e);
+      }
+      window.location.href = target;
     }, 2600);
 
   } catch (e) {

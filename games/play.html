@@ -135,6 +135,7 @@ if ('serviceWorker' in navigator) {
         id="game-iframe"
         class="game-iframe"
         src=""
+        tabindex="0"
         allow="fullscreen; autoplay; gamepad; clipboard-write; microphone"
         allowfullscreen="true"
         webkitallowfullscreen="true"
@@ -157,8 +158,10 @@ if ('serviceWorker' in navigator) {
 // ═══════════════════════════════════════════════════════════
 
 const FLUSH_INTERVAL_MS = 30 * 1000;
-const INACTIVITY_TIMEOUT_MS = 2 * 60 * 1000;
-const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'click', 'scroll'];
+// V3.8.2: 5 min inactivity (was 2 min). Bloxd.io kicks AFK players anyway,
+// so 5 min is safe — the player will already be disconnected if truly AFK.
+const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'click', 'scroll', 'pointerdown', 'wheel'];
 
 let GAME_SLUG = null;
 let gameRecord = null;
@@ -359,15 +362,45 @@ function resetInactivity() {
 }
 
 function setupTrackingListeners() {
+  // Browser tab visibility — the ONLY reliable signal for "user is here"
+  // on all platforms including mobile and Chromebook parental controls.
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopTracking();
     else resetInactivity();
   });
+
   window.addEventListener('blur', () => { stopTracking(); });
   window.addEventListener('focus', () => { resetInactivity(); });
+
+  // Parent-page activity (keyboard/mouse on the wrapper area).
   ACTIVITY_EVENTS.forEach(evt => {
     document.addEventListener(evt, resetInactivity, { passive: true });
   });
+
+  // V3.8.2: iframe events. Even though the iframe is cross-origin (bloxd.io),
+  // `focus` and `click` on the iframe ELEMENT bubble up to the parent — this is
+  // the ONLY way to detect activity inside the game on mobile where touches
+  // go straight to the iframe and never hit the parent document.
+  const gameIframe = document.getElementById('game-iframe');
+  const frameWrap = document.getElementById('game-frame-wrap');
+
+  if (gameIframe) {
+    // These fire on the parent even for cross-origin iframes
+    gameIframe.addEventListener('focus', resetInactivity);
+    gameIframe.addEventListener('click', resetInactivity);
+    // Some browsers fire these on the parent when the iframe gets pointer events
+    gameIframe.addEventListener('pointerdown', resetInactivity, { passive: true });
+    gameIframe.addEventListener('touchstart', resetInactivity, { passive: true });
+  }
+
+  if (frameWrap) {
+    // Any touch anywhere on the game frame wrapper area counts as activity
+    frameWrap.addEventListener('touchstart', resetInactivity, { passive: true });
+    frameWrap.addEventListener('pointerdown', resetInactivity, { passive: true });
+    frameWrap.addEventListener('click', resetInactivity, { passive: true });
+  }
+
+  // Page hide / unload: flush what we have
   window.addEventListener('pagehide', () => {
     stopTracking();
     if (pendingSeconds >= 1 && currentSessionId) flushPending();

@@ -1384,3 +1384,96 @@
   transform: scale(0.97);
 }
 .feed-empty-btn i { font-size: 0.82rem; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   V3.8.2 — Mobile feed header fix
+   ═══════════════════════════════════════════════════════════ */
+
+.page-header-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.page-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Desktop: keep everything on one line */
+@media (min-width: 769px) {
+  .page-header {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Tablet: allow wrap of controls only */
+@media (max-width: 900px) and (min-width: 769px) {
+  .page-header-controls {
+    max-width: 60%;
+  }
+}
+
+/* Mobile: stack title on top, controls below full-width */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .page-header-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .feed-tabs {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .feed-tab {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .page-header-buttons {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .page-header-buttons .create-post-btn,
+  .page-header-buttons .refresh-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+}
+
+/* Very narrow phones: hide text labels, keep icons */
+@media (max-width: 400px) {
+  .page-header-buttons .create-post-btn span,
+  .page-header-buttons .refresh-btn span:not(.spin) {
+    display: none;
+  }
+
+  .page-header-buttons .create-post-btn,
+  .page-header-buttons .refresh-btn {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+  }
+}

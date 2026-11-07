@@ -1,10 +1,7 @@
 // ── SUPABASE CLIENT ──
-// Using CDN version - supabase is already available globally
 const SUPABASE_URL = 'https://wojbqixkarjlvbgublsg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvamJxaXhrYXJqbHZiZ3VibHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjkxNDYsImV4cCI6MjEwMTY0NTE0Nn0.A2VpByFPSIi9bS8EkAh7VPsgjuiYFfgAyuwIz-sCcas';
 
-// supabase is already defined globally by the CDN script
-// Just initialize it with the URL and key
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { 
   auth: { persistSession: true },
   realtime: { params: { eventsPerSecond: 10 } }
@@ -22,20 +19,68 @@ let _loadingRetryCallback = null;
 let _loadingEscapeDisabled = false;
 
 // ═══════════════════════════════════════════════════════════
-// ── NAV TEMPLATES (single source of truth) ──
+// ── PENDING USER ALLOWLIST (Phase 2.1) ──
+// Pending users are locked to these paths. Anything else
+// redirects to /pending with a friendly message.
+// Owner bypasses (matches onboarding exception).
 // ═══════════════════════════════════════════════════════════
-// These functions render the header, sidebar, downbar, and downbar-more.
-// Every page has placeholder divs that get replaced with this HTML on
-// DOMContentLoaded — BEFORE the page's own initPage() runs.
+const PENDING_ALLOWED_PATHS = [
+  '/',
+  '/index.html',
+  '/pending',
+  '/pending.html',
+  '/settings',
+  '/settings.html',
+  '/feedback',
+  '/feedback.html',
+  '/timeout',
+  '/timeout.html',
+  '/onboarding',
+  '/onboarding.html',
+  '/signup',
+  '/signup.html',
+  '/login',
+  '/login.html'
+];
+
+function isPendingAllowedPath(pathname) {
+  // Normalize trailing slash
+  const p = pathname.endsWith('/') && pathname.length > 1
+    ? pathname.slice(0, -1)
+    : pathname;
+  return PENDING_ALLOWED_PATHS.includes(p);
+}
+
+// ── GUARD PENDING ACTION (Phase 2.1) ──
+// Pages call this BEFORE attempting any write. If the current
+// user is pending, it shows the friendly toast and returns true
+// (caller should `return`). If verified, returns false (caller
+// proceeds with the action).
 //
-// Edit the nav ONCE here and it updates everywhere.
+// Usage:
+//   if (window.guardPendingAction('post')) return;
+//   if (window.guardPendingAction('comment')) return;
+//   if (window.guardPendingAction('like')) return;
+//   if (window.guardPendingAction('send messages')) return;
+//   if (window.guardPendingAction('follow users')) return;
+function guardPendingAction(actionLabel) {
+  if (!currentUser) return false;
+  const status = currentUser.verification_status;
+  if (status == null || status === 'verified') return false;
+  const label = actionLabel || 'do that';
+  showToast(`You need to be verified to ${label}`, 'error');
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ── NAV TEMPLATES ──
 // ═══════════════════════════════════════════════════════════
 
 function getActivePageKey() {
   const path = window.location.pathname;
   if (path === '/' || path === '/index.html') return 'home';
   if (path.startsWith('/chat')) return 'chat';
-  if (path.startsWith('/profiles')) return 'profiles';
+  if (path.startsWith('/search') || path.startsWith('/u/') || path.startsWith('/profiles')) return 'search';
   if (path.startsWith('/games/bloxdio')) return 'bloxdio';
   if (path.startsWith('/games')) return 'games';
   if (path.startsWith('/leaderboard')) return 'leaderboard';
@@ -45,6 +90,8 @@ function getActivePageKey() {
   if (path.startsWith('/about')) return 'about';
   if (path.startsWith('/feedback')) return 'feedback';
   if (path.startsWith('/onboarding')) return 'onboarding';
+  if (path.startsWith('/signup')) return 'signup';
+  if (path.startsWith('/pending')) return 'pending';
   return '';
 }
 
@@ -80,7 +127,6 @@ function downbarMoreItem(href, icon, label, opts) {
     + '</a>';
 }
 
-// ── HEADER ──
 function renderHeaderNav() {
   const title = document.body.dataset.pageTitle || 'CESC Hub';
   return ''
@@ -111,22 +157,21 @@ function renderHeaderNav() {
     +           '<div class="dd-name" id="dd-name">—</div>'
     +           '<div class="dd-sub">CESC Hub member</div>'
     +         '</div>'
-    +         '<a href="/profiles" class="dd-item"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>'
+    +         '<a href="/search" class="dd-item" id="dd-my-profile"><span class="di-icon"><i class="fas fa-user"></i></span> My Profile</a>'
     +         '<a href="/settings" class="dd-item"><span class="di-icon"><i class="fas fa-cog"></i></span> Settings</a>'
-+         '<a href="/leaderboard" class="dd-item"><span class="di-icon"><i class="fas fa-fire" style="color:var(--yellow);"></i></span> Streak · <span class="dd-streak-count" id="dd-streak-count" style="margin-left:4px;font-family:Space Mono,monospace;font-size:0.72rem;color:var(--yellow);font-weight:700;">0</span> days</a>'
+    +         '<a href="/leaderboard" class="dd-item"><span class="di-icon"><i class="fas fa-fire" style="color:var(--yellow);"></i></span> Streak · <span class="dd-streak-count" id="dd-streak-count" style="margin-left:4px;font-family:Space Mono,monospace;font-size:0.72rem;color:var(--yellow);font-weight:700;">0</span> days</a>'
     +         '<a href="/wallet" class="dd-item"><span class="di-icon"><i class="fas fa-coins"></i></span> Wallet <span class="dd-cein-balance" id="dd-cein-balance" style="margin-left:auto;font-family:Space Mono,monospace;font-size:0.72rem;color:var(--neon);font-weight:700;"></span></a>'
     +         '<a href="/about" class="dd-item"><span class="di-icon"><i class="fas fa-info-circle"></i></span> About</a>'
-+         '<a href="/feedback" class="dd-item"><span class="di-icon"><i class="fas fa-comment-dots"></i></span> Feedback</a>'
-+         '<button class="dd-item" onclick="window.forceUpdate()"><span class="di-icon"><i class="fas fa-rotate"></i></span> Force Update</button>'
-+         '<div class="dd-div"></div>'
-+         '<button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>'
+    +         '<a href="/feedback" class="dd-item"><span class="di-icon"><i class="fas fa-comment-dots"></i></span> Feedback</a>'
+    +         '<button class="dd-item" onclick="window.forceUpdate()"><span class="di-icon"><i class="fas fa-rotate"></i></span> Force Update</button>'
+    +         '<div class="dd-div"></div>'
+    +         '<button class="dd-item logout" onclick="window.logout()"><span class="di-icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>'
     +       '</div>'
     +     '</div>'
     +   '</div>'
     + '</header>';
 }
 
-// ── SIDEBAR ──
 function renderSidebarNav() {
   const p = getActivePageKey();
   return ''
@@ -134,7 +179,7 @@ function renderSidebarNav() {
     +   '<div class="sidebar-nav-scroll">'
     +     navItem('/',           'fa-newspaper',   'Feed',          { active: p === 'home' })
     +     navItem('/chat',       'fa-comments',    'Chat Room',     { active: p === 'chat', id: 'chat-nav', badge: 'chat-nav-badge' })
-    +     navItem('/profiles',   'fa-users',       'Profiles',      { active: p === 'profiles' })
+    +     navItem('/search',     'fa-search',      'Search',        { active: p === 'search' })
     +     navItem('/games',      'fa-gamepad',     'Games',         { active: p === 'games' || p === 'bloxdio' })
     +     navItem('/leaderboard','fa-trophy',      'Leaderboard',   { active: p === 'leaderboard' })
     +     navItem('/wallet',     'fa-coins',       'Wallet',        { active: p === 'wallet' })
@@ -154,7 +199,6 @@ function renderSidebarNav() {
     + '</aside>';
 }
 
-// ── DOWNBAR (mobile, 5 icons) ──
 function renderDownbarNav() {
   const p = getActivePageKey();
   return ''
@@ -165,7 +209,7 @@ function renderDownbarNav() {
     +       '<span class="downbar-icon"><i class="fas fa-comments"></i></span>'
     +       '<span class="nav-badge-count" id="downbar-chat-badge">0</span>'
     +     '</a>'
-    +     downbarItem('/profiles','fa-users',     { active: p === 'profiles', id: 'downbar-profiles' })
+    +     downbarItem('/search',  'fa-search',    { active: p === 'search',   id: 'downbar-search' })
     +     downbarItem('/games',   'fa-gamepad',   { active: p === 'games' || p === 'bloxdio', id: 'downbar-games' })
     +     '<button class="downbar-item more-btn" onclick="window.toggleDownbarMore()" id="downbar-more-btn">'
     +       '<span class="downbar-icon"><i class="fas fa-ellipsis-h"></i></span>'
@@ -174,7 +218,6 @@ function renderDownbarNav() {
     + '</nav>';
 }
 
-// ── DOWNBAR MORE (drawer + overlay) ──
 function renderDownbarMoreNav() {
   const p = getActivePageKey();
   return ''
@@ -188,7 +231,7 @@ function renderDownbarMoreNav() {
     +       '<span class="downbar-more-label">Chat</span>'
     +       '<span class="nav-badge-count" id="downbar-more-chat-badge" style="position:absolute;top:2px;right:2px;">0</span>'
     +     '</a>'
-    +     downbarMoreItem('/profiles',    'fa-users',       'Profiles',      { active: p === 'profiles' })
+    +     downbarMoreItem('/search',      'fa-search',      'Search',        { active: p === 'search' })
     +     downbarMoreItem('/games',       'fa-gamepad',     'Games',         { active: p === 'games' || p === 'bloxdio' })
     +     downbarMoreItem('/leaderboard', 'fa-trophy',      'Leaderboard',   { active: p === 'leaderboard' })
     +     downbarMoreItem('/settings',    'fa-cog',         'Settings',      { active: p === 'settings' })
@@ -210,9 +253,6 @@ function renderDownbarMoreNav() {
     + '</div>';
 }
 
-// ── INJECT ALL NAV SECTIONS ──
-// Called on DOMContentLoaded, BEFORE the page's initPage() runs.
-// Replaces the 4 placeholder divs with the rendered nav.
 function injectNav() {
   const headerMount     = document.getElementById('app-header');
   const sidebarMount    = document.getElementById('app-sidebar');
@@ -225,8 +265,6 @@ function injectNav() {
   if (downbarMoreMount) downbarMoreMount.outerHTML = renderDownbarMoreNav();
 }
 
-// ── QUICK REPORT (from any page) ──
-// Redirects to /feedback with query params that pre-fill the target.
 function openQuickReport(targetType, targetId, preview) {
   const params = new URLSearchParams({
     report_type: targetType,
@@ -237,8 +275,6 @@ function openQuickReport(targetType, targetId, preview) {
 }
 
 // ── LOADING SCREEN ──
-
-// Show loading screen
 function showLoadingScreen() {
   const screen = document.getElementById('loading-screen');
   if (screen) {
@@ -246,12 +282,10 @@ function showLoadingScreen() {
     screen.style.opacity = '1';
     screen.style.visibility = 'visible';
   }
-  // Reset error state
   hideLoadingError();
   document.getElementById('loading-retry-btn')?.classList.remove('show');
 }
 
-// Hide loading screen - INSTANT (no animation for debugging)
 function hideLoadingScreen() {
   const screen = document.getElementById('loading-screen');
   if (screen) {
@@ -262,7 +296,6 @@ function hideLoadingScreen() {
   _loadingInProgress = false;
 }
 
-// Update progress
 function updateLoadingProgress(percent, friendly, technical) {
   const fill = document.getElementById('loading-progress-fill');
   const text = document.getElementById('loading-progress-text');
@@ -273,27 +306,18 @@ function updateLoadingProgress(percent, friendly, technical) {
     const clamped = Math.min(100, Math.max(0, percent));
     fill.style.width = clamped + '%';
   }
-  
   if (text) {
     text.textContent = Math.min(100, Math.max(0, percent)) + '%';
   }
-  
-  if (friendlyEl && friendly) {
-    friendlyEl.textContent = friendly;
-  }
-  
-  if (technicalEl && technical) {
-    technicalEl.textContent = technical;
-  }
+  if (friendlyEl && friendly) friendlyEl.textContent = friendly;
+  if (technicalEl && technical) technicalEl.textContent = technical;
 }
 
-// Define loading steps
 function defineLoadingSteps(steps) {
   _loadingSteps = steps;
   _currentStepIndex = 0;
 }
 
-// Advance to next loading step
 function nextLoadingStep() {
   if (_currentStepIndex < _loadingSteps.length) {
     const step = _loadingSteps[_currentStepIndex];
@@ -305,69 +329,41 @@ function nextLoadingStep() {
   return null;
 }
 
-// Complete loading (100%)
 function completeLoading() {
   updateLoadingProgress(100, 'Done! ✨', 'All systems ready');
-  // Hide loading screen after a brief moment
   setTimeout(hideLoadingScreen, 300);
 }
 
-// Show loading error
 function showLoadingError(friendly, technical) {
   const errorEl = document.getElementById('loading-error');
   const friendlyEl = document.getElementById('loading-error-friendly');
   const technicalEl = document.getElementById('loading-error-technical');
   const retryBtn = document.getElementById('loading-retry-btn');
   
-  if (errorEl) {
-    errorEl.classList.add('show');
-  }
+  if (errorEl) errorEl.classList.add('show');
+  if (friendlyEl) friendlyEl.textContent = friendly || 'Something went wrong';
+  if (technicalEl) technicalEl.textContent = technical || 'Unknown error';
+  if (retryBtn) retryBtn.classList.add('show');
   
-  if (friendlyEl) {
-    friendlyEl.textContent = friendly || 'Something went wrong';
-  }
-  
-  if (technicalEl) {
-    technicalEl.textContent = technical || 'Unknown error';
-  }
-  
-  if (retryBtn) {
-    retryBtn.classList.add('show');
-  }
-  
-  // Turn progress bar red
   const fill = document.getElementById('loading-progress-fill');
-  if (fill) {
-    fill.style.background = 'var(--danger)';
-  }
+  if (fill) fill.style.background = 'var(--danger)';
 }
 
-// Hide loading error
 function hideLoadingError() {
   const errorEl = document.getElementById('loading-error');
   const retryBtn = document.getElementById('loading-retry-btn');
   
-  if (errorEl) {
-    errorEl.classList.remove('show');
-  }
+  if (errorEl) errorEl.classList.remove('show');
+  if (retryBtn) retryBtn.classList.remove('show');
   
-  if (retryBtn) {
-    retryBtn.classList.remove('show');
-  }
-  
-  // Restore progress bar color
   const fill = document.getElementById('loading-progress-fill');
-  if (fill) {
-    fill.style.background = 'linear-gradient(90deg, var(--neon), var(--neon2))';
-  }
+  if (fill) fill.style.background = 'linear-gradient(90deg, var(--neon), var(--neon2))';
 }
 
-// Set retry callback
 function setLoadingRetry(callback) {
   _loadingRetryCallback = callback;
 }
 
-// Retry loading
 function retryLoading() {
   if (typeof _loadingRetryCallback === 'function') {
     hideLoadingError();
@@ -377,7 +373,6 @@ function retryLoading() {
   }
 }
 
-// Enable/disable escape key
 function setLoadingEscapeEnabled(enabled) {
   _loadingEscapeDisabled = !enabled;
 }
@@ -457,25 +452,18 @@ async function logout() {
 }
 
 // ── FORCE UPDATE ──
-// Clears SW caches + reloads the page with fresh assets.
 async function forceUpdate() {
   try {
-    // Unregister all service workers
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(r => r.unregister()));
     }
-
-    // Clear all caches
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map(k => caches.delete(k)));
     }
-
     showToast('Cleared cache. Reloading…', 'success');
-    setTimeout(() => {
-      window.location.reload(true);
-    }, 600);
+    setTimeout(() => { window.location.reload(true); }, 600);
   } catch (e) {
     console.error('Force update failed:', e);
     showToast('Update failed — try reloading manually', 'error');
@@ -487,88 +475,55 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   if (!sidebar) return;
-  
-  // Only works on mobile
   if (window.innerWidth > 768) return;
-  
-  // On mobile, use the slide-in/out logic
   sidebar.classList.toggle('open');
   if (overlay) overlay.classList.toggle('show');
-  
   const isOpen = sidebar.classList.contains('open');
   localStorage.setItem('cesc_sidebar_open', isOpen ? 'true' : 'false');
 }
 
-// ── SIDEBAR EXPAND TOGGLE (DESKTOP) ──
-// Toggles the .expanded class on the sidebar. Persists choice in localStorage.
-// Does NOT interfere with the mobile off-canvas sidebar.
 function toggleSidebarExpand() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  
   const isExpanded = sidebar.classList.toggle('expanded');
   localStorage.setItem('cesc_sidebar_expanded', isExpanded ? 'true' : 'false');
 }
 
-// Restore the sidebar expanded state on desktop page load.
-// Should be called on DOM ready (auto-called at bottom of this file).
 function initSidebarExpand() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  
-  // Only apply on desktop — mobile uses the off-canvas drawer
   if (window.innerWidth <= 768) {
     sidebar.classList.remove('expanded');
     return;
   }
-  
   const saved = localStorage.getItem('cesc_sidebar_expanded');
-  if (saved === 'true') {
-    sidebar.classList.add('expanded');
-  } else {
-    sidebar.classList.remove('expanded');
-  }
+  if (saved === 'true') sidebar.classList.add('expanded');
+  else sidebar.classList.remove('expanded');
 }
 
-// ── DOWNBAR MORE TOGGLE (MOBILE) ──
 function toggleDownbarMore() {
   const more = document.getElementById('downbar-more');
   const overlay = document.getElementById('downbar-overlay');
-  
   if (!more) return;
-  
   isDownbarMoreOpen = !isDownbarMoreOpen;
-  
   if (isDownbarMoreOpen) {
     more.classList.add('open');
-    if (overlay) {
-      overlay.classList.add('show');
-      overlay.style.display = 'block';
-    }
+    if (overlay) { overlay.classList.add('show'); overlay.style.display = 'block'; }
     document.body.style.overflow = 'hidden';
   } else {
     more.classList.remove('open');
-    if (overlay) {
-      overlay.classList.remove('show');
-      overlay.style.display = 'none';
-    }
+    if (overlay) { overlay.classList.remove('show'); overlay.style.display = 'none'; }
     document.body.style.overflow = '';
   }
 }
 
-// ── CLOSE DOWNBAR MORE ──
 function closeDownbarMore() {
   if (!isDownbarMoreOpen) return;
-  
   const more = document.getElementById('downbar-more');
   const overlay = document.getElementById('downbar-overlay');
-  
   isDownbarMoreOpen = false;
   more.classList.remove('open');
-  if (overlay) {
-    overlay.classList.remove('show');
-    overlay.style.display = 'none';
-  }
+  if (overlay) { overlay.classList.remove('show'); overlay.style.display = 'none'; }
   document.body.style.overflow = '';
 }
 
@@ -591,8 +546,6 @@ async function loadOnlineCount() {
         setTimeout(() => { el.style.transform = 'scale(1)'; }, 300);
       }
     }
-    
-    // Update header online count
     const headerCount = document.querySelector('.online-count-number');
     if (headerCount) headerCount.textContent = count ?? '?';
   } catch (e) {
@@ -629,16 +582,11 @@ async function loadNotifCount() {
   }
 }
 
-// ── CHAT UNREAD COUNT (global, across all pages) ──
-// Counts how many CONVERSATIONS have unread messages, not total messages.
-// Includes: DMs + GCs + Global chat.
-// Updates every chat badge in the DOM.
+// ── CHAT UNREAD COUNT ──
 async function loadChatUnreadCount() {
   if (!session) return;
   const myId = session.user.id;
-
   try {
-    // Fetch my conversation memberships with last_read_at + last_message_at
     const { data: members, error } = await supabaseClient
       .from('conversation_members')
       .select(`
@@ -656,8 +604,6 @@ async function loadChatUnreadCount() {
     }
 
     let unreadConvoCount = 0;
-
-    // Identify the global-chat conversation id (uses `messages` table, not gc_messages)
     let globalChatId = null;
     const globalEntry = members.find(m => m.conversations?.slug === 'global-chat');
     if (globalEntry) globalChatId = globalEntry.conversations.id;
@@ -665,11 +611,9 @@ async function loadChatUnreadCount() {
     for (const m of members) {
       const c = m.conversations;
       if (!c) continue;
-
       const lastRead = m.last_read_at || '1970-01-01T00:00:00Z';
 
       if (c.id === globalChatId) {
-        // Global chat: check latest `messages` row directly
         const { data: latestGlobal } = await supabaseClient
           .from('messages')
           .select('created_at, user_id')
@@ -681,20 +625,17 @@ async function loadChatUnreadCount() {
           unreadConvoCount++;
         }
       } else {
-        // DM + GC: use conversations.last_message_at
         if (c.last_message_at && c.last_message_at > lastRead) {
           unreadConvoCount++;
         }
       }
     }
-
     updateChatBadges(unreadConvoCount);
   } catch (e) {
     console.error('loadChatUnreadCount exception:', e);
   }
 }
 
-// Update all chat badges in the DOM
 function updateChatBadges(count) {
   const label = count > 99 ? '99+' : (count > 0 ? String(count) : '');
   const els = [
@@ -702,28 +643,19 @@ function updateChatBadges(count) {
     document.getElementById('downbar-chat-badge'),
     document.getElementById('downbar-more-chat-badge'),
   ];
-
   els.forEach(el => {
     if (!el) return;
-    if (count > 0) {
-      el.textContent = label;
-      el.classList.add('show');
-    } else {
-      el.textContent = '0';
-      el.classList.remove('show');
-    }
+    if (count > 0) { el.textContent = label; el.classList.add('show'); }
+    else { el.textContent = '0'; el.classList.remove('show'); }
   });
 }
 
-// ── CHAT UNREAD REALTIME SUBSCRIPTION ──
-// One subscription per page load. Tear down on unload.
 let _chatUnreadChannel = null;
 let _chatUnreadDebounce = null;
 
 function startChatUnreadRealtime() {
   if (!session) return;
-  if (_chatUnreadChannel) return; // already running
-
+  if (_chatUnreadChannel) return;
   const scheduleRefresh = () => {
     if (_chatUnreadDebounce) clearTimeout(_chatUnreadDebounce);
     _chatUnreadDebounce = setTimeout(() => {
@@ -731,7 +663,6 @@ function startChatUnreadRealtime() {
       loadChatUnreadCount();
     }, 500);
   };
-
   try {
     _chatUnreadChannel = supabaseClient
       .channel('global-chat-unread')
@@ -763,19 +694,14 @@ async function loadCEINBalance() {
   try {
     const { data, error } = await supabaseClient.rpc('get_my_credits');
     if (error || !data || !data.ok) return;
-
     const el = document.getElementById('dd-cein-balance');
-    if (el) {
-      el.textContent = data.balance + ' CEIN';
-    }
+    if (el) el.textContent = data.balance + ' CEIN';
   } catch (e) {
     console.error('loadCEINBalance:', e);
   }
 }
 
 // ── DAILY LOGIN CEIN CLAIM ──
-// Runs once per page load. Idempotent server-side.
-// Only shows a toast on the feed page (so it doesn't spam every page).
 async function claimDailyLoginCEIN() {
   if (!session) return;
   try {
@@ -784,18 +710,16 @@ async function claimDailyLoginCEIN() {
       console.error('claim_daily_login error:', error);
       return;
     }
-
+    if (data && data.ok === false && data.reason === 'not_verified') {
+      return; // silent for pending users
+    }
     if (data && data.ok) {
-      // Refresh the CEIN balance shown in the dropdown
       await loadCEINBalance();
-
-      // Toast only on the feed page
       const isFeed = window.location.pathname === '/' || window.location.pathname === '/index.html';
       if (isFeed) {
         showToast(`+10 CEIN claimed · ${data.balance} total`, 'success');
       }
     }
-    // If already claimed today, stay silent.
   } catch (e) {
     console.error('claimDailyLoginCEIN exception:', e);
   }
@@ -825,7 +749,6 @@ function buildAvatar(username, pfpUrl, size = 40, cls = '') {
   span.style.zIndex = '1';
   div.appendChild(span);
   
-  // Resolve the pfp url from cache if not passed in
   const url = pfpUrl || pfpCache[username] || null;
   if (url) {
     const img = document.createElement('img');
@@ -838,17 +761,14 @@ function buildAvatar(username, pfpUrl, size = 40, cls = '') {
     img.style.objectFit = 'cover';
     img.style.display = 'none';
     img.style.borderRadius = '50%';
-    img.loading = 'eager';           // ← load immediately (was lazy)
+    img.loading = 'eager';
     img.decoding = 'async';
     img.onload = () => {
       img.style.display = 'block';
       span.style.display = 'none';
       img.classList.add('loaded');
     };
-    img.onerror = () => {
-      img.remove();
-      span.style.display = '';
-    };
+    img.onerror = () => { img.remove(); span.style.display = ''; };
     div.appendChild(img);
   }
   return div;
@@ -857,12 +777,7 @@ function buildAvatar(username, pfpUrl, size = 40, cls = '') {
 async function loadPfpCache() {
   try {
     const { data } = await supabaseClient.from('profiles').select('username, pfp_url');
-    if (data) {
-      data.forEach(p => {
-        // Cache even null values so we know we checked already
-        pfpCache[p.username] = p.pfp_url || null;
-      });
-    }
+    if (data) data.forEach(p => { pfpCache[p.username] = p.pfp_url || null; });
   } catch (e) {
     console.error('Error loading PFP cache:', e);
   }
@@ -885,42 +800,78 @@ async function initAuth() {
   }
 }
 
+// ── LOAD USER PROFILE ──
 async function loadUserProfile() {
   if (!session) return null;
+  const BASE_COLS = 'id, username, display_name, pfp_url, bio, streak, last_active_date, is_timed_out, timeout_until, roles, onboarding_completed_at, is_private, follower_count, following_count, verified, banner_url, links, pinned_post_id, location, created_at';
+
   try {
-    const { data: profile } = await supabaseClient
+    const { data: profile, error } = await supabaseClient
       .from('profiles')
-      .select('id, username, display_name, pfp_url, bio, streak, last_active_date, is_timed_out, timeout_until, roles, onboarding_completed_at, is_private, follower_count, following_count, verified, banner_url, links, pinned_post_id, location, created_at')
+      .select(BASE_COLS + ', verification_status')
       .eq('id', session.user.id)
       .single();
-    if (profile) currentUser = profile;
-    return profile;
+
+    if (!error && profile) {
+      currentUser = profile;
+      return profile;
+    }
+
+    if (error) {
+      console.warn('loadUserProfile: verification_status not available, falling back:', error.message);
+      const { data: fallbackProfile, error: fallbackError } = await supabaseClient
+        .from('profiles')
+        .select(BASE_COLS)
+        .eq('id', session.user.id)
+        .single();
+
+      if (!fallbackError && fallbackProfile) {
+        fallbackProfile.verification_status = 'verified';
+        currentUser = fallbackProfile;
+        return fallbackProfile;
+      }
+      console.error('loadUserProfile fallback failed:', fallbackError);
+      return null;
+    }
+    return null;
   } catch (e) {
     console.error('Error loading user profile:', e);
     return null;
   }
 }
 
+// ── IS VERIFIED ──
+function isVerified() {
+  if (!currentUser) return false;
+  const status = currentUser.verification_status;
+  return status == null || status === 'verified';
+}
+
+// ── UPDATE USER UI ──
 function updateUserUI(profile) {
   if (!profile) return;
   const displayName = profile.display_name || profile.username || 'you';
   const rawName = profile.username || 'you';
-  
+  const isPending = profile.verification_status === 'pending';
+  const isRejected = profile.verification_status === 'rejected';
+  const suffix = isPending ? ' (pending)' : (isRejected ? ' (rejected)' : '');
+  const dropdownName = displayName + suffix;
+
   const elements = {
     'chip-name': displayName,
     'chip-initial': rawName[0].toUpperCase(),
-    'dd-name': displayName,
+    'dd-name': dropdownName,
     'sidebar-user': displayName,
     'compose-name': displayName,
     'compose-initial': rawName[0].toUpperCase(),
     'welcome-name': displayName,
   };
-  
+
   Object.entries(elements).forEach(([id, val]) => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   });
-  
+
   if (profile.pfp_url) {
     ['chip-av', 'compose-av'].forEach(id => {
       const av = document.getElementById(id);
@@ -928,7 +879,7 @@ function updateUserUI(profile) {
       const initial = av.querySelector('span');
       const existingImg = av.querySelector('img');
       if (existingImg) existingImg.remove();
-      
+
       const img = document.createElement('img');
       img.src = profile.pfp_url;
       img.loading = 'lazy';
@@ -942,7 +893,6 @@ function updateUserUI(profile) {
     });
   }
 
-    // Streak in dropdown
   const ddStreak = document.getElementById('dd-streak-count');
   if (ddStreak && profile.streak !== undefined) {
     ddStreak.textContent = profile.streak || 0;
@@ -955,7 +905,7 @@ let _lastSeenUpdate = 0;
 async function updateLastSeen() {
   if (!session) return;
   const now = Date.now();
-  if (now - _lastSeenUpdate < 10000) return; // Throttle to 10s
+  if (now - _lastSeenUpdate < 10000) return;
   _lastSeenUpdate = now;
   try {
     await supabaseClient
@@ -988,8 +938,6 @@ async function updateStreak() {
       currentUser.last_active_date = today;
     }
 
-    // Streak milestone bonus — idempotent server-side.
-    // Fire only when we just incremented to a milestone.
     const effectiveStreak = newStreak !== null ? newStreak : streak;
     if (effectiveStreak === 7 || effectiveStreak === 30 || effectiveStreak === 100) {
       try {
@@ -1007,7 +955,7 @@ async function updateStreak() {
   }
 }
 
-// ── DEBOUNCE ──
+// ── DEBOUNCE / THROTTLE ──
 function debounce(fn, delay = 300) {
   let timer;
   return function(...args) {
@@ -1016,7 +964,6 @@ function debounce(fn, delay = 300) {
   };
 }
 
-// ── THROTTLE ──
 function throttle(fn, limit = 300) {
   let inThrottle = false;
   return function(...args) {
@@ -1033,8 +980,6 @@ let _backgroundInterval = null;
 
 function startBackgroundTasks() {
   if (_backgroundInterval) return;
-  
-  // Run immediately
   if (session) {
     updateLastSeen();
     loadOnlineCount();
@@ -1043,8 +988,6 @@ function startBackgroundTasks() {
     loadChatUnreadCount();
     startChatUnreadRealtime();
   }
-  
-  // Run every 10s
   _backgroundInterval = setInterval(() => {
     if (!session) return;
     updateLastSeen();
@@ -1066,17 +1009,14 @@ async function initPage(pageInitFn) {
   if (_loadingInProgress) return;
   _loadingInProgress = true;
   
-  // Show loading screen
   showLoadingScreen();
   
-  // Set retry callback
   setLoadingRetry(() => {
     _loadingInProgress = true;
     _currentStepIndex = 0;
     initPage(pageInitFn);
   });
   
-  // Enable escape key for debugging
   setLoadingEscapeEnabled(true);
   
   try {
@@ -1099,33 +1039,26 @@ async function initPage(pageInitFn) {
     const profile = await loadUserProfile();
     if (profile) {
       updateUserUI(profile);
-      // Streak — runs on every page, once per day, silently
       try { await updateStreak(); } catch (e) { console.error('updateStreak failed:', e); }
 
       // ── TIMEOUT ENFORCEMENT ──
-      // Skip the check on /timeout itself to avoid redirect loop
       const isTimeoutPage = window.location.pathname.startsWith('/timeout');
       if (!isTimeoutPage) {
-        // Auto-clear expired timeouts (RPC handles both state + timeouts table)
         try {
           await supabaseClient.rpc('check_and_clear_my_timeout');
         } catch (e) {
           console.error('check_and_clear_my_timeout failed:', e);
         }
 
-        // Re-fetch profile (state may have changed)
         const rechecked = await loadUserProfile();
 
         if (rechecked && rechecked.is_timed_out) {
-          // Still timed out → redirect to prison
           _loadingInProgress = false;
           window.location.replace('/timeout');
           return;
         }
 
         // ── ONBOARDING ENFORCEMENT ──
-        // Skip on /onboarding itself (no loop). Skip for owners.
-        // Everyone else with onboarding_completed_at = null gets redirected.
         const isOnboardingPage = window.location.pathname.startsWith('/onboarding');
         const userRoles = Array.isArray(rechecked?.roles) ? rechecked.roles : [];
         const isOwnerRole = userRoles.includes('owner');
@@ -1135,10 +1068,43 @@ async function initPage(pageInitFn) {
           window.location.replace('/onboarding');
           return;
         }
+
+        // ── PENDING / REJECTED USER GATE (Phase 2.1 unified) ──
+        // This single gate replaces the old Phase 2 verification gate.
+        // Pending/rejected users are allowed on:
+        //   /, /index.html, /pending, /pending.html, /settings, /settings.html,
+        //   /feedback, /feedback.html, /timeout, /onboarding, /signup, /login.
+        // Anything else → redirect to /pending with a friendly message.
+        const verificationStatus = rechecked?.verification_status;
+
+        if (
+          !isOwnerRole &&
+          (verificationStatus === 'pending' || verificationStatus === 'rejected') &&
+          !isPendingAllowedPath(window.location.pathname)
+        ) {
+          const triedPath = window.location.pathname + window.location.search;
+          console.warn('[pending-gate] 🚫 REDIRECTING to /pending', {
+            pathname: window.location.pathname,
+            verificationStatus,
+            allowed: false,
+            triedPath
+          });
+          try {
+            sessionStorage.setItem('cesc_pending_msg', `You tried to open ${triedPath}. Pending accounts can only use the feed and feedback until verified.`);
+            sessionStorage.setItem('cesc_pending_from', triedPath);
+          } catch (e) {}
+          _loadingInProgress = false;
+          window.location.replace('/pending');
+          return;
+        }
+        console.log('[pending-gate] ✅ PASSED', {
+          pathname: window.location.pathname,
+          verificationStatus,
+          allowed: isPendingAllowedPath(window.location.pathname)
+        });
       }
 
       // ── CEIN: DAILY LOGIN CLAIM ──
-      // Server-side idempotent. Silent if already claimed.
       try { await claimDailyLoginCEIN(); } catch (e) { console.error('claimDailyLoginCEIN failed:', e); }
     }
     
@@ -1163,26 +1129,20 @@ async function initPage(pageInitFn) {
       loadChatUnreadCount()
     ]);
 
-    // ── ADS: load ads + mount slots BEFORE hiding the loading screen ──
-    nextLoadingStep(); // extra step for ads
+    // Ads
+    nextLoadingStep();
     try {
       if (window.Ads && typeof window.Ads.init === 'function') {
         await window.Ads.init();
       }
-
-      // Loading-screen ad (show while loading is still visible)
       const loadingSlot = document.getElementById('loading-ad-slot');
       if (loadingSlot && window.Ads && typeof window.Ads.mountLoadingSlot === 'function') {
         window.Ads.mountLoadingSlot(loadingSlot);
       }
-
-      // Sidebar ad (all pages with a sidebar)
       const sidebarSlot = document.getElementById('sidebar-ad-slot');
       if (sidebarSlot && window.Ads && typeof window.Ads.mountSidebarSlot === 'function') {
         window.Ads.mountSidebarSlot(sidebarSlot);
       }
-
-      // Downbar more drawer ad (mobile expanded drawer)
       const downbarSlot = document.getElementById('downbar-ad-slot');
       if (downbarSlot && window.Ads && typeof window.Ads.mountDownbarSlot === 'function') {
         window.Ads.mountDownbarSlot(downbarSlot);
@@ -1191,25 +1151,19 @@ async function initPage(pageInitFn) {
       console.log('[Ads init exception]', e);
     }
 
-    // Complete
     nextLoadingStep();
     completeLoading();
     _loadingInProgress = false;
 
-    // ── ADS: re-render ads that depend on the page being ready ──
     try {
       if (window.Ads && typeof window.Ads.reRenderAll === 'function') {
-        setTimeout(() => {
-          try { window.Ads.reRenderAll(); } catch (e) {}
-        }, 200);
+        setTimeout(() => { try { window.Ads.reRenderAll(); } catch (e) {} }, 200);
       }
     } catch (e) {}
 
   } catch (error) {
     console.error('Loading error:', error);
     _loadingInProgress = false;
-    
-    // Show error
     const friendly = error.friendly || 'Something went wrong';
     const technical = error.technical || error.message || 'Unknown error';
     showLoadingError(friendly, technical);
@@ -1218,7 +1172,6 @@ async function initPage(pageInitFn) {
 
 // ── CLICK OUTSIDE HANDLER ──
 document.addEventListener('click', e => {
-  // Close dropdown
   const chip = document.getElementById('profile-chip');
   const dd = document.getElementById('profile-dropdown');
   if (chip && !chip.contains(e.target)) {
@@ -1226,7 +1179,6 @@ document.addEventListener('click', e => {
     chip.classList.remove('open');
   }
   
-  // Close sidebar overlay on mobile
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   const mobileMenu = document.querySelector('.mobile-menu');
@@ -1239,12 +1191,10 @@ document.addEventListener('click', e => {
     toggleSidebar();
   }
   
-  // Close downbar more when clicking outside
   if (isDownbarMoreOpen) {
     const more = document.getElementById('downbar-more');
     const overlay = document.getElementById('downbar-overlay');
     const moreBtn = document.querySelector('.downbar-item.more-btn');
-    
     if (overlay && overlay.contains(e.target) && !moreBtn?.contains(e.target)) {
       closeDownbarMore();
     }
@@ -1253,12 +1203,7 @@ document.addEventListener('click', e => {
 
 // ── KEYBOARD SHORTCUTS ──
 document.addEventListener('keydown', e => {
-  // ESC key closes downbar more
-  if (e.key === 'Escape' && isDownbarMoreOpen) {
-    closeDownbarMore();
-  }
-  
-  // ESC key FORCE HIDE loading screen (debug only)
+  if (e.key === 'Escape' && isDownbarMoreOpen) closeDownbarMore();
   if (e.key === 'Escape' && _loadingInProgress && !_loadingEscapeDisabled) {
     console.log('🔑 ESC pressed - force hiding loading screen (debug)');
     hideLoadingScreen();
@@ -1271,25 +1216,18 @@ let resizeTimeout;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
-    // Close downbar more if open
-    if (isDownbarMoreOpen) {
-      closeDownbarMore();
-    }
-    
-    // Close mobile sidebar overlay if screen becomes desktop
+    if (isDownbarMoreOpen) closeDownbarMore();
     if (window.innerWidth > 768) {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebar-overlay');
       if (sidebar) sidebar.classList.remove('open');
       if (overlay) overlay.classList.remove('show');
     }
-    
-    // Re-apply desktop sidebar expansion state on breakpoint changes
     initSidebarExpand();
   }, 250);
 });
 
-// ── EXPOSE EVERYTHING TO WINDOW ──
+// ── EXPOSE TO WINDOW ──
 Object.defineProperty(window, 'session', {
   get: function() { return session; },
   set: function(val) { session = val; }
@@ -1326,6 +1264,9 @@ window.buildAvatar = buildAvatar;
 window.loadPfpCache = loadPfpCache;
 window.initAuth = initAuth;
 window.loadUserProfile = loadUserProfile;
+window.isVerified = isVerified;
+window.guardPendingAction = guardPendingAction;
+window.isPendingAllowedPath = isPendingAllowedPath;
 window.updateUserUI = updateUserUI;
 window.updateLastSeen = updateLastSeen;
 window.updateStreak = updateStreak;
@@ -1347,7 +1288,7 @@ window.retryLoading = retryLoading;
 window.setLoadingEscapeEnabled = setLoadingEscapeEnabled;
 window.openQuickReport = openQuickReport;
 
-// ── AUTO-INIT: INJECT NAV + SIDEBAR EXPANSION ──
+// ── AUTO-INIT ──
 function _autoInitOnReady() {
   if (typeof injectNav === 'function') injectNav();
   if (typeof initSidebarExpand === 'function') initSidebarExpand();
@@ -1359,10 +1300,10 @@ if (document.readyState === 'loading') {
   _autoInitOnReady();
 }
 
-// ── CLEANUP ON UNLOAD ──
 window.addEventListener('beforeunload', () => {
   stopChatUnreadRealtime();
 });
 
 console.log('✅ shared.js loaded successfully!');
 console.log('🔑 Session:', session ? 'Logged in' : 'Not logged in');
+console.log('🛡️ Verification gate:', (currentUser?.verification_status || 'n/a'));

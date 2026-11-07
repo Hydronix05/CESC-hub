@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CESC Hub — Sign up</title>
+
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CESC Hub">
+<meta name="theme-color" content="#4a9eff">
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="/shared.css"/>
+<link rel="stylesheet" href="/css/pages/login.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/shared.js"></script>
+<script src="/js/theme-presets.js"></script>
+<script src="/js/theme-engine.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</head>
+<body>
+
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="bg-canvas">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  <div class="loading-progress-wrap">
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <div class="loading-progress-text" id="loading-progress-text">0%</div>
+  </div>
+  <div class="loading-status">
+    <div class="loading-status-friendly" id="loading-status-friendly">Initializing...</div>
+    <div class="loading-status-technical" id="loading-status-technical">Starting up</div>
+  </div>
+  <div class="loading-error" id="loading-error">
+    <div class="loading-error-friendly" id="loading-error-friendly"></div>
+    <div class="loading-error-technical" id="loading-error-technical"></div>
+    <div class="loading-error-bar"><div class="loading-error-fill"></div></div>
+    <button class="loading-retry-btn" id="loading-retry-btn" onclick="window.retryLoading()">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+  <div class="loading-debug-hint">[ESC] force show</div>
+  <div class="loading-ad-slot" id="loading-ad-slot"></div>
+</div>
+
+<div class="bg-canvas">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── SIGNUP CONTENT ── -->
+<main class="login-shell">
+  <div class="login-content" id="card">
+
+    <!-- LOGO -->
+    <div class="logo-wrap">
+      <div class="logo-row">
+        <span class="logo-fade">
+          <img class="logo-img" src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+        </span>
+        <div>
+          <div class="logo-name">CESC <em>Hub</em></div>
+          <div class="logo-sub">// join the community</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FORM STATE ── -->
+    <div id="signup-form-state">
+      <div class="privacy-notice">
+        <div class="privacy-line">
+          <i class="fas fa-lock"></i>
+          <span>Only <strong>CESC students</strong> can sign up</span>
+        </div>
+        <div class="privacy-line">
+          <i class="fas fa-shield-halved"></i>
+          <span>An admin reviews every new account before it's active</span>
+        </div>
+        <div class="privacy-line">
+          <i class="fas fa-hourglass-half"></i>
+          <span>Approval usually takes less than 48 hours</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="signup-username">Username</label>
+        <input
+          type="text"
+          id="signup-username"
+          placeholder="pick a username"
+          autocomplete="username"
+          maxlength="30"
+          onkeydown="window.onEnter(event)"
+        />
+        <div class="hint" style="text-align:left;font-size:0.7rem;color:var(--muted);margin-top:6px;font-family:'Space Mono',monospace;">
+          <i class="fas fa-info-circle"></i> 3-30 characters · letters, numbers, underscores
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="signup-email">Email</label>
+        <input
+          type="email"
+          id="signup-email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          onkeydown="window.onEnter(event)"
+        />
+      </div>
+
+      <div class="field">
+        <label for="signup-password">Password</label>
+        <div class="input-wrap">
+          <input
+            type="password"
+            id="signup-password"
+            class="padded"
+            placeholder="at least 6 characters"
+            autocomplete="new-password"
+            minlength="6"
+            onkeydown="window.onEnter(event)"
+          />
+          <button class="eye-btn" onclick="window.togglePw()" type="button" id="eye-btn" aria-label="Toggle password visibility">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn" id="signup-btn" onclick="window.doSignup()">
+        <span id="btn-text">Create account</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+
+      <div class="msg error" id="err"></div>
+
+      <div class="divider"></div>
+
+      <div class="request-block">
+        <div class="request-title">
+          <i class="fas fa-user"></i>
+          Already have an account?
+        </div>
+        <a href="/login" class="request-btn" style="text-decoration:none;">
+          <i class="fas fa-right-to-bracket"></i>
+          Sign in instead
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="login-footer">
+    <span>CESC Hub</span>
+    <span class="dot">·</span>
+    <span>Built by NAIX Studio</span>
+  </footer>
+</main>
+
+<!-- ── PAGE INIT ── -->
+<script>
+window.showLoadingScreen();
+window.updateLoadingProgress(10, 'Loading theme...', 'Applying saved theme preferences');
+
+if (typeof window.initTheme === 'function') {
+  window.initTheme();
+}
+
+window.updateLoadingProgress(40, 'Checking session...', 'Verifying if already logged in');
+
+window.supabaseClient.auth.getSession().then(({ data }) => {
+  if (data.session) {
+    // Already logged in — no need to be on signup
+    window.updateLoadingProgress(100, 'Already signed in', 'Redirecting to feed');
+    window.hideLoadingScreen();
+    window.location.replace('/');
+    return;
+  }
+  window.updateLoadingProgress(100, 'Ready!', 'Signup page ready');
+  setTimeout(() => window.hideLoadingScreen(), 300);
+}).catch(() => {
+  window.updateLoadingProgress(100, 'Ready!', 'Signup page ready');
+  setTimeout(() => window.hideLoadingScreen(), 300);
+});
+</script>
+
+<!-- ── SIGNUP LOGIC ── -->
+<script>
+let pwVisible = false;
+
+window.togglePw = function () {
+  pwVisible = !pwVisible;
+  const pwInput = document.getElementById('signup-password');
+  const eyeBtn = document.getElementById('eye-btn');
+  pwInput.type = pwVisible ? 'text' : 'password';
+  eyeBtn.innerHTML = pwVisible
+    ? '<i class="fas fa-eye-slash"></i>'
+    : '<i class="fas fa-eye"></i>';
+};
+
+window.onEnter = function (e) {
+  if (e.key === 'Enter') window.doSignup();
+};
+
+function setLoading(on, label) {
+  const btn = document.getElementById('signup-btn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btn-text');
+  if (!btn) return;
+  btn.disabled = on;
+  if (spinner) spinner.style.display = on ? 'block' : 'none';
+  if (btnText) btnText.textContent = on ? (label || 'loading...') : 'Create account';
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'msg error show';
+  const card = document.getElementById('card');
+  card.style.animation = 'none';
+  void card.offsetHeight;
+  card.style.animation = 'shake 0.45s ease';
+}
+
+function clearErr() {
+  const el = document.getElementById('err');
+  if (el) el.className = 'msg error';
+}
+
+function validateUsername(u) {
+  if (!u) return 'Username is required';
+  if (u.length < 3) return 'Username must be at least 3 characters';
+  if (u.length > 30) return 'Username must be 30 characters or less';
+  if (!/^[a-zA-Z0-9_]+$/.test(u)) return 'Username can only contain letters, numbers, and underscores';
+  return null;
+}
+
+function validateEmail(e) {
+  if (!e) return 'Email is required';
+  if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(e)) {
+    return 'Enter a valid email address';
+  }
+  return null;
+}
+
+function validatePassword(p) {
+  if (!p) return 'Password is required';
+  if (p.length < 6) return 'Password must be at least 6 characters';
+  return null;
+}
+
+window.doSignup = async function () {
+  clearErr();
+
+  const username = document.getElementById('signup-username').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+
+  const uErr = validateUsername(username);
+  if (uErr) { showErr(uErr); return; }
+
+  const eErr = validateEmail(email);
+  if (eErr) { showErr(eErr); return; }
+
+  const pErr = validatePassword(password);
+  if (pErr) { showErr(pErr); return; }
+
+  setLoading(true, 'creating account...');
+
+  try {
+    // Pre-check: username collision (better message than raw unique violation)
+    const { data: existing } = await window.supabaseClient
+      .from('profiles')
+      .select('username')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (existing) {
+      setLoading(false);
+      showErr('That username is already taken. Try another.');
+      return;
+    }
+
+    const { data, error } = await window.supabaseClient.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: { username: username }
+      }
+    });
+
+    if (error) {
+      setLoading(false);
+      console.error('[signup] raw Supabase error:', error.message, error);
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('already') && msg.includes('registered')) {
+        showErr('An account with this email already exists. Try logging in instead.');
+      } else if (msg.includes('password')) {
+        showErr('Password is too weak. Try a longer one.');
+      } else if (msg.includes('rate limit') || msg.includes('rate_limit')) {
+        showErr('Too many signups from this device. Wait a few minutes and try again.');
+      } else {
+        showErr(error.message || 'Could not create account');
+      }
+      return;
+    }
+
+    // With email confirmation OFF, signUp returns a session immediately.
+    // Redirect straight to /onboarding (initPage on / will also gate).
+    if (data?.session) {
+      window.updateLoadingProgress(100, 'Account created!', 'Starting setup...');
+      window.showLoadingScreen();
+      window.location.replace('/onboarding');
+      return;
+    }
+
+    // Fallback: if no session (confirmation ON but no email sent),
+    // send them to login with a note. This branch should not be hit
+    // while confirmation is OFF, but it's safe to keep.
+    setLoading(false);
+    window.showToast('Account created — please log in.', 'success');
+    setTimeout(() => { window.location.replace('/login'); }, 1200);
+
+  } catch (e) {
+    setLoading(false);
+    console.error('signup exception:', e);
+    showErr('Something went wrong. Try again in a moment.');
+  }
+};
+</script>
+
+</body>
+</html>

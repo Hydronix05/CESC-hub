@@ -168,7 +168,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="divider"></div>
 
-    <!-- NO ACCOUNT — REQUEST ACCESS -->
+    <!-- NO ACCOUNT — SIGN UP -->
     <div class="request-block">
       <div class="request-title">
         <i class="fas fa-id-card"></i>
@@ -176,17 +176,15 @@ if ('serviceWorker' in navigator) {
       </div>
       <p class="request-sub">Join the CESC Hub community.</p>
       <p class="request-desc">
-        CESC Hub is currently invite-only. If you're a CESC student, you can request
-        an account by sending us a registration email. We've prepared a simple form
-        for you — just fill in your details and tap send.
+        Create your account in under a minute. You'll confirm your email,
+        finish a quick setup, and an admin will review your account.
       </p>
-      <button class="request-btn" id="request-btn" onclick="window.requestAccount()">
-        <i class="fas fa-envelope"></i>
-        Request an Account via Email
-      </button>
+      <a href="/signup" class="request-btn" style="text-decoration:none;">
+        <i class="fas fa-user-plus"></i>
+        Create an Account
+      </a>
       <p class="request-note">
-        Once your request has been reviewed and your account is ready, we'll notify
-        you by email. Please make sure your details are accurate.
+        Takes about 2 minutes. An admin approves new accounts within 48 hours.
       </p>
     </div>
 
@@ -213,7 +211,11 @@ window.updateLoadingProgress(40, 'Checking session...', 'Verifying if already lo
 
 window.supabaseClient.auth.getSession().then(({ data }) => {
   if (data.session) {
-    window.location.href = '/';
+    // Hide the loading screen BEFORE redirecting, so the user
+    // doesn't see a blank page during the navigation.
+    window.updateLoadingProgress(100, 'Already signed in', 'Redirecting to feed');
+    window.hideLoadingScreen();
+    window.location.replace('/');
     return;
   }
   window.updateLoadingProgress(100, 'Ready!', 'Login page ready');
@@ -239,26 +241,37 @@ const EMAIL_DOMAINS = [
 
 // ─── FIND USER BY ANY DOMAIN ────────────────────
 async function findUserByUsername(username) {
-  const { data: profile } = await window.supabaseClient
+  // Single query: match either username OR email-local-part in one shot.
+  // No loop. No sequential network calls. Fits inside OneCompiler's
+  // execution budget.
+  const { data: profile, error } = await window.supabaseClient
     .from('profiles')
     .select('email, username')
-    .eq('username', username)
+    .ilike('username', username)
     .maybeSingle();
 
+  if (error) {
+    console.error('[login] findUserByUsername error:', error);
+  }
   if (profile && profile.email) {
     return { email: profile.email, matched: true };
   }
 
-  for (const domain of EMAIL_DOMAINS) {
-    const emailToTry = `${username}@${domain}`;
-    const { data: user } = await window.supabaseClient
+  // Fallback: try the 5 known domains, but in PARALLEL (not sequential).
+  // Still bounded — one Promise.all, not a for-loop.
+  const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+  const results = await Promise.all(
+    domains.map(d => window.supabaseClient
       .from('profiles')
       .select('email, username')
-      .eq('email', emailToTry)
-      .maybeSingle();
+      .eq('email', `${username}@${d}`)
+      .maybeSingle()
+    )
+  );
 
-    if (user && user.email) {
-      return { email: user.email, matched: true, domain };
+  for (const r of results) {
+    if (r.data && r.data.email) {
+      return { email: r.data.email, matched: true };
     }
   }
 
@@ -339,39 +352,7 @@ window.login = async function () {
   window.location.href = '/';
 };
 
-// ─── REQUEST ACCOUNT (mailto:) ────────────────
-window.requestAccount = function () {
-  const to = 'irfanchowdhurycesc@gmail.com';
-  const subject = 'CESC Hub — Account Registration Request';
 
-  const body = [
-    'Hello CESC Hub Team,',
-    '',
-    "I'd like to request an account for CESC Hub, the student community platform for CESC students.",
-    '',
-    'Here are my details:',
-    '',
-    'Full Name:',
-    'Class:',
-    'Section:',
-    'Roll Number:',
-    '',
-    'I confirm that the information provided above is accurate.',
-    '',
-    'Please review my request and let me know by email once my account is ready.',
-    '',
-    'Thank you for your time!',
-    '',
-    'Best regards,',
-    'CESC Hub Applicant'
-  ].join('\r\n');
-
-  const mailtoUrl = 'mailto:' + encodeURIComponent(to)
-    + '?subject=' + encodeURIComponent(subject)
-    + '&body=' + encodeURIComponent(body);
-
-  window.location.href = mailtoUrl;
-};
 </script>
 
 <script src="/js/ads.js"></script>

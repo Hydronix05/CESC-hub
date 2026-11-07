@@ -1,7 +1,12 @@
 {
-  "current": "3.8",
+  "current": "3.8.1",
   "versions": {
     "v3": [
+      {
+        "version": "3.8.1",
+        "date": "2026-11-07",
+        "changes": "Verification + signup + search update · Self-service signup with username/email/password · New accounts enter a pending state after onboarding (read-only community access) · Live wait timer + rejection banner on /pending · Admin Pending tab in the admin site with Approve / Reject actions · Two new notification types: account_approved, account_rejected · 20 existing users backfilled to verified (zero interruption) · RLS gate on all 16 INSERT policies + 9 RPCs · Timeout holes on likes, notes, and typing_status closed · Follow-5 onboarding step preserved via server-side exception · /profiles renamed to /search (old URL redirects) · Explore page: posts with images only by default, bidirectional search across posts / profiles / games, filter pills shown only during search · Profile page: added Following and Followers tabs (private accounts: followers-only access) · Mobile feed header no longer overflows · Game playtime now counts on mobile (iframe focus + touch events, 5-min inactivity timeout) · Following-feed regression fixed (two-query follow graph) · Admin accounts page gains verification badges, privacy lock for non-owners on private accounts, followers/following counts · Service worker cache bumped to v3.8.1"
+      },
       {
         "version": "3.8",
         "date": "2026-10-24",
