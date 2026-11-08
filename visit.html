@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>CESC Hub — Student Community</title>
+<meta name="description" content="CESC Hub is a student community for connecting, sharing ideas, exploring interests, and discovering opportunities. Built by students of Cantonment English School & College (CESC)."/>
+<link rel="canonical" href="https://cesc-hub.vercel.app/visit"/>
+
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="CESC Hub — Student Community"/>
+<meta property="og:description" content="A student community for connecting, sharing ideas, exploring interests, and discovering opportunities."/>
+<meta property="og:url" content="https://cesc-hub.vercel.app/visit"/>
+<meta property="og:image" content="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png"/>
+<meta property="og:site_name" content="CESC Hub"/>
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="CESC Hub — Student Community"/>
+<meta name="twitter:description" content="A student community for connecting, sharing ideas, exploring interests, and discovering opportunities."/>
+<meta name="twitter:image" content="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png"/>
+
+<meta name="theme-color" content="#4a9eff"/>
+<link rel="icon" type="image/x-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png"/>
+<link rel="apple-touch-icon" href="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #080a14;
+  color: #e8e8f0;
+  min-height:100vh;
+  overflow-x:hidden;
+  line-height:1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --bg: #080a14;
+  --bg2: #0e1020;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.13);
+  --neon: #4a9eff;
+  --neon2: #6c5ce7;
+  --neon-glow: rgba(74,158,255,0.3);
+  --neon-glow2: rgba(108,92,231,0.3);
+  --text: #e8e8f0;
+  --text-bright: #f0f0f8;
+  --muted: #6b6b80;
+  --yellow: #f5c400;
+  --success: #22c55e;
+  --radius: 14px;
+}
+
+/* ─── BACKGROUND ─── */
+.v-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.v-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, var(--neon-glow) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, var(--neon-glow2) 0%, transparent 60%);
+  animation: v-bg-breathe 10s ease-in-out infinite alternate;
+}
+@keyframes v-bg-breathe {
+  0%   { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.05); }
+}
+.v-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  animation: v-orb-float linear infinite;
+  pointer-events: none;
+}
+.v-orb.orb1 { width: 340px; height: 340px; background: var(--neon-glow); top: 10%; left: 5%; animation-duration: 26s; }
+.v-orb.orb2 { width: 240px; height: 240px; background: var(--neon-glow2); top: 60%; right: 8%; animation-duration: 34s; animation-delay: -10s; }
+.v-orb.orb3 { width: 180px; height: 180px; background: var(--neon-glow); bottom: 20%; left: 40%; animation-duration: 22s; animation-delay: -6s; }
+@keyframes v-orb-float {
+  0%   { transform: translate(0, 0); }
+  33%  { transform: translate(-30px, -40px); }
+  66%  { transform: translate(30px, -15px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ─── NAV ─── */
+.v-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 64px;
+  background: rgba(8,10,20,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+}
+.v-nav-inner {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.v-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+.v-nav-logo img {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+.v-nav-name {
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+}
+.v-nav-name em {
+  color: var(--neon);
+  font-style: normal;
+}
+
+.v-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  list-style: none;
+}
+.v-nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.v-nav-links a:hover {
+  color: var(--text-bright);
+}
+
+.v-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.v-btn-nav {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.v-btn-nav:hover {
+  border-color: var(--neon-glow);
+  color: var(--neon);
+}
+.v-btn-nav.primary {
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  border-color: transparent;
+  color: #000;
+}
+.v-btn-nav.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--neon-glow);
+  color: #000;
+}
+
+.v-nav-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-bright);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 6px;
+}
+
+/* ─── MAIN ─── */
+.v-main {
+  position: relative;
+  z-index: 1;
+  padding-top: 64px;
+}
+
+/* ─── HERO ─── */
+.v-hero {
+  padding: 80px 24px 100px;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+.v-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: var(--neon-glow);
+  border: 1px solid var(--neon-glow);
+  color: var(--neon);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 24px;
+}
+.v-hero-badge i { font-size: 0.7rem; }
+
+.v-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text-bright);
+  margin-bottom: 20px;
+}
+.v-hero h1 em {
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-style: normal;
+}
+.v-hero-sub {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: var(--muted);
+  max-width: 680px;
+  margin: 0 auto 32px;
+  line-height: 1.65;
+}
+.v-hero-ctas {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.v-btn-cta {
+  padding: 14px 28px;
+  border-radius: 11px;
+  border: none;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.v-btn-cta.primary {
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  box-shadow: 0 8px 24px var(--neon-glow);
+}
+.v-btn-cta.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px var(--neon-glow);
+}
+.v-btn-cta.secondary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.v-btn-cta.secondary:hover {
+  border-color: var(--neon-glow);
+  color: var(--neon);
+}
+
+/* ─── SECTIONS ─── */
+.v-section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.v-section-head {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 56px;
+}
+.v-section-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--neon);
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.v-section h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.v-section-sub {
+  font-size: 1rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* ─── ABOUT ─── */
+.v-about-content {
+  max-width: 780px;
+  margin: 0 auto;
+  text-align: center;
+}
+.v-about-content p {
+  font-size: 1rem;
+  color: var(--text);
+  line-height: 1.75;
+  margin-bottom: 18px;
+}
+.v-about-content p:last-child { margin-bottom: 0; }
+
+/* ─── CESC IDENTITY SECTION ─── */
+.v-cesc-section {
+  padding: 80px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Top row: text on left, orbit on right */
+.v-cesc-top {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 48px;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.v-cesc-text h2 {
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  font-weight: 800;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.v-cesc-text p {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+.v-cesc-text p strong {
+  color: var(--text-bright);
+  font-weight: 700;
+}
+.v-cesc-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 1px solid var(--neon-glow);
+  background: var(--surface);
+  color: var(--neon);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.v-cesc-link-btn:hover {
+  background: var(--neon-glow);
+  transform: translateY(-2px);
+}
+
+/* ─── ORBIT ─── */
+/* The container is a fixed-size square. The central logo sits dead-center.
+   The orbiting Hub logo is a smaller circle pinned to the top of a rotating
+   wrapper that has the same size as the container. Rotating the wrapper
+   swings the Hub logo around the perimeter. The Hub logo counter-rotates
+   so it stays upright. */
+
+.v-cesc-orbit {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+.v-cesc-orbit-ring {
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  border: 1px dashed rgba(74,158,255,0.22);
+  pointer-events: none;
+}
+
+.v-cesc-orbit-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44%;
+  height: 44%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.v-cesc-orbit-center img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 32px rgba(74,158,255,0.35))
+          drop-shadow(0 0 20px rgba(74,158,255,0.2));
+  animation: v-central-float 6s ease-in-out infinite;
+}
+@keyframes v-central-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.v-cesc-orbit-rotator {
+  position: absolute;
+  inset: 0;
+  animation: v-orbit-spin 20s linear infinite;
+  pointer-events: none;
+}
+
+.v-cesc-orbit-hub {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 42px;
+  height: 42px;
+  /* no background, no overflow:hidden, no border-radius disc —
+     the logo image itself defines the shape */
+  animation: v-orbit-counter-spin 20s linear infinite;
+  z-index: 3;
+}
+.v-cesc-orbit-hub img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  /* glow lives on the image now, so it follows the logo's actual shape */
+  filter: drop-shadow(0 8px 32px rgba(74,158,255,0.35))
+          drop-shadow(0 0 20px rgba(74,158,255,0.2));
+  border-radius: 50%;
+  background: transparent;
+}
+
+@keyframes v-orbit-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes v-orbit-counter-spin {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to   { transform: translateX(-50%) rotate(-360deg); }
+}
+
+/* ─── GALLERY (two big images below the orbit row) ─── */
+.v-cesc-gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+.v-cesc-img {
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  position: relative;
+}
+.v-cesc-img img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  display: block;
+}
+.v-cesc-img-caption {
+  padding: 12px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.v-disclaimer {
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: rgba(245,196,0,0.05);
+  border: 1px solid rgba(245,196,0,0.2);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--yellow);
+  line-height: 1.6;
+  text-align: center;
+}
+.v-disclaimer strong { color: var(--text-bright); }
+
+/* ─── FEATURES GRID ─── */
+.v-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.v-feature {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.v-feature::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--neon), var(--neon2));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.v-feature:hover {
+  border-color: var(--neon-glow);
+  background: var(--surface2);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.v-feature:hover::before { opacity: 1; }
+.v-feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--neon-glow), var(--neon-glow2));
+  border: 1px solid var(--neon-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--neon);
+  margin-bottom: 16px;
+}
+.v-feature h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.v-feature p {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ─── HOW TO JOIN ─── */
+.v-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.v-step {
+  text-align: center;
+  padding: 20px;
+  position: relative;
+}
+.v-step-num {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  color: #000;
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 6px 20px var(--neon-glow);
+}
+.v-step-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 6px;
+}
+.v-step-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.v-approval-note {
+  max-width: 720px;
+  margin: 40px auto 0;
+  padding: 16px 20px;
+  background: rgba(245,196,0,0.05);
+  border: 1px solid rgba(245,196,0,0.2);
+  border-radius: 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--yellow);
+  line-height: 1.6;
+  text-align: center;
+}
+.v-approval-note strong {
+  color: var(--text-bright);
+}
+
+/* ─── FINAL CTA ─── */
+.v-final-cta {
+  padding: 80px 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+.v-final-cta h2 {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 900;
+  color: var(--text-bright);
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+.v-final-cta p {
+  font-size: 1rem;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+
+/* ─── FOOTER ─── */
+.v-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 40px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.v-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.v-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.v-footer-name {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.v-footer-name em { color: var(--neon); font-style: normal; }
+.v-footer-tag {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.v-footer-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.v-footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.v-footer-links a:hover { color: var(--neon); }
+.v-footer-copyright {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+
+/* Tablet */
+@media (max-width: 900px) {
+  .v-cesc-top {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .v-cesc-orbit {
+    width: 280px;
+    height: 280px;
+  }
+  .v-cesc-orbit-hub {
+    width: 38px;
+    height: 38px;
+  }
+  .v-cesc-gallery {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .v-cesc-img img {
+    height: 220px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .v-nav { padding: 0 16px; height: 60px; }
+  .v-nav-links { display: none; }
+  .v-nav-mobile-toggle { display: block; }
+  .v-nav-actions .v-btn-nav:not(.primary) { display: none; }
+
+  .v-main { padding-top: 60px; }
+  .v-hero { padding: 50px 20px 70px; }
+  .v-hero-sub { font-size: 0.95rem; margin-bottom: 26px; }
+  .v-btn-cta { padding: 12px 22px; font-size: 0.88rem; }
+
+  .v-section { padding: 60px 20px; }
+  .v-section-head { margin-bottom: 40px; }
+
+  .v-cesc-section { padding: 60px 20px; }
+  .v-cesc-top { gap: 32px; margin-bottom: 32px; }
+  .v-cesc-orbit {
+    width: 240px;
+    height: 240px;
+  }
+  .v-cesc-orbit-hub {
+    width: 32px;
+    height: 32px;
+  }
+  .v-cesc-orbit-hub img {
+    filter: drop-shadow(0 4px 20px rgba(74,158,255,0.32))
+            drop-shadow(0 0 12px rgba(74,158,255,0.18));
+  }
+  .v-cesc-orbit-ring {
+    inset: 14px;
+  }
+  .v-cesc-gallery {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .v-cesc-img img { height: 200px; }
+  .v-cesc-text h2 { font-size: 1.4rem; }
+
+  .v-features { grid-template-columns: 1fr; gap: 14px; }
+  .v-feature { padding: 22px; }
+
+  .v-steps { grid-template-columns: 1fr; gap: 12px; }
+  .v-step { padding: 14px; }
+
+  .v-footer-inner { flex-direction: column; align-items: flex-start; }
+  .v-footer-links { flex-wrap: wrap; }
+}
+
+/* Very small phones */
+@media (max-width: 400px) {
+  .v-hero h1 { font-size: 1.8rem; }
+  .v-btn-cta { width: 100%; justify-content: center; }
+  .v-cesc-orbit {
+    width: 200px;
+    height: 200px;
+  }
+  .v-cesc-orbit-hub {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .v-cesc-orbit-rotator,
+  .v-cesc-orbit-hub,
+  .v-cesc-orbit-center img,
+  .v-orb,
+  .v-bg::before {
+    animation: none !important;
+  }
+}
+
+/* ─── MOBILE NAV DRAWER ─── */
+.v-mobile-drawer {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background: rgba(8,10,20,0.98);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 99;
+  display: none;
+  flex-direction: column;
+  padding: 20px;
+  gap: 4px;
+}
+.v-mobile-drawer.open { display: flex; }
+.v-mobile-drawer a {
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+.v-mobile-drawer a:hover { background: var(--surface); }
+.v-mobile-drawer .v-mobile-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="v-bg">
+  <div class="v-orb orb1"></div>
+  <div class="v-orb orb2"></div>
+  <div class="v-orb orb3"></div>
+</div>
+
+<nav class="v-nav">
+  <div class="v-nav-inner">
+    <a href="/visit" class="v-nav-logo">
+      <img src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png" alt="CESC Hub"/>
+      <span class="v-nav-name">CESC <em>Hub</em></span>
+    </a>
+
+    <ul class="v-nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#cesc">CESC</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-to-join">How to Join</a></li>
+    </ul>
+
+    <div class="v-nav-actions" id="nav-actions">
+      <a href="https://cesc.edu.bd/" target="_blank" rel="noopener" class="v-btn-nav" style="border-color: var(--neon-glow); color: var(--neon);">
+        <i class="fas fa-external-link-alt"></i> CESC Website
+      </a>
+      <a href="/login" class="v-btn-nav" data-auth="guest">Login</a>
+      <a href="/signup" class="v-btn-nav primary" data-auth="guest">Sign Up</a>
+      <a href="/pending" class="v-btn-nav primary" data-auth="pending" style="display:none;">
+        View your status <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="/" class="v-btn-nav primary" data-auth="verified" style="display:none;">
+        Continue to app <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <button class="v-nav-mobile-toggle" onclick="toggleMobileNav()" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+</nav>
+
+<div class="v-mobile-drawer" id="mobile-drawer">
+  <a href="#about" onclick="toggleMobileNav()">About</a>
+  <a href="#cesc" onclick="toggleMobileNav()">CESC</a>
+  <a href="#features" onclick="toggleMobileNav()">Features</a>
+  <a href="#how-to-join" onclick="toggleMobileNav()">How to Join</a>
+  <div class="v-mobile-divider"></div>
+  <a href="https://cesc.edu.bd/" target="_blank" rel="noopener" style="color:var(--neon);">CESC Website ↗</a>
+  <a href="/login" data-auth="guest">Login</a>
+  <a href="/signup" data-auth="guest" style="color:var(--neon);">Sign Up</a>
+  <a href="/pending" data-auth="pending" style="color:var(--neon); display:none;">View your status</a>
+  <a href="/" data-auth="verified" style="color:var(--neon); display:none;">Continue to app</a>
+</div>
+
+<main class="v-main">
+
+  <!-- HERO -->
+  <section class="v-hero">
+    <div class="v-hero-badge">
+      <i class="fas fa-star"></i> Student Community
+    </div>
+    <h1>
+      Your Community. Your Creativity.<br/>
+      <em>Your Space.</em>
+    </h1>
+    <p class="v-hero-sub">
+      CESC Hub is a student community where you can connect with others, share ideas, discover new interests, and explore opportunities — built by students of Cantonment English School &amp; College.
+    </p>
+    <div class="v-hero-ctas">
+      <a href="/signup" class="v-btn-cta primary">
+        Join CESC Hub <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="#features" class="v-btn-cta secondary">
+        Explore the Platform
+      </a>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="v-section" id="about">
+    <div class="v-section-head">
+      <div class="v-section-label">About CESC Hub</div>
+      <h2>Built by students, for students.</h2>
+    </div>
+    <div class="v-about-content">
+      <p>
+        CESC Hub is a private community platform made specifically for students of Cantonment English School &amp; College (CESC). It's a space where classmates can stay connected, share what they're thinking, discover what others are working on, and just be part of a community that knows them.
+      </p>
+      <p>
+        We built it because the tools most people use are too big, too noisy, and not really meant for a school. CESC Hub is smaller, calmer, and shaped entirely around the people it serves.
+      </p>
+    </div>
+  </section>
+
+  <!-- CESC IDENTITY -->
+  <section class="v-cesc-section" id="cesc">
+
+    <div class="v-cesc-top">
+
+      <div class="v-cesc-text">
+        <div class="v-section-label" style="margin-bottom:12px;">The School Behind the Hub</div>
+        <h2>Cantonment English School &amp; College</h2>
+        <p>
+          <strong>CESC</strong> stands for <strong>Cantonment English School &amp; College</strong> — an English-version national curriculum institution in Chattogram Cantonment, Bangladesh.
+        </p>
+        <p>
+          The school started its journey in 1998 as Cantonment International School, became Cantonment English School in 2005, and was upgraded to college level in 2010, becoming CESC. It follows the National Curriculum in English version and is affiliated with the Chittagong Education Board.
+        </p>
+        <p>
+          CESC Hub exists to serve the students of this school — it's not the school's official platform, but a community built by students who wanted a space of their own.
+        </p>
+        <a href="https://cesc.edu.bd/" target="_blank" rel="noopener" class="v-cesc-link-btn">
+          <i class="fas fa-external-link-alt"></i> Visit CESC's Official Website
+        </a>
+      </div>
+
+      <div class="v-cesc-orbit" aria-hidden="true">
+        <div class="v-cesc-orbit-ring"></div>
+        <div class="v-cesc-orbit-center">
+          <img
+            src="https://cesc.edu.bd/img/configurations/5e3e9d2fa8ce65ddce5d0a4694logo.png"
+            alt="Cantonment English School & College logo"
+            loading="lazy"
+          />
+        </div>
+        <div class="v-cesc-orbit-rotator">
+          <div class="v-cesc-orbit-hub">
+            <img
+              src="https://uploads.onecompiler.io/43m56waex/44huzak7q/232a0cec-1d90-4e0b-8377-41d13d78b763.png"
+              alt="CESC Hub logo"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="v-cesc-gallery">
+      <div class="v-cesc-img">
+        <img src="https://cesc.edu.bd/img/content/662893cb5e25aDJI_0068%20copy%20(3).jpg" alt="CESC campus" loading="lazy"/>
+        <div class="v-cesc-img-caption">The CESC campus in Chattogram Cantonment.</div>
+      </div>
+      <div class="v-cesc-img">
+        <img src="https://cesc.edu.bd/img/sliderContent/thumb/1786594371WhatsApp%20Image%202026-08-13%20at%2010.11.17%20AM.jpeg" alt="CESC morning assembly" loading="lazy"/>
+        <div class="v-cesc-img-caption">"Upholding our values to shape the future." — CESC morning assembly</div>
+      </div>
+    </div>
+
+    <div class="v-disclaimer">
+      <strong>Note:</strong> CESC Hub is a student-built project and is <strong>not officially affiliated with</strong> Cantonment English School &amp; College. The CESC name and images are referenced for community identification only. For official information, visit <a href="https://cesc.edu.bd/" target="_blank" rel="noopener" style="color:var(--yellow);text-decoration:underline;">cesc.edu.bd</a>.
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="v-section" id="features">
+    <div class="v-section-head">
+      <div class="v-section-label">Features</div>
+      <h2>Everything the community needs.</h2>
+      <p class="v-section-sub">
+        A focused set of tools designed for real student life — nothing more, nothing less.
+      </p>
+    </div>
+    <div class="v-features">
+
+      <div class="v-feature">
+        <div class="v-feature-icon"><i class="fas fa-newspaper"></i></div>
+        <h3>Community Posts</h3>
+        <p>Share ideas, updates, and creative work with the community. Comment, react, and stay in the loop with what's happening.</p>
+      </div>
+
+      <div class="v-feature">
+        <div class="v-feature-icon"><i class="fas fa-comments"></i></div>
+        <h3>Private &amp; Group Messaging</h3>
+        <p>Chat with classmates one-on-one, or join group conversations. Keep up with the community without the noise.</p>
+      </div>
+
+      <div class="v-feature">
+        <div class="v-feature-icon"><i class="fas fa-user-circle"></i></div>
+        <h3>Student Profiles</h3>
+        <p>Showcase who you are, what you're interested in, and what you're working on. A profile that's actually yours.</p>
+      </div>
+
+      <div class="v-feature">
+        <div class="v-feature-icon"><i class="fas fa-compass"></i></div>
+        <h3>Explore &amp; Discover</h3>
+        <p>Find new posts, people, and ideas from across the community. Discover what others are creating and thinking about.</p>
+      </div>
+
+      <div class="v-feature">
+        <div class="v-feature-icon"><i class="fas fa-bell"></i></div>
+        <h3>Notes &amp; Notifications</h3>
+        <p>Post quick 24-hour notes, and get notified when people interact with your content — the small moments that keep the community alive.</p>
+      </div>
+
+      <div class="v-feature">
+        <div class="v-feature-icon"><i class="fas fa-gamepad"></i></div>
+        <h3>Bloxd Gaming</h3>
+        <p>Jump into shared gaming sessions with classmates. Play together, track your playtime, and climb the community leaderboard.</p>
+      </div>
+
+      <div class="v-feature">
+        <div class="v-feature-icon"><i class="fas fa-coins"></i></div>
+        <h3>CEIN Rewards</h3>
+        <p>Earn CEIN — the community's reward currency — for being active, staying consistent, and contributing. A simple way to recognize participation.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- HOW TO JOIN -->
+  <section class="v-section" id="how-to-join">
+    <div class="v-section-head">
+      <div class="v-section-label">How to Join</div>
+      <h2>Getting in is straightforward.</h2>
+      <p class="v-section-sub">
+        Every account is reviewed by an admin to keep the community safe and genuine.
+      </p>
+    </div>
+    <div class="v-steps">
+      <div class="v-step">
+        <div class="v-step-num">1</div>
+        <div class="v-step-title">Create an Account</div>
+        <div class="v-step-desc">Sign up with your username, email, and password.</div>
+      </div>
+      <div class="v-step">
+        <div class="v-step-num">2</div>
+        <div class="v-step-title">Complete Setup</div>
+        <div class="v-step-desc">Finish a short onboarding and set up your profile.</div>
+      </div>
+      <div class="v-step">
+        <div class="v-step-num">3</div>
+        <div class="v-step-title">Wait for Approval</div>
+        <div class="v-step-desc">An admin reviews your account to confirm you're a CESC student.</div>
+      </div>
+      <div class="v-step">
+        <div class="v-step-num">4</div>
+        <div class="v-step-title">You're In</div>
+        <div class="v-step-desc">Once approved, you get full access to the community.</div>
+      </div>
+    </div>
+    <div class="v-approval-note">
+      <strong>Note:</strong> Signing up doesn't grant immediate access. Every new account is reviewed by an admin before being approved.
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="v-final-cta">
+    <h2>Your community is waiting.</h2>
+    <p>Join CESC Hub and become part of something built by students, for students.</p>
+    <div class="v-hero-ctas">
+      <a href="/signup" class="v-btn-cta primary">
+        Create an Account <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="/login" class="v-btn-cta secondary">
+        Already have an account? Log in
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="v-footer">
+  <div class="v-footer-inner">
+    <div class="v-footer-brand">
+      <div class="v-footer-name">CESC <em>Hub</em></div>
+      <div class="v-footer-tag">Student community · built by students, for students</div>
+    </div>
+    <div class="v-footer-links">
+      <a href="/login">Login</a>
+      <a href="/signup">Sign Up</a>
+      <a href="https://cesc.edu.bd/" target="_blank" rel="noopener">CESC Website ↗</a>
+      <a href="#about">About</a>
+      <a href="#features">Features</a>
+    </div>
+  </div>
+  <div class="v-footer-copyright">
+    © 2026 CESC Hub · Built by NAIX Studio · Not officially affiliated with Cantonment English School &amp; College
+  </div>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://wojbqixkarjlvbgublsg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvamJxaXhrYXJqbHZiZ3VibHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjkxNDYsImV4cCI6MjEwMTY0NTE0Nn0.A2VpByFPSIi9bS8EkAh7VPsgjuiYFfgAyuwIz-sCcas';
+
+let sb = null;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true }
+  });
+} catch (e) {
+  console.warn('Supabase init failed:', e);
+}
+
+function toggleMobileNav() {
+  document.getElementById('mobile-drawer').classList.toggle('open');
+}
+window.toggleMobileNav = toggleMobileNav;
+
+function setCTAState(state) {
+  document.querySelectorAll('[data-auth]').forEach(el => {
+    el.style.display = (el.dataset.auth === state) ? 'inline-flex' : 'none';
+  });
+}
+
+async function checkSession() {
+  if (!sb) { setCTAState('guest'); return; }
+  try {
+    const { data } = await sb.auth.getSession();
+    if (!data?.session) { setCTAState('guest'); return; }
+
+    const { data: profile } = await sb
+      .from('profiles')
+      .select('verification_status')
+      .eq('id', data.session.user.id)
+      .maybeSingle();
+
+    if (!profile) { setCTAState('guest'); return; }
+
+    const verif = profile.verification_status;
+    if (verif === 'verified' || verif == null) setCTAState('verified');
+    else setCTAState('pending');
+  } catch (e) {
+    console.warn('Session check failed:', e);
+    setCTAState('guest');
+  }
+}
+
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (!target) return;
+    e.preventDefault();
+    const top = target.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top, behavior: 'smooth' });
+  });
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkSession);
+} else {
+  checkSession();
+}
+</script>
+
+</body>
+</html>

@@ -1,7 +1,12 @@
 {
-  "current": "3.8.1",
+  "current": "3.8.2",
   "versions": {
     "v3": [
+      {
+        "version": "3.8.2",
+        "date": "2026-11-08",
+        "changes": "Public landing page · New /visit route for visitors · Explains CESC Hub, its features, and how to join · Auth-aware CTAs (Continue to app / View status / Login+Sign Up depending on session) · Not indexed, / and /login unchanged · Service worker cache bumped to v3.8.2"
+      },
       {
         "version": "3.8.1",
         "date": "2026-11-07",

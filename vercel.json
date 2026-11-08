@@ -17,6 +17,7 @@
   { "source": "/download", "destination": "/download.html" },
   { "source": "/login", "destination": "/login.html" },
   { "source": "/signup", "destination": "/signup.html" },
+  { "source": "/visit", "destination": "/visit.html" },
   { "source": "/timeout", "destination": "/timeout.html" },
   { "source": "/timeout", "destination": "/timeout.html" },
   { "source": "/onboarding", "destination": "/onboarding.html" },

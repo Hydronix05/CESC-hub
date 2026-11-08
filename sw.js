@@ -1,7 +1,7 @@
 // ── CESC HUB SERVICE WORKER ──
 // No terminal needed - just copy this file!
 
-const CACHE_NAME = 'cesc-hub-v3.8.1'; // V3.8.1 — signup + verification
+const CACHE_NAME = 'cesc-hub-v3.8.2'; // V3.8.1 — signup + verification
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -21,6 +21,7 @@ const STATIC_ASSETS = [
   '/wallet.html',
   '/signup.html',
   '/pending.html',
+  '/visit.html',
   '/offline.html',
   '/shared.js',
   '/shared.css',
@@ -138,7 +139,7 @@ self.addEventListener('message', event => {
 });
 
 // ── VERSION INFO ──
-const APP_VERSION = '3.8.1';
+const APP_VERSION = '3.8.2';
 const UPDATE_DATE = new Date().toISOString();
 
 console.log(`✅ CESC Hub v${APP_VERSION} - ${UPDATE_DATE}`);
