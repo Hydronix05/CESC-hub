@@ -7,7 +7,7 @@
 // ═══════════════════════════════════════════════════════════
 // ── CONSTANTS ──
 // ═══════════════════════════════════════════════════════════
-const MAX_IMAGE_SIZE = 500 * 1024;
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const EDIT_WINDOW_MINUTES = 15;
 const LAYOUT_KEY = 'cesc_chat_layout';
 const MENTION_SPAM_WINDOW_MS = 60 * 1000;
@@ -3808,7 +3808,7 @@ window.handleImageUpload = function(e) {
   const file = e.target.files[0];
   if (!file) return;
   if (file.size > MAX_IMAGE_SIZE) {
-    window.showToast(`Image too large (${(file.size/1024).toFixed(0)}KB). Max 500KB 💀`, 'error');
+    window.showToast(`Image too large (${(file.size/1024).toFixed(0)}KB). Max 20 MB 💀`, 'error');
     e.target.value = '';
     return;
   }
