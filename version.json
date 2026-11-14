@@ -1,7 +1,12 @@
 {
-  "current": "3.8.2",
+  "current": "3.8.3",
   "versions": {
     "v3": [
+      {
+        "version": "3.8.3",
+        "date": "2026-11-14",
+        "changes": "DM nicknames · Set a nickname for yourself or the other person in any DM · Nicknames are visible to both members of that conversation (private from anyone outside it) · Every nickname change is announced in-chat as a centered system message (Instagram-style, no side hyphens), e.g. 'f0rgetm3h changed sahil_jr's nickname from sahil to ASI yt' or 'f0rgetm3h changed their nickname from irfan to Naix owner' · Chat settings modal rebuilt with both accounts listed, each with a pen icon for inline editing · Broadcasts persist as real DM messages, survive refresh, and don't count toward unread or trigger push/toast notifications · Renaming yourself updates your own message headers within that DM · New DB: dm_messages.system_type column, set_dm_nickname_v2 and get_dm_nicknames RPCs · Fix: edited messages now re-linkify text and refresh their link preview card · Fix: global chat reports use the correct 'chat_message' target type · Fix: DM creation edge cases hardened (existing-convo path now clears ephemeral + loads nicknames, gear appears immediately after first message) · Fix: GC/global now update the Seen-by line on your own sent messages · Service worker cache bumped to v3.8.3"
+      },
       {
         "version": "3.8.2",
         "date": "2026-11-08",

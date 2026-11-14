@@ -160,6 +160,9 @@ if ('serviceWorker' in navigator) {
             <div class="chat-head-sub" id="chat-head-sub">—</div>
           </div>
 <div class="chat-head-actions">
+  <button class="chat-head-btn" id="chat-settings-btn" title="Chat settings" onclick="window.openChatSettings()" style="display:none;">
+    <i class="fas fa-cog"></i>
+  </button>
   <button class="chat-head-btn read-all-btn" id="chat-head-read-all" title="Mark all read" onclick="window.markAllChatRead()">
     <i class="fas fa-check-double"></i> <span>Read all</span>
   </button>
@@ -321,6 +324,28 @@ if ('serviceWorker' in navigator) {
       </button>
     </div>
     <div class="seen-by-modal-body" id="seen-by-modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══ CHAT SETTINGS MODAL (DM nicknames — group-visible) ═══ -->
+<div class="chat-settings-overlay" id="chat-settings-modal" onclick="window.closeChatSettings(event)">
+  <div class="chat-settings" role="dialog" aria-modal="true" aria-labelledby="chat-settings-title" onclick="event.stopPropagation()">
+    <div class="chat-settings-handle" onclick="window.closeChatSettings()"></div>
+
+    <div class="chat-settings-head">
+      <div class="chat-settings-title" id="chat-settings-title">
+        <i class="fas fa-cog"></i> Chat settings
+      </div>
+      <button class="chat-settings-close" onclick="window.closeChatSettings()" aria-label="Close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="chat-settings-body">
+      <div class="chat-settings-sub">Nicknames are visible to both of you in this DM.</div>
+      <div class="chat-settings-list" id="chat-settings-list"></div>
+      <div class="chat-settings-error" id="chat-settings-error" role="alert"></div>
+    </div>
   </div>
 </div>
 

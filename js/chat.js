@@ -1,7 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
-   CESC HUB — CHAT LOGIC (Phase 1.7)
-   Inbox + Global + DMs + Groups + Notes + Receipts + Presence
-   + Windowed message loading (20/page) + Typing indicator
+   CESC HUB — CHAT LOGIC (Phase 1.7 + DM Nicknames v2)
+   Group-visible nicknames + broadcast messages.
    ═══════════════════════════════════════════════════════════ */
 
 // ═══════════════════════════════════════════════════════════
@@ -22,6 +21,7 @@ const MSG_PAGE_SIZE = 20;
 const SCROLL_TOP_TRIGGER_PX = 60;
 const TYPING_THROTTLE_MS = 2000;
 const TYPING_EXPIRE_MS = 6000;
+const NICKNAME_MAX_LEN = 32;
 
 const EMOJIS = [
   '😀','😁','😂','🤣','😊','😍','🥰','😘','😜','😝','😛','🤑','🤪','😋','😇','🤗',
@@ -82,12 +82,10 @@ let conversationsCache = [];
 let profilesIndex = {};
 let currentSearchQuery = '';
 
-// Notes
 let notesCache = [];
 let notesChannel = null;
 let currentViewingNote = null;
 
-// Ads (chat)
 let currentChatAd = null;
 let currentInboxBottomAd = null;
 let chatAdRefreshTimer = null;
@@ -95,7 +93,6 @@ let preAdActiveChat = null;
 let currentChatAdSlot = null;
 let currentChatAdSignature = null;
 
-// ── Windowed message loading ──
 let msgWindow = {
   table: null,
   conversationId: null,
@@ -106,16 +103,19 @@ let msgWindow = {
 };
 let _scrollLoaderAttached = false;
 
-// ── Typing indicator ──
 let typingTimeout = null;
 let lastTypingSent = 0;
 let typingChannel = null;
 let typingPruneInterval = null;
 const typingState = {};
 
-// ── Seen-by (message reads) ──
 let messageReadsCache = [];
 let readsChannel = null;
+
+// Chat settings modal
+let _settingsOpen = false;
+let _settingsPrevFocus = null;
+let _editingNicknameUserId = null;
 
 // ═══════════════════════════════════════════════════════════
 // ── UTILITIES ──
@@ -187,6 +187,406 @@ function isUserOnline(uname) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ── DM NICKNAMES (group-visible) ──
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Resolve the name to show for a user in the *active* DM.
+ * Uses activeChat.nicknames[userId] first, then falls back.
+ */
+function resolveChatName(userId, uname, fallbackDisplayName) {
+  if (activeChat && activeChat.type === 'dm' && activeChat.nicknames && userId) {
+    const nick = activeChat.nicknames[userId];
+    if (nick && String(nick).trim()) return String(nick).trim();
+  }
+  return fallbackDisplayName || uname || 'Unknown';
+}
+
+/**
+ * Resolve the display name for an inbox row.
+ */
+function resolveInboxName(convo) {
+  if (!convo) return 'Unknown';
+  const isMe = convo.otherProfile?.id === myUserId;
+  const targetId = convo.otherProfile?.id;
+  if (convo.type === 'dm' && convo.nicknames && targetId) {
+    const nick = convo.nicknames[targetId];
+    if (nick && String(nick).trim()) return String(nick).trim();
+  }
+  return convo.displayName || convo.otherUsername || 'Unknown';
+}
+
+/**
+ * Fetch BOTH members' nicknames for a DM.
+ * Returns { [userId]: nicknameString } (only entries that are set).
+ */
+async function loadDmNicknames(conversationId) {
+  const out = { realNames: {} };
+  if (!conversationId) return out;
+  try {
+    const { data, error } = await window.supabaseClient.rpc('get_dm_nicknames', {
+      p_conversation_id: conversationId,
+    });
+    if (error || !Array.isArray(data)) {
+      if (error) console.error('loadDmNicknames:', error);
+      return out;
+    }
+    out.nicknames = {};
+    for (const row of data) {
+      if (row.nickname && String(row.nickname).trim()) {
+        out.nicknames[row.user_id] = String(row.nickname).trim();
+      }
+      out.realNames[row.user_id] = {
+        username: row.username,
+        display_name: row.display_name,
+      };
+    }
+    return out;
+  } catch (e) {
+    console.error('loadDmNicknames exception:', e);
+    return out;
+  }
+}
+
+// ── Settings modal state ──
+function _settingsErrorEl() { return document.getElementById('chat-settings-error'); }
+function _showSettingsError(msg) {
+  const el = _settingsErrorEl();
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('show', !!msg);
+}
+function _clearSettingsError() { _showSettingsError(''); }
+
+function _buildNickRow(userId, opts) {
+  // opts: { isSelf, username, displayName, nickname, pfpUrl }
+  const row = document.createElement('div');
+  row.className = 'chat-settings-row';
+  row.dataset.userId = userId;
+
+  // Avatar
+  const av = document.createElement('div');
+  av.className = 'chat-settings-row-av';
+  const span = document.createElement('span');
+  span.textContent = (opts.username?.[0] || '?').toUpperCase();
+  av.appendChild(span);
+  if (opts.pfpUrl) {
+    const img = document.createElement('img');
+    img.src = opts.pfpUrl;
+    img.onload = () => { img.classList.add('loaded'); span.style.display = 'none'; };
+    img.onerror = () => img.remove();
+    av.appendChild(img);
+  }
+  row.appendChild(av);
+
+  // Info block
+  const info = document.createElement('div');
+  info.className = 'chat-settings-row-info';
+
+  const unameEl = document.createElement('div');
+  unameEl.className = 'chat-settings-row-username';
+  unameEl.textContent = '@' + (opts.username || '—');
+  info.appendChild(unameEl);
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'chat-settings-row-name';
+  if (opts.nickname) {
+    nameEl.innerHTML = `${window.escapeHTML(opts.nickname)} <span class="chat-settings-row-was">(was ${window.escapeHTML(opts.displayName || opts.username)})</span>`;
+  } else {
+    nameEl.textContent = opts.displayName || opts.username || '—';
+  }
+  info.appendChild(nameEl);
+
+  // Inline editor (hidden by default)
+  const editor = document.createElement('div');
+  editor.className = 'chat-settings-row-editor';
+  editor.style.display = 'none';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'chat-settings-row-input';
+  input.maxLength = NICKNAME_MAX_LEN;
+  input.placeholder = 'Nickname (empty to clear)';
+  input.value = opts.nickname || '';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'chat-settings-row-save';
+  saveBtn.textContent = 'Save';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'chat-settings-row-cancel';
+  cancelBtn.textContent = 'Cancel';
+
+  editor.appendChild(input);
+  editor.appendChild(saveBtn);
+  editor.appendChild(cancelBtn);
+  info.appendChild(editor);
+
+  row.appendChild(info);
+
+  // Pen button
+  const penBtn = document.createElement('button');
+  penBtn.className = 'chat-settings-row-pen';
+  penBtn.title = 'Change nickname';
+  penBtn.innerHTML = '<i class="fas fa-pen"></i>';
+  row.appendChild(penBtn);
+
+  // Wire behavior
+  const openEditor = () => {
+    _editingNicknameUserId = userId;
+    editor.style.display = 'flex';
+    penBtn.style.display = 'none';
+    input.focus();
+    input.select();
+    _clearSettingsError();
+  };
+  const closeEditor = () => {
+    editor.style.display = 'none';
+    penBtn.style.display = '';
+    _editingNicknameUserId = null;
+    _clearSettingsError();
+  };
+
+  penBtn.onclick = openEditor;
+  cancelBtn.onclick = closeEditor;
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); doSave(); }
+    if (e.key === 'Escape') { e.preventDefault(); closeEditor(); }
+  });
+  const doSave = async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    const ok = await window.saveDmNicknameV2(userId, input.value);
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+    if (ok) closeEditor();
+  };
+  saveBtn.onclick = doSave;
+
+  return row;
+}
+
+window.openChatSettings = function() {
+  if (!activeChat || activeChat.type !== 'dm') return;
+  if (!activeChat.conversationId) {
+    window.showToast('Send a message first to start the conversation', 'info');
+    return;
+  }
+  const modal = document.getElementById('chat-settings-modal');
+  const list = document.getElementById('chat-settings-list');
+  if (!modal || !list) return;
+
+  _settingsOpen = true;
+  _settingsPrevFocus = document.activeElement;
+  _editingNicknameUserId = null;
+  _clearSettingsError();
+
+  // Build the two rows (self + peer)
+  list.innerHTML = '';
+
+  const nicknames = activeChat.nicknames || {};
+  const realNames = activeChat.realNames || {};
+
+  // Peer first
+  if (activeChat.otherProfile?.id) {
+    const peerId = activeChat.otherProfile.id;
+    list.appendChild(_buildNickRow(peerId, {
+      isSelf: false,
+      username: activeChat.otherProfile.username || activeChat.otherUsername || '—',
+      displayName: activeChat.otherProfile.display_name || activeChat.otherUsername,
+      nickname: nicknames[peerId] || '',
+      pfpUrl: activeChat.otherProfile.pfp_url || activeChat.pfpUrl || null,
+    }));
+  }
+
+  // Self
+  list.appendChild(_buildNickRow(myUserId, {
+    isSelf: true,
+    username: username,
+    displayName: currentDisplayName,
+    nickname: nicknames[myUserId] || '',
+    pfpUrl: myPfpUrl,
+  }));
+
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeChatSettings = function(e) {
+  if (e && e.target && e.target.id !== 'chat-settings-modal') return;
+  const modal = document.getElementById('chat-settings-modal');
+  if (modal) modal.classList.remove('show');
+  document.body.style.overflow = '';
+  _clearSettingsError();
+  _settingsOpen = false;
+  _editingNicknameUserId = null;
+  if (_settingsPrevFocus && typeof _settingsPrevFocus.focus === 'function') {
+    try { _settingsPrevFocus.focus(); } catch {}
+  }
+  _settingsPrevFocus = null;
+};
+
+window.saveDmNicknameV2 = async function(targetUserId, rawValue) {
+  if (!activeChat || activeChat.type !== 'dm' || !activeChat.conversationId) return false;
+  if (!targetUserId) return false;
+
+  const raw = rawValue || '';
+  const cleaned = raw.trim().replace(/\s+/g, ' ');
+
+  if (cleaned.length > NICKNAME_MAX_LEN) {
+    _showSettingsError(`Nickname must be ${NICKNAME_MAX_LEN} characters or less.`);
+    return false;
+  }
+
+  _clearSettingsError();
+
+  try {
+    const { data, error } = await window.supabaseClient.rpc('set_dm_nickname_v2', {
+      p_conversation_id: activeChat.conversationId,
+      p_target_user_id: targetUserId,
+      p_nickname: cleaned,
+    });
+
+    if (error) {
+      _showSettingsError(error.message || 'Could not save nickname.');
+      return false;
+    }
+    if (!data || data.ok === false) {
+      const reason = data?.reason || 'unknown';
+      const msg =
+        reason === 'nickname_too_long' ? `Nickname is too long (max ${NICKNAME_MAX_LEN}).` :
+        reason === 'target_not_member' ? 'This person is no longer in the conversation.' :
+        reason === 'not_member' ? 'You are no longer a member of this conversation.' :
+        reason === 'not_a_dm' ? 'Nicknames are only available in direct messages.' :
+        'Could not save nickname.';
+      _showSettingsError(msg);
+      return false;
+    }
+
+    // Update local state
+    activeChat.nicknames = activeChat.nicknames || {};
+    if (data.nickname) activeChat.nicknames[targetUserId] = data.nickname;
+    else delete activeChat.nicknames[targetUserId];
+
+    // Sync inbox cache
+    const cached = conversationsCache.find(c => c.id === activeChat.conversationId);
+    if (cached) {
+      cached.nicknames = cached.nicknames || {};
+      if (data.nickname) cached.nicknames[targetUserId] = data.nickname;
+      else delete cached.nicknames[targetUserId];
+    }
+
+    // Re-render everything visible
+    _refreshChatHeaderName();
+    patchRenderedNames();
+    renderInbox();
+
+    // Insert the broadcast into the DOM immediately (if the RPC returned one)
+    if (data.message_id && data.broadcast_content) {
+      const synthetic = {
+        id: data.message_id,
+        conversation_id: activeChat.conversationId,
+        user_id: myUserId,
+        username: username,
+        display_name: currentDisplayName,
+        content: data.broadcast_content,
+        image_url: null,
+        edited: false,
+        seen_at: null,
+        system_type: 'nickname_change',
+        created_at: new Date().toISOString(),
+      };
+      appendMessage(synthetic, false);
+      const container = document.getElementById('messages');
+      if (container) container.scrollTop = container.scrollHeight;
+    }
+
+    window.showToast(data.nickname ? 'Nickname saved' : 'Nickname cleared', 'success');
+
+    // Rebuild the settings list so the "was …" text and inputs update
+    if (_settingsOpen) {
+      const list = document.getElementById('chat-settings-list');
+      if (list) {
+        list.innerHTML = '';
+        const nicknames = activeChat.nicknames || {};
+        if (activeChat.otherProfile?.id) {
+          const peerId = activeChat.otherProfile.id;
+          list.appendChild(_buildNickRow(peerId, {
+            isSelf: false,
+            username: activeChat.otherProfile.username || activeChat.otherUsername,
+            displayName: activeChat.otherProfile.display_name || activeChat.otherUsername,
+            nickname: nicknames[peerId] || '',
+            pfpUrl: activeChat.otherProfile.pfp_url || activeChat.pfpUrl || null,
+          }));
+        }
+        list.appendChild(_buildNickRow(myUserId, {
+          isSelf: true,
+          username,
+          displayName: currentDisplayName,
+          nickname: nicknames[myUserId] || '',
+          pfpUrl: myPfpUrl,
+        }));
+      }
+    }
+
+    return true;
+  } catch (e) {
+    console.error('saveDmNicknameV2:', e);
+    _showSettingsError('Something went wrong. Try again.');
+    return false;
+  }
+};
+
+function _refreshChatHeaderName() {
+  if (!activeChat || activeChat.type !== 'dm') return;
+  const peerId = activeChat.otherProfile?.id;
+  const newName = resolveChatName(peerId, activeChat.otherUsername, activeChat.displayName);
+  activeChat.displayName = newName;
+  updateChatHeader({
+    name: newName,
+    sub: '@' + (activeChat.otherUsername || ''),
+    avatarType: 'user',
+    avatarUser: activeChat.otherProfile || { username: activeChat.otherUsername },
+  });
+}
+
+/**
+ * Update already-rendered message headers and reply quotes.
+ * Since both self and peer can have nicknames, we re-resolve
+ * for every message group (but only the header/quote text).
+ */
+function patchRenderedNames() {
+  if (!activeChat || activeChat.type !== 'dm') return;
+
+  const nicknames = activeChat.nicknames || {};
+
+  document.querySelectorAll('#messages .msg-group').forEach(g => {
+    const uid = g.dataset.userId;
+    if (!uid) return;
+    const nick = nicknames[uid];
+    const head = g.querySelector('.msg-username');
+    if (head) {
+      head.textContent = nick || g.dataset.display_name || g.dataset.username || '';
+    }
+    g.dataset.effective_name = nick || g.dataset.display_name || g.dataset.username || '';
+  });
+
+  // Reply quotes
+  document.querySelectorAll('#messages .reply-who').forEach(q => {
+    const replyUsername = q.dataset.replyUsername;
+    if (!replyUsername) return;
+    // find the userId by matching username (only 2 members in DM)
+    let replyUserId = null;
+    if (activeChat.otherProfile?.username === replyUsername) replyUserId = activeChat.otherProfile.id;
+    else if (replyUsername === username) replyUserId = myUserId;
+    if (!replyUserId) return;
+    const nick = nicknames[replyUserId];
+    if (nick) q.textContent = nick;
+    else if (q.dataset.originalName) q.textContent = q.dataset.originalName;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
 // ── LOADING STEPS ──
 // ═══════════════════════════════════════════════════════════
 function definePageSteps() {
@@ -233,9 +633,8 @@ function maskBadWords(text) {
 // ═══════════════════════════════════════════════════════════
 function loadChatLayout() {
   const saved = localStorage.getItem(LAYOUT_KEY);
-  if (saved === 'discord' || saved === 'meta') {
-    chatLayout = saved;
-  } else {
+  if (saved === 'discord' || saved === 'meta') chatLayout = saved;
+  else {
     chatLayout = window.innerWidth >= 900 ? 'discord' : 'meta';
     localStorage.setItem(LAYOUT_KEY, chatLayout);
   }
@@ -249,7 +648,7 @@ function applyChatLayout() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── MOBILE VIEW TOGGLE + FULL-SCREEN ──
+// ── MOBILE VIEW TOGGLE ──
 // ═══════════════════════════════════════════════════════════
 function setMobileView(view) {
   const shell = document.getElementById('chat-shell');
@@ -294,8 +693,7 @@ window.addEventListener('popstate', () => {
 // ═══════════════════════════════════════════════════════════
 async function loadProfilesIndex() {
   const { data, error } = await window.supabaseClient
-    .from('profiles')
-    .select('id, username, display_name, pfp_url, last_seen');
+    .from('profiles').select('id, username, display_name, pfp_url, last_seen');
   if (error) return;
   profilesIndex = {};
   data.forEach(p => { profilesIndex[p.username] = p; });
@@ -322,20 +720,15 @@ async function fillGlobalChatPreview(globalEntry) {
       globalEntry.lastAt = last.created_at;
 
       const { data: myMember } = await window.supabaseClient
-        .from('conversation_members')
-        .select('last_read_at')
-        .eq('conversation_id', globalEntry.id)
-        .eq('user_id', myUserId)
-        .maybeSingle();
+        .from('conversation_members').select('last_read_at')
+        .eq('conversation_id', globalEntry.id).eq('user_id', myUserId).maybeSingle();
 
       const myLastRead = myMember?.last_read_at || '1970-01-01';
       globalEntry.unread = globalLast.filter(m =>
         m.user_id !== myUserId && m.created_at > myLastRead
       ).length;
     }
-  } catch (e) {
-    console.error('fillGlobalChatPreview:', e);
-  }
+  } catch (e) { console.error('fillGlobalChatPreview:', e); }
 }
 
 async function loadConversations() {
@@ -379,8 +772,7 @@ async function loadConversations() {
       pfpUrl = otherProfile?.pfp_url || null;
       dmIds.push(c.id);
     } else if (c.slug === 'global-chat') {
-      // Keep it in the cache but don't add to gcIds (its messages live in `messages` table, not gc_messages)
-      // We'll fill its lastMessage + unread separately below
+      // Handled below
     } else {
       gcIds.push(c.id);
     }
@@ -397,19 +789,14 @@ async function loadConversations() {
       lastAt: c.last_message_at || null,
       unread: 0,
       memberCount: c.member_count || 0,
+      nicknames: {},
     });
   }
 
   const allIds = [...dmIds, ...gcIds];
-  // Note: do NOT return early here — we still need to process global-chat below
-  // even if the user has no DMs/GCs. Otherwise the global-chat entry never gets
-  // its last message / unread count.
   if (allIds.length === 0) {
-    // Still process global-chat, then bail
     const globalEntry = convos.find(c => c.slug === 'global-chat');
-    if (globalEntry) {
-      await fillGlobalChatPreview(globalEntry);
-    }
+    if (globalEntry) await fillGlobalChatPreview(globalEntry);
     conversationsCache = convos;
     return;
   }
@@ -422,7 +809,7 @@ async function loadConversations() {
     fetches.push(
       window.supabaseClient
         .from('dm_messages')
-        .select('conversation_id, content, username, display_name, image_url, created_at, user_id')
+        .select('conversation_id, content, username, display_name, image_url, created_at, user_id, system_type')
         .in('conversation_id', dmIds)
         .order('created_at', { ascending: false })
         .limit(150)
@@ -440,7 +827,6 @@ async function loadConversations() {
   }
 
   const results = await Promise.all(fetches);
-
   const grouped = {};
   results.forEach(res => {
     (res.data || []).forEach(msg => {
@@ -464,18 +850,19 @@ async function loadConversations() {
       display_name: last.display_name,
       image_url: last.image_url,
       created_at: last.created_at,
+      system_type: last.system_type || null,
     };
     convo.lastAt = last.created_at;
+    // Broadcasts don't count as unread
     convo.unread = msgs.filter(m =>
-      m.user_id !== myUserId && m.created_at > lastRead
+      m.user_id !== myUserId &&
+      m.created_at > lastRead &&
+      !m.system_type
     ).length;
   });
 
-  // Fetch last message + unread for global-chat from the `messages` table
   const globalEntry = convos.find(c => c.slug === 'global-chat');
-  if (globalEntry) {
-    await fillGlobalChatPreview(globalEntry);
-  }
+  if (globalEntry) await fillGlobalChatPreview(globalEntry);
 
   convos.sort((a, b) => {
     if (!a.lastAt && !b.lastAt) return 0;
@@ -490,67 +877,40 @@ async function loadConversations() {
 // ═══════════════════════════════════════════════════════════
 // ── NOTES ──
 // ═══════════════════════════════════════════════════════════
-
-// Follow graph cache — who I follow + who follows me (mutual filter for notes)
 let noteFollowGraph = {
   loaded: false,
-  followingIds: new Set(),    // users I follow (active)
-  followerIds: new Set(),     // users who follow me (active)
-  mutualIds: new Set(),       // intersection — users where both directions active
+  followingIds: new Set(),
+  followerIds: new Set(),
+  mutualIds: new Set(),
 };
 
 async function loadNoteFollowGraph() {
   if (!myUserId) return;
-
   try {
     const [followingRes, followerRes] = await Promise.all([
-      window.supabaseClient
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', myUserId)
-        .eq('status', 'active'),
-      window.supabaseClient
-        .from('follows')
-        .select('follower_id')
-        .eq('following_id', myUserId)
-        .eq('status', 'active'),
+      window.supabaseClient.from('follows').select('following_id').eq('follower_id', myUserId).eq('status', 'active'),
+      window.supabaseClient.from('follows').select('follower_id').eq('following_id', myUserId).eq('status', 'active'),
     ]);
-
     const followingIds = new Set((followingRes.data || []).map(f => f.following_id));
     const followerIds = new Set((followerRes.data || []).map(f => f.follower_id));
-
     const mutualIds = new Set();
-    followingIds.forEach(id => {
-      if (followerIds.has(id)) mutualIds.add(id);
-    });
-
-    noteFollowGraph = {
-      loaded: true,
-      followingIds,
-      followerIds,
-      mutualIds,
-    };
+    followingIds.forEach(id => { if (followerIds.has(id)) mutualIds.add(id); });
+    noteFollowGraph = { loaded: true, followingIds, followerIds, mutualIds };
   } catch (e) {
     console.error('loadNoteFollowGraph:', e);
-    noteFollowGraph.loaded = true; // don't block, just show own note + none others
+    noteFollowGraph.loaded = true;
   }
 }
 
 function isNoteVisibleToMe(note) {
   if (!note) return false;
-  // Always show own note
   if (note.user_id === myUserId) return true;
-  // Mutual-only filter
   return noteFollowGraph.mutualIds.has(note.user_id);
 }
 
 async function loadNotes() {
   try { window.supabaseClient.rpc('cleanup_expired_notes').then(() => {}, () => {}); } catch {}
-
-  // Load follow graph once per session (cached)
-  if (!noteFollowGraph.loaded) {
-    await loadNoteFollowGraph();
-  }
+  if (!noteFollowGraph.loaded) await loadNoteFollowGraph();
 
   const { data, error } = await window.supabaseClient
     .from('notes')
@@ -558,13 +918,7 @@ async function loadNotes() {
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('loadNotes:', error);
-    notesCache = [];
-    return;
-  }
-
-  // Mutual-only filter
+  if (error) { console.error('loadNotes:', error); notesCache = []; return; }
   notesCache = (data || []).filter(isNoteVisibleToMe);
   renderNotesRow();
 }
@@ -572,12 +926,10 @@ async function loadNotes() {
 function renderNotesRow() {
   const row = document.getElementById('notes-row');
   if (!row) return;
-
   row.innerHTML = '';
 
   const noteByUser = {};
   notesCache.forEach(n => { noteByUser[n.username] = n; });
-
   const myNote = noteByUser[username];
 
   const ownCard = buildNoteCard({
@@ -588,18 +940,13 @@ function renderNotesRow() {
     isOwn: true,
     isOnline: true,
     onClick: () => {
-      if (myNote) {
-        currentViewingNote = myNote;
-        openNoteViewModal(myNote);
-      } else {
-        openNoteComposeModal();
-      }
+      if (myNote) { currentViewingNote = myNote; openNoteViewModal(myNote); }
+      else openNoteComposeModal();
     }
   });
   row.appendChild(ownCard);
 
   const others = Object.values(noteByUser).filter(n => n.username !== username);
-
   others.sort((a, b) => {
     const aOnline = isUserOnline(a.username);
     const bOnline = isUserOnline(b.username);
@@ -608,19 +955,15 @@ function renderNotesRow() {
   });
 
   others.forEach(n => {
-    const card = buildNoteCard({
+    row.appendChild(buildNoteCard({
       username: n.username,
       display_name: n.display_name || n.username,
       pfp_url: n.pfp_url,
       content: n.content,
       isOwn: false,
       isOnline: isUserOnline(n.username),
-      onClick: () => {
-        currentViewingNote = n;
-        openNoteViewModal(n);
-      }
-    });
-    row.appendChild(card);
+      onClick: () => { currentViewingNote = n; openNoteViewModal(n); }
+    }));
   });
 
   if (row.children.length === 0) row.classList.add('empty');
@@ -634,11 +977,7 @@ function buildNoteCard(opts) {
   if (opts.content) {
     const bubble = document.createElement('div');
     bubble.className = 'note-bubble';
-    const text = String(opts.content);
-    bubble.innerHTML = text
-      .split('\n')
-      .map(l => window.escapeHTML(l))
-      .join('<br>');
+    bubble.innerHTML = String(opts.content).split('\n').map(l => window.escapeHTML(l)).join('<br>');
     card.appendChild(bubble);
   }
 
@@ -684,7 +1023,7 @@ function buildNoteCard(opts) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── NOTE COMPOSE MODAL ──
+// ── NOTE MODALS ──
 // ═══════════════════════════════════════════════════════════
 window.openNoteComposeModal = function(opts) {
   const overlay = document.getElementById('note-modal');
@@ -697,30 +1036,19 @@ window.openNoteComposeModal = function(opts) {
   const isReplace = !!(existing || opts?.replace);
 
   const input = document.getElementById('note-input');
-  if (input) {
-    input.value = existing ? existing.content : '';
-    updateNoteCharCount();
-  }
+  if (input) { input.value = existing ? existing.content : ''; updateNoteCharCount(); }
 
   const postBtn = document.getElementById('note-post-btn');
-  if (postBtn) {
-    postBtn.textContent = isReplace ? 'Replace Note' : 'Post Note';
-  }
-  if (titleEl) {
-    titleEl.textContent = isReplace ? 'Replace your note' : 'Post a note';
-  }
+  if (postBtn) postBtn.textContent = isReplace ? 'Replace Note' : 'Post Note';
+  if (titleEl) titleEl.textContent = isReplace ? 'Replace your note' : 'Post a note';
 
   compose.style.display = 'block';
   view.style.display = 'none';
-  // close reply composer if it was open
   closeNoteReplyComposer();
   overlay.classList.add('show');
   if (input) setTimeout(() => input.focus(), 100);
 };
 
-// ═══════════════════════════════════════════════════════════
-// ── NOTE VIEW MODAL ──
-// ═══════════════════════════════════════════════════════════
 function openNoteViewModal(note) {
   const overlay = document.getElementById('note-modal');
   const compose = document.getElementById('note-modal-compose');
@@ -742,52 +1070,33 @@ function openNoteViewModal(note) {
 
   document.getElementById('note-view-name').textContent = note.display_name || note.username;
   document.getElementById('note-view-username').textContent = '@' + note.username;
-  const contentEl = document.getElementById('note-view-content');
-  contentEl.innerHTML = String(note.content)
-    .split('\n')
-    .map(line => window.escapeHTML(line))
-    .join('<br>');
+  document.getElementById('note-view-content').innerHTML = String(note.content).split('\n').map(line => window.escapeHTML(line)).join('<br>');
   document.getElementById('note-view-time').textContent = timeAgoShort(note.created_at);
 
-  // Configure footer buttons based on whose note this is
   const isOwn = note.username === username;
   const secondaryBtn = document.getElementById('note-view-secondary');
   const primaryBtn = document.getElementById('note-view-primary');
 
   if (isOwn) {
-    // Own note → Close + New Note
     secondaryBtn.textContent = 'Close';
     secondaryBtn.onclick = () => window.closeNoteModal();
     primaryBtn.innerHTML = '<i class="fas fa-plus"></i> New Note';
-    primaryBtn.onclick = () => {
-      // Switch modal into compose mode
-      openNoteComposeModal({ replace: true });
-    };
+    primaryBtn.onclick = () => openNoteComposeModal({ replace: true });
   } else {
-    // Someone else's note → Close + Reply
     secondaryBtn.textContent = 'Close';
     secondaryBtn.onclick = () => window.closeNoteModal();
     primaryBtn.innerHTML = '<i class="fas fa-reply"></i> Reply';
     primaryBtn.onclick = () => openNoteReplyComposer(note);
   }
 
-  // Close any open reply composer when opening view
   closeNoteReplyComposer();
-
   compose.style.display = 'none';
   view.style.display = 'flex';
   overlay.classList.add('show');
 }
 
-// Handle legacy footer buttons (kept for safety)
-window.onNoteViewSecondary = function() {
-  // Default: close
-  window.closeNoteModal();
-};
-
-window.onNoteViewPrimary = function() {
-  // No-op by default; overridden in openNoteViewModal based on context
-};
+window.onNoteViewSecondary = function() { window.closeNoteModal(); };
+window.onNoteViewPrimary = function() {};
 
 window.closeNoteModal = function(e) {
   if (e && e.target && e.target.id !== 'note-modal') return;
@@ -808,9 +1117,6 @@ function updateNoteCharCount() {
   else if (len > NOTE_MAX_LEN - 10) count.parentElement.classList.add('near');
 }
 
-// ═══════════════════════════════════════════════════════════
-// ── NOTE REPLY COMPOSER ──
-// ═══════════════════════════════════════════════════════════
 let currentReplyingToNote = null;
 
 function openNoteReplyComposer(note) {
@@ -822,21 +1128,14 @@ function openNoteReplyComposer(note) {
   currentReplyingToNote = note;
   input.value = '';
   if (count) count.textContent = '0';
-
   composer.classList.add('open');
   setTimeout(() => input.focus(), 150);
 
-  // Wire char count once
   if (!input.dataset.wired) {
     input.dataset.wired = '1';
-    input.addEventListener('input', () => {
-      if (count) count.textContent = input.value.length;
-    });
+    input.addEventListener('input', () => { if (count) count.textContent = input.value.length; });
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        window.submitNoteReply();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.submitNoteReply(); }
     });
   }
 }
@@ -852,33 +1151,22 @@ window.submitNoteReply = async function() {
   const input = document.getElementById('note-reply-input');
   if (!input) return;
   const replyText = input.value.trim();
-  if (!replyText) {
-    window.showToast('Write a reply first', 'error');
-    return;
-  }
+  if (!replyText) { window.showToast('Write a reply first', 'error'); return; }
 
   const noteOwner = currentReplyingToNote;
   const sendBtn = document.getElementById('note-reply-send');
   if (sendBtn) sendBtn.disabled = true;
 
   try {
-    // 1. Check if DM conversation already exists
     const dmSlugStr = dmSlug(username, noteOwner.username);
     const { data: existingConvo } = await window.supabaseClient
-      .from('conversations')
-      .select('id')
-      .eq('slug', dmSlugStr)
-      .maybeSingle();
+      .from('conversations').select('id').eq('slug', dmSlugStr).maybeSingle();
 
     let convoId = existingConvo?.id || null;
 
     if (!convoId) {
-      // Need to create the conversation. Fetch note owner profile id first.
       const { data: ownerProfile } = await window.supabaseClient
-        .from('profiles')
-        .select('id, username')
-        .eq('username', noteOwner.username)
-        .maybeSingle();
+        .from('profiles').select('id, username').eq('username', noteOwner.username).maybeSingle();
 
       if (!ownerProfile?.id) {
         window.showToast('Could not find note owner', 'error');
@@ -891,25 +1179,18 @@ window.submitNoteReply = async function() {
       const { data: newConvo, error: cErr } = await window.supabaseClient
         .from('conversations')
         .insert({
-          type: 'dm',
-          slug: dmSlugStr,
+          type: 'dm', slug: dmSlugStr,
           name: `${sorted[0]}-${sorted[1]}`,
           created_by: window.session.user.id,
           owner_id: null,
-          dm_user_a: sorted[0],
-          dm_user_b: sorted[1]
+          dm_user_a: sorted[0], dm_user_b: sorted[1]
         })
-        .select('id')
-        .single();
+        .select('id').single();
 
       if (cErr) {
-        // Retry once if it was a race (unique violation)
         if (cErr.code === '23505') {
           const { data: retry } = await window.supabaseClient
-            .from('conversations')
-            .select('id')
-            .eq('slug', dmSlugStr)
-            .maybeSingle();
+            .from('conversations').select('id').eq('slug', dmSlugStr).maybeSingle();
           if (retry?.id) convoId = retry.id;
         }
         if (!convoId) {
@@ -918,20 +1199,15 @@ window.submitNoteReply = async function() {
           if (sendBtn) sendBtn.disabled = false;
           return;
         }
-      } else {
-        convoId = newConvo.id;
-      }
+      } else { convoId = newConvo.id; }
 
-      // Add self + other as conversation members
       try {
-        await window.supabaseClient
-          .from('conversation_members')
+        await window.supabaseClient.from('conversation_members')
           .insert({ conversation_id: convoId, user_id: window.session.user.id, role: 'member' });
-      } catch (e) { /* duplicate ok */ }
+      } catch (e) {}
 
       try {
-        await window.supabaseClient
-          .from('conversation_members')
+        await window.supabaseClient.from('conversation_members')
           .insert({ conversation_id: convoId, user_id: ownerProfile.id, role: 'member' });
       } catch (e) {
         console.error('submitNoteReply add other member:', e);
@@ -940,49 +1216,37 @@ window.submitNoteReply = async function() {
         return;
       }
     } else {
-      // Conversation exists. Ensure we're both members (edge case for older convos).
       const { data: existingMembers } = await window.supabaseClient
-        .from('conversation_members')
-        .select('user_id')
-        .eq('conversation_id', convoId);
+        .from('conversation_members').select('user_id').eq('conversation_id', convoId);
       const existingIds = new Set((existingMembers || []).map(m => m.user_id));
 
       const { data: ownerProfile } = await window.supabaseClient
-        .from('profiles')
-        .select('id')
-        .eq('username', noteOwner.username)
-        .maybeSingle();
+        .from('profiles').select('id').eq('username', noteOwner.username).maybeSingle();
 
       if (ownerProfile?.id && !existingIds.has(ownerProfile.id)) {
         try {
-          await window.supabaseClient
-            .from('conversation_members')
+          await window.supabaseClient.from('conversation_members')
             .insert({ conversation_id: convoId, user_id: ownerProfile.id, role: 'member' });
         } catch (e) {}
       }
       if (!existingIds.has(window.session.user.id)) {
         try {
-          await window.supabaseClient
-            .from('conversation_members')
+          await window.supabaseClient.from('conversation_members')
             .insert({ conversation_id: convoId, user_id: window.session.user.id, role: 'member' });
         } catch (e) {}
       }
     }
 
-    // 2. Compose the reply body with note context prefix
     const noteText = (noteOwner.content || '').trim();
-    const prefix = noteText
-      ? `Replied to your note:\n"${noteText}"\n\n`
-      : `Replied to your note:\n\n`;
+    const prefix = noteText ? `Replied to your note:\n"${noteText}"\n\n` : `Replied to your note:\n\n`;
     const fullContent = prefix + replyText;
 
-    // 3. Insert the DM message
     const { error: msgErr } = await window.supabaseClient
       .from('dm_messages')
       .insert({
         conversation_id: convoId,
         user_id: window.session.user.id,
-        username: username,
+        username,
         display_name: currentDisplayName,
         content: fullContent,
         receiver_username: noteOwner.username,
@@ -995,7 +1259,6 @@ window.submitNoteReply = async function() {
       return;
     }
 
-    // 4. Success
     window.showToast('Reply sent to @' + noteOwner.username, 'success');
     closeNoteReplyComposer();
     window.closeNoteModal();
@@ -1007,21 +1270,12 @@ window.submitNoteReply = async function() {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// ── SUBMIT / DELETE NOTE ──
-// ═══════════════════════════════════════════════════════════
 window.submitNote = async function() {
   const input = document.getElementById('note-input');
   if (!input) return;
   const content = input.value.trim();
-  if (!content) {
-    window.showToast('Write something first 💀', 'error');
-    return;
-  }
-  if (content.length > NOTE_MAX_LEN) {
-    window.showToast(`Max ${NOTE_MAX_LEN} characters`, 'error');
-    return;
-  }
+  if (!content) { window.showToast('Write something first 💀', 'error'); return; }
+  if (content.length > NOTE_MAX_LEN) { window.showToast(`Max ${NOTE_MAX_LEN} characters`, 'error'); return; }
 
   const btn = document.getElementById('note-post-btn');
   btn.disabled = true;
@@ -1041,33 +1295,22 @@ window.submitNote = async function() {
   btn.disabled = false;
   btn.textContent = 'Post Note';
 
-  if (error) {
-    window.showToast('Failed: ' + error.message, 'error');
-    return;
-  }
+  if (error) { window.showToast('Failed: ' + error.message, 'error'); return; }
 
   window.closeNoteModal();
   window.showToast('Note posted ✨', 'success');
   await loadNotes();
 };
 
-// Keep for backwards compatibility — not wired to any button now
 window.deleteMyNote = async function() {
   if (!currentViewingNote || currentViewingNote.username !== username) return;
   if (!confirm('Delete your note?')) return;
-  const { error } = await window.supabaseClient
-    .from('notes')
-    .delete()
-    .eq('id', currentViewingNote.id);
-  if (error) {
-    window.showToast('Delete failed: ' + error.message, 'error');
-    return;
-  }
+  const { error } = await window.supabaseClient.from('notes').delete().eq('id', currentViewingNote.id);
+  if (error) { window.showToast('Delete failed: ' + error.message, 'error'); return; }
   window.closeNoteModal();
   window.showToast('Note deleted', 'success');
   await loadNotes();
 };
-
 
 function setupNotesRealtime() {
   if (notesChannel) window.supabaseClient.removeChannel(notesChannel);
@@ -1080,7 +1323,7 @@ function setupNotesRealtime() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── PROFILES REALTIME (online status) ──
+// ── PROFILES REALTIME ──
 // ═══════════════════════════════════════════════════════════
 function setupProfilesRealtime() {
   if (profilesChannel) window.supabaseClient.removeChannel(profilesChannel);
@@ -1104,7 +1347,6 @@ function setupProfilesRealtime() {
       }
 
       updateInboxPresenceDots();
-
       if (activeChat && activeChat.otherUsername === p.username) {
         updateActiveStatusLine(p.username);
       }
@@ -1118,16 +1360,12 @@ function updateInboxPresenceDots() {
 
   list.querySelectorAll('.inbox-row').forEach(row => {
     if (row.classList.contains('inbox-row-ad')) return;
-
     const avatar = row.querySelector('.inbox-row-avatar');
     if (!avatar) return;
-
     const uname = row.dataset.username;
     if (!uname) return;
-
     const isOnline = isUserOnline(uname);
     const existingDot = avatar.querySelector('.active-dot');
-
     if (isOnline && !existingDot) {
       const dot = document.createElement('div');
       dot.className = 'active-dot';
@@ -1139,24 +1377,19 @@ function updateInboxPresenceDots() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── ACTIVE STATUS TICKER + LINE UPDATER ──
+// ── ACTIVE STATUS ──
 // ═══════════════════════════════════════════════════════════
 function updateActiveStatusLine(uname) {
   if (!activeChat || activeChat.type !== 'dm') return;
   if (activeChat.otherUsername !== uname) return;
 
-  // Don't overwrite an active typing line
-  if (Object.keys(typingState).length > 0) {
-    renderTypingLine();
-    return;
-  }
+  if (Object.keys(typingState).length > 0) { renderTypingLine(); return; }
 
   const subEl = document.getElementById('chat-head-sub');
   const av = document.getElementById('chat-head-avatar');
   if (!subEl) return;
 
   const isOnline = isUserOnline(uname);
-
   if (isOnline) {
     subEl.textContent = 'Active now';
     subEl.classList.add('active-now');
@@ -1187,10 +1420,7 @@ function startActiveStatusTicker() {
 }
 
 function stopActiveStatusTicker() {
-  if (activeStatusTicker) {
-    clearInterval(activeStatusTicker);
-    activeStatusTicker = null;
-  }
+  if (activeStatusTicker) { clearInterval(activeStatusTicker); activeStatusTicker = null; }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1207,12 +1437,9 @@ function renderInbox() {
 
   list.innerHTML = '';
 
-  // Global chat gets its own row, with real unread/lastMessage from DB
   const globalEntry = conversationsCache.find(c => c.slug === 'global-chat');
   const globalLastMsg = globalEntry?.lastMessage;
-  const globalPreviewText = globalLastMsg
-    ? buildPreviewText(globalLastMsg)
-    : 'Everyone in CESC';
+  const globalPreviewText = globalLastMsg ? buildPreviewText(globalLastMsg) : 'Everyone in CESC';
 
   list.appendChild(buildInboxRow({
     kind: 'global',
@@ -1223,7 +1450,6 @@ function renderInbox() {
     unread: globalEntry?.unread || 0,
     active: activeChat && activeChat.type === 'global'
   }));
-
 
   if (conversationsCache.length > 0) {
     const label = document.createElement('div');
@@ -1241,15 +1467,13 @@ function renderInbox() {
   }
 
   conversationsCache.forEach(c => {
-    // Skip global-chat — it has its own dedicated row at the top
     if (c.slug === 'global-chat') return;
-
     const previewText = buildPreviewText(c.lastMessage);
     const isGroup = c.type === 'group';
     const row = buildInboxRow({
       kind: c.type,
       slug: c.slug,
-      name: c.displayName,
+      name: resolveInboxName(c),
       sub: previewText,
       avatarType: isGroup ? 'group' : 'user',
       avatarUser: isGroup ? { username: c.slug, pfp_url: c.pfpUrl } : (c.otherProfile || { username: c.otherUsername }),
@@ -1274,10 +1498,7 @@ function maybeInjectBottomAd(list) {
 
   const existingBottom = list.querySelector('.inbox-row-bottom-ad');
   if (existingBottom && currentInboxBottomAd) {
-    const existingId = existingBottom.dataset.adId;
-    if (existingId === currentInboxBottomAd.id) {
-      return;
-    }
+    if (existingBottom.dataset.adId === currentInboxBottomAd.id) return;
   }
 
   const excludeIds = currentChatAd ? [currentChatAd.id] : [];
@@ -1304,9 +1525,7 @@ function maybeInjectBottomAd(list) {
 
   const rowTitle = ad.title || ad.advertiser_display_name || ad.advertiser_username || 'Sponsored';
   const rowAvatarUrl =
-    ad.image_square_url ||
-    ad.advertiser_pfp_url ||
-    ad.image_wide_url ||
+    ad.image_square_url || ad.advertiser_pfp_url || ad.image_wide_url ||
     (window.pfpCache && ad.advertiser_username ? window.pfpCache[ad.advertiser_username] : null);
 
   const av = document.createElement('div');
@@ -1340,16 +1559,15 @@ function maybeInjectBottomAd(list) {
   meta.innerHTML = '<div class="ad-badge-inline">Ad</div>';
   row.appendChild(meta);
 
-  row.addEventListener('click', (e) => {
-    e.stopPropagation();
-    openChatAdView(ad);
-  });
-
+  row.addEventListener('click', (e) => { e.stopPropagation(); openChatAdView(ad); });
   list.appendChild(row);
 }
 
 function buildPreviewText(lastMessage) {
   if (!lastMessage) return 'No messages yet';
+  if (lastMessage.system_type === 'nickname_change') {
+    return `<i>${window.escapeHTML(lastMessage.content || '')}</i>`;
+  }
   const isMine = lastMessage.username === username;
   let body = lastMessage.content || '';
   if (!body && lastMessage.image_url) body = '📷 Photo';
@@ -1371,17 +1589,13 @@ function buildInboxRow(opts) {
     av.classList.add('global');
     av.innerHTML = '<i class="fas fa-globe"></i>';
   } else if (opts.avatarType === 'group') {
-    // Group chat: use PFP if available, else show the users icon
     av.classList.add('global');
     const pfp = opts.avatarUser?.pfp_url || null;
     if (pfp) {
       const img = document.createElement('img');
       img.src = pfp;
       img.onload = () => img.classList.add('loaded');
-      img.onerror = () => {
-        img.remove();
-        av.innerHTML = '<i class="fas fa-users"></i>';
-      };
+      img.onerror = () => { img.remove(); av.innerHTML = '<i class="fas fa-users"></i>'; };
       av.appendChild(img);
     } else {
       av.innerHTML = '<i class="fas fa-users"></i>';
@@ -1449,20 +1663,14 @@ function buildInboxRow(opts) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── CHAT ADS: pseudo-DM row + ad chat view + inbox bottom slot ──
+// ── CHAT ADS ──
 // ═══════════════════════════════════════════════════════════
-
 function startChatAdRotation() {
   stopChatAdRotation();
-  chatAdRefreshTimer = setInterval(() => {
-    renderInbox();
-  }, 10 * 60 * 1000);
+  chatAdRefreshTimer = setInterval(() => { renderInbox(); }, 10 * 60 * 1000);
 }
 function stopChatAdRotation() {
-  if (chatAdRefreshTimer) {
-    clearInterval(chatAdRefreshTimer);
-    chatAdRefreshTimer = null;
-  }
+  if (chatAdRefreshTimer) { clearInterval(chatAdRefreshTimer); chatAdRefreshTimer = null; }
 }
 
 function maybeInjectChatAdRow(list) {
@@ -1510,7 +1718,6 @@ function maybeInjectChatAdRow(list) {
   }
 
   const maxAfter = Math.min(3, convCount);
-
   if (currentChatAdSlot === null || currentChatAdSlot < 1 || currentChatAdSlot > maxAfter) {
     currentChatAdSlot = 1 + Math.floor(Math.random() * maxAfter);
   }
@@ -1526,7 +1733,6 @@ function maybeInjectChatAdRow(list) {
 
 function openChatAdView(ad) {
   if (!ad) return;
-
   preAdActiveChat = activeChat;
 
   const empty = document.getElementById('chat-empty');
@@ -1537,18 +1743,13 @@ function openChatAdView(ad) {
   const adView = document.getElementById('ad-chat-view');
   const adHead = document.getElementById('ad-chat-head');
   const adBody = document.getElementById('ad-chat-body');
-
   if (!adView || !adHead || !adBody) return;
 
   if (window.Ads && typeof window.Ads.renderAdChatView === 'function') {
     window.Ads.renderAdChatView(ad, adView, adHead, adBody);
-
     const closeBtns = adHead.querySelectorAll('[data-ad-close], .chat-back-btn');
     closeBtns.forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        closeChatAdView();
-      };
+      btn.onclick = (e) => { e.stopPropagation(); closeChatAdView(); };
     });
 
     const ctaBtn = adBody.querySelector('.ad-chat-cta');
@@ -1556,23 +1757,13 @@ function openChatAdView(ad) {
       ctaBtn.onclick = (e) => {
         e.stopPropagation();
         e.preventDefault();
-
-        if (window.Ads && typeof window.Ads.logClick === 'function') {
-          window.Ads.logClick(ad.id, 'chat');
-        }
-        if (window.Ads && typeof window.Ads.markChatAdSeen === 'function') {
-          window.Ads.markChatAdSeen(ad.id);
-        }
+        if (window.Ads && typeof window.Ads.logClick === 'function') window.Ads.logClick(ad.id, 'chat');
+        if (window.Ads && typeof window.Ads.markChatAdSeen === 'function') window.Ads.markChatAdSeen(ad.id);
         try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
-
         const row = document.querySelector(`.inbox-row-ad[data-ad-id="${ad.id}"]`);
         if (row) row.remove();
-
         closeChatAdView();
-
-        setTimeout(() => {
-          try { renderInbox(); } catch (e) {}
-        }, 500);
+        setTimeout(() => { try { renderInbox(); } catch (e) {} }, 500);
       };
     }
 
@@ -1581,18 +1772,11 @@ function openChatAdView(ad) {
       imgWrap.onclick = (e) => {
         e.stopPropagation();
         e.preventDefault();
-
-        if (window.Ads && typeof window.Ads.logClick === 'function') {
-          window.Ads.logClick(ad.id, 'chat');
-        }
-        if (window.Ads && typeof window.Ads.markChatAdSeen === 'function') {
-          window.Ads.markChatAdSeen(ad.id);
-        }
+        if (window.Ads && typeof window.Ads.logClick === 'function') window.Ads.logClick(ad.id, 'chat');
+        if (window.Ads && typeof window.Ads.markChatAdSeen === 'function') window.Ads.markChatAdSeen(ad.id);
         try { window.open(ad.link_url, '_blank', 'noopener,noreferrer'); } catch {}
-
         const row = document.querySelector(`.inbox-row-ad[data-ad-id="${ad.id}"]`);
         if (row) row.remove();
-
         closeChatAdView();
       };
     }
@@ -1624,14 +1808,9 @@ function closeChatAdView() {
   if (preAdActiveChat) {
     const remembered = preAdActiveChat;
     preAdActiveChat = null;
-
-    if (remembered.type === 'global') {
-      openGlobalChat();
-    } else if (remembered.slug) {
-      openChatBySlug(remembered.slug, remembered.otherUsername);
-    } else {
-      showEmptyView();
-    }
+    if (remembered.type === 'global') openGlobalChat();
+    else if (remembered.slug) openChatBySlug(remembered.slug, remembered.otherUsername);
+    else showEmptyView();
   } else {
     showEmptyView();
   }
@@ -1661,9 +1840,7 @@ function attachInboxDeleteTrigger(row, convo) {
       if (navigator.vibrate) navigator.vibrate(30);
       confirmDeleteConversation(convo);
     }, LONG_PRESS_MS);
-    setTimeout(() => {
-      if (timer) row.classList.add('long-pressing');
-    }, 200);
+    setTimeout(() => { if (timer) row.classList.add('long-pressing'); }, 200);
   };
 
   const cancel = () => {
@@ -1685,7 +1862,6 @@ function attachInboxDeleteTrigger(row, convo) {
     const dy = Math.abs((e.clientY || 0) - startPos.y);
     if (dx > 15 || dy > 15) cancel();
   });
-
   row.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     confirmDeleteConversation(convo);
@@ -1698,22 +1874,11 @@ async function confirmDeleteConversation(convo) {
   const ok = confirm(`Delete your conversation with ${otherName}?\n\nThis deletes all messages for both of you. No undo.`);
   if (!ok) return;
 
-  const { error } = await window.supabaseClient
-    .from('conversations')
-    .delete()
-    .eq('id', convo.id);
-
-  if (error) {
-    window.showToast('Delete failed: ' + error.message, 'error');
-    return;
-  }
+  const { error } = await window.supabaseClient.from('conversations').delete().eq('id', convo.id);
+  if (error) { window.showToast('Delete failed: ' + error.message, 'error'); return; }
 
   window.showToast('Conversation deleted', 'success');
-
-  if (activeChat && activeChat.conversationId === convo.id) {
-    closeChat();
-  }
-
+  if (activeChat && activeChat.conversationId === convo.id) closeChat();
   await loadConversations();
   renderInbox();
 }
@@ -1779,8 +1944,7 @@ function renderSearchResults(list, query) {
 
     row.onclick = () => {
       clearSearchInput();
-      const slug = dmSlugForMe(p.username);
-      navigateTo(slug, p.username);
+      navigateTo(dmSlugForMe(p.username), p.username);
     };
 
     list.appendChild(row);
@@ -1819,72 +1983,40 @@ function clearSearchInput() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── OPEN A CHAT ──
+// ── OPEN CHAT ──
 // ═══════════════════════════════════════════════════════════
 async function openChatBySlug(slug, hintUsername) {
   if (!slug) { closeChat(); return; }
   pushUrl(slug);
-
-  if (slug === GLOBAL_CHAT_SLUG) {
-    await openGlobalChat();
-  } else {
-    await openConversationBySlug(slug, hintUsername);
-  }
+  if (slug === GLOBAL_CHAT_SLUG) await openGlobalChat();
+  else await openConversationBySlug(slug, hintUsername);
 }
 
 async function ensureGlobalChatConversation() {
   const { data: existing } = await window.supabaseClient
-    .from('conversations')
-    .select('id')
-    .eq('slug', 'global-chat')
-    .maybeSingle();
-
+    .from('conversations').select('id').eq('slug', 'global-chat').maybeSingle();
   if (existing?.id) return existing.id;
-
-  // Create if missing
   const { data: created } = await window.supabaseClient
     .from('conversations')
-    .insert({
-      type: 'group',
-      slug: 'global-chat',
-      name: 'Global Chat',
-      member_count: 0,
-      message_count: 0
-    })
-    .select('id')
-    .single();
-
+    .insert({ type: 'group', slug: 'global-chat', name: 'Global Chat', member_count: 0, message_count: 0 })
+    .select('id').single();
   return created?.id || null;
 }
 
 async function ensureGlobalMembership(globalConvId) {
   if (!globalConvId || !window.session?.user?.id) return false;
-
   try {
     const { data: existing } = await window.supabaseClient
-      .from('conversation_members')
-      .select('user_id')
-      .eq('conversation_id', globalConvId)
-      .eq('user_id', window.session.user.id)
-      .maybeSingle();
-
+      .from('conversation_members').select('user_id')
+      .eq('conversation_id', globalConvId).eq('user_id', window.session.user.id).maybeSingle();
     if (existing) return true;
-
-    const { error } = await window.supabaseClient
-      .from('conversation_members')
-      .insert({
-        conversation_id: globalConvId,
-        user_id: window.session.user.id,
-        role: 'member'
-      });
-
+    const { error } = await window.supabaseClient.from('conversation_members')
+      .insert({ conversation_id: globalConvId, user_id: window.session.user.id, role: 'member' });
     if (error) {
-      // Duplicate is fine — treat as success
       if (error.code === '23505') return true;
       console.error('ensureGlobalMembership:', error);
       return false;
     }
-
     return true;
   } catch (e) {
     console.error('ensureGlobalMembership exception:', e);
@@ -1897,23 +2029,18 @@ async function openGlobalChat() {
   stopTyping();
 
   const globalConvId = await ensureGlobalChatConversation();
-  if (globalConvId) {
-    await ensureGlobalMembership(globalConvId);
-  }
+  if (globalConvId) await ensureGlobalMembership(globalConvId);
 
   activeChat = {
     type: 'global',
     slug: GLOBAL_CHAT_SLUG,
-    conversationId: globalConvId
+    conversationId: globalConvId,
+    nicknames: {},
   };
 
-
+  _refreshChatSettingsButton();
   renderInbox();
-  updateChatHeader({
-    name: 'Global Chat',
-    sub: 'Everyone in CESC',
-    avatarType: 'global'
-  });
+  updateChatHeader({ name: 'Global Chat', sub: 'Everyone in CESC', avatarType: 'global' });
   showChatView();
   setMobileView('chat');
   await loadMessagesForChat();
@@ -1926,8 +2053,6 @@ async function openGlobalChat() {
   }
 }
 
-
-
 async function openConversationBySlug(slug, hintUsername) {
   stopActiveStatusTicker();
   stopTyping();
@@ -1935,8 +2060,7 @@ async function openConversationBySlug(slug, hintUsername) {
   let { data: existing } = await window.supabaseClient
     .from('conversations')
     .select('id, type, slug, name, pfp_url, dm_user_a, dm_user_b, member_count, message_count, last_message_at')
-    .eq('slug', slug)
-    .maybeSingle();
+    .eq('slug', slug).maybeSingle();
 
   let otherUsername = null;
   let otherProfile = null;
@@ -1952,16 +2076,9 @@ async function openConversationBySlug(slug, hintUsername) {
     }
   } else {
     let rawUser = null;
-    if (hintUsername && profilesIndex[hintUsername]) {
-      rawUser = hintUsername;
-    } else if (profilesIndex[slug]) {
-      rawUser = slug;
-    }
-    if (!rawUser) {
-      window.showToast('User not found', 'error');
-      closeChat();
-      return;
-    }
+    if (hintUsername && profilesIndex[hintUsername]) rawUser = hintUsername;
+    else if (profilesIndex[slug]) rawUser = slug;
+    if (!rawUser) { window.showToast('User not found', 'error'); closeChat(); return; }
 
     otherUsername = rawUser;
     otherProfile = profilesIndex[rawUser];
@@ -1972,8 +2089,7 @@ async function openConversationBySlug(slug, hintUsername) {
     const { data: retry } = await window.supabaseClient
       .from('conversations')
       .select('id, type, slug, name, pfp_url, dm_user_a, dm_user_b, member_count, message_count, last_message_at')
-      .eq('slug', slug)
-      .maybeSingle();
+      .eq('slug', slug).maybeSingle();
     if (retry) existing = retry;
   }
 
@@ -1993,7 +2109,18 @@ async function openConversationBySlug(slug, hintUsername) {
     otherProfile,
     displayName,
     pfpUrl,
+    nicknames: {},
   };
+
+  // Load nicknames for this DM (both sides)
+  if (activeChat.type === 'dm' && activeChat.conversationId) {
+    const data = await loadDmNicknames(activeChat.conversationId);
+    activeChat.nicknames = data.nicknames || {};
+    if (activeChat.otherProfile?.id && activeChat.nicknames[activeChat.otherProfile.id]) {
+      activeChat.displayName = activeChat.nicknames[activeChat.otherProfile.id];
+      displayName = activeChat.displayName;
+    }
+  }
 
   renderInbox();
   updateChatHeader({
@@ -2018,19 +2145,16 @@ async function openConversationBySlug(slug, hintUsername) {
   if (activeChat.type === 'dm' && activeChat.otherUsername) {
     startActiveStatusTicker();
   }
+
+  _refreshChatSettingsButton();
 }
 
 function closeChat() {
+  if (_settingsOpen) window.closeChatSettings();
   stopActiveStatusTicker();
   stopTyping();
-  if (typingChannel) {
-    window.supabaseClient.removeChannel(typingChannel);
-    typingChannel = null;
-  }
-  if (typingPruneInterval) {
-    clearInterval(typingPruneInterval);
-    typingPruneInterval = null;
-  }
+  if (typingChannel) { window.supabaseClient.removeChannel(typingChannel); typingChannel = null; }
+  if (typingPruneInterval) { clearInterval(typingPruneInterval); typingPruneInterval = null; }
   for (const k in typingState) delete typingState[k];
   teardownMessageReads();
   activeChat = null;
@@ -2042,6 +2166,7 @@ function closeChat() {
   if (empty) empty.style.display = 'flex';
   renderInbox();
   setMobileView('inbox');
+  _refreshChatSettingsButton();
 }
 
 function showChatView() {
@@ -2113,10 +2238,19 @@ function updateChatHeader(opts) {
 
   const input = document.getElementById('msg-input');
   if (input) input.placeholder = `Message ${opts.name}...`;
+
+  _refreshChatSettingsButton();
+}
+
+function _refreshChatSettingsButton() {
+  const btn = document.getElementById('chat-settings-btn');
+  if (!btn) return;
+  const show = !!(activeChat && activeChat.type === 'dm' && activeChat.conversationId);
+  btn.style.display = show ? '' : 'none';
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── MESSAGES LOADING (windowed: 20 per page) ──
+// ── MESSAGES LOADING ──
 // ═══════════════════════════════════════════════════════════
 async function loadMessagesForChat() {
   const container = document.getElementById('messages');
@@ -2124,14 +2258,7 @@ async function loadMessagesForChat() {
   container.innerHTML = '<div class="loading-msgs"><div class="loading-spin"></div>loading messages...</div>';
   resetMessageRenderState();
 
-  msgWindow = {
-    table: null,
-    conversationId: null,
-    oldestAt: null,
-    newestAt: null,
-    hasOlder: true,
-    loading: false,
-  };
+  msgWindow = { table: null, conversationId: null, oldestAt: null, newestAt: null, hasOlder: true, loading: false };
 
   if (activeChat.type === 'global') {
     msgWindow.table = 'messages';
@@ -2170,26 +2297,17 @@ async function loadMessagesWindow({ initial = false } = {}) {
   msgWindow.loading = true;
 
   let query = window.supabaseClient
-    .from(msgWindow.table)
-    .select('*')
+    .from(msgWindow.table).select('*')
     .order('created_at', { ascending: false })
     .limit(MSG_PAGE_SIZE);
 
-  if (msgWindow.conversationId) {
-    query = query.eq('conversation_id', msgWindow.conversationId);
-  }
-
-  if (!initial && msgWindow.oldestAt) {
-    query = query.lt('created_at', msgWindow.oldestAt);
-  }
+  if (msgWindow.conversationId) query = query.eq('conversation_id', msgWindow.conversationId);
+  if (!initial && msgWindow.oldestAt) query = query.lt('created_at', msgWindow.oldestAt);
 
   const { data, error } = await query;
   msgWindow.loading = false;
 
-  if (error) {
-    window.showToast('Failed to load messages', 'error');
-    return;
-  }
+  if (error) { window.showToast('Failed to load messages', 'error'); return; }
 
   const rows = (data || []).reverse();
 
@@ -2224,7 +2342,7 @@ async function loadMessagesWindow({ initial = false } = {}) {
       const msgDate = fmtDate(m.created_at);
       const dateDivNeeded = msgDate !== localDate;
       const timeDiff = localTs ? (new Date(m.created_at) - new Date(localTs)) / 60000 : 999;
-      const isContinued = m.username === localUser && timeDiff < 5 && !m.reply_to && !dateDivNeeded;
+      const isContinued = m.username === localUser && timeDiff < 5 && !m.reply_to && !dateDivNeeded && !m.system_type;
 
       if (dateDivNeeded) {
         const div = document.createElement('div');
@@ -2240,10 +2358,8 @@ async function loadMessagesWindow({ initial = false } = {}) {
     });
 
     container.insertBefore(frag, container.firstChild);
-
     const newHeight = container.scrollHeight;
     container.scrollTop = prevTop + (newHeight - prevHeight);
-
     msgWindow.oldestAt = rows[0].created_at;
     msgWindow.hasOlder = rows.length === MSG_PAGE_SIZE;
   }
@@ -2253,11 +2369,8 @@ function installScrollLoader() {
   const container = document.getElementById('messages');
   if (!container || _scrollLoaderAttached) return;
   _scrollLoaderAttached = true;
-
   container.addEventListener('scroll', () => {
-    if (container.scrollTop < SCROLL_TOP_TRIGGER_PX) {
-      maybeLoadOlder();
-    }
+    if (container.scrollTop < SCROLL_TOP_TRIGGER_PX) maybeLoadOlder();
   }, { passive: true });
 }
 
@@ -2279,20 +2392,13 @@ async function maybeLoadOlder() {
 
 async function markConversationRead(conversationId) {
   if (!conversationId) return;
-
-  // Existing: unread badge tracking
-  window.supabaseClient
-    .from('conversation_members')
+  window.supabaseClient.from('conversation_members')
     .update({ last_read_at: new Date().toISOString() })
     .eq('conversation_id', conversationId)
     .eq('user_id', myUserId)
     .then(() => {}, () => {});
-
-  // NEW: seen-by watermark
-  window.supabaseClient
-    .rpc('mark_conversation_seen', { p_conversation_id: conversationId })
+  window.supabaseClient.rpc('mark_conversation_seen', { p_conversation_id: conversationId })
     .then(() => {}, () => {});
-
   const c = conversationsCache.find(x => x.id === conversationId);
   if (c) c.unread = 0;
   renderInbox();
@@ -2300,23 +2406,17 @@ async function markConversationRead(conversationId) {
 
 async function markDMMessagesSeen(conversationId) {
   if (!conversationId) return;
-  const { error } = await window.supabaseClient
-    .from('dm_messages')
+  const { error } = await window.supabaseClient.from('dm_messages')
     .update({ seen_at: new Date().toISOString() })
     .eq('conversation_id', conversationId)
     .eq('receiver_username', username)
     .is('seen_at', null);
-
-  if (error) {
-    console.error('markDMMessagesSeen error:', error);
-  }
+  if (error) console.error('markDMMessagesSeen error:', error);
 }
 
-
 // ═══════════════════════════════════════════════════════════
-// ── SEEN BY (GC + Global Chat) ──
+// ── SEEN BY ──
 // ═══════════════════════════════════════════════════════════
-
 async function loadMessageReads(conversationId) {
   if (!conversationId) { messageReadsCache = []; return; }
   try {
@@ -2332,15 +2432,11 @@ async function loadMessageReads(conversationId) {
 }
 
 function renderSeenBy() {
-  // Remove existing elements
   document.querySelectorAll('.msg-seen-by').forEach(el => el.remove());
-
-  // Only show for GC + Global chat
   if (!activeChat) return;
   if (activeChat.type === 'dm') return;
   if (activeChat.type !== 'group' && activeChat.type !== 'global') return;
 
-  // Find last message group
   const groups = document.querySelectorAll('.msg-group');
   if (groups.length === 0) return;
   const lastGroup = groups[groups.length - 1];
@@ -2348,37 +2444,23 @@ function renderSeenBy() {
   const msgTime = new Date(lastGroup.dataset.created_at).getTime();
   if (isNaN(msgTime)) return;
 
-  // Compute seen-by list (excluding self, only if they've read up to this message)
   const seenBy = messageReadsCache
-    .filter(r =>
-      r.username !== username &&
-      new Date(r.last_read_at).getTime() >= msgTime
-    )
+    .filter(r => r.username !== username && new Date(r.last_read_at).getTime() >= msgTime)
     .map(r => r.display_name || r.username);
 
   if (seenBy.length === 0) return;
 
-  // Build label
   let label;
-  let isOverflow = false;
-  if (seenBy.length === 1) {
-    label = `Seen by ${seenBy[0]}`;
-  } else if (seenBy.length <= 3) {
-    label = `Seen by ${seenBy.join(', ')}`;
-  } else {
-    label = `Seen by ${seenBy.slice(0, 3).join(', ')} +${seenBy.length - 3}`;
-    isOverflow = true;
-  }
+  if (seenBy.length === 1) label = `Seen by ${seenBy[0]}`;
+  else if (seenBy.length <= 3) label = `Seen by ${seenBy.join(', ')}`;
+  else label = `Seen by ${seenBy.slice(0, 3).join(', ')} +${seenBy.length - 3}`;
 
   const el = document.createElement('div');
   el.className = 'msg-seen-by';
   el.textContent = label;
   el.style.cursor = 'pointer';
   el.title = 'Tap to see full list';
-  el.onclick = (e) => {
-    e.stopPropagation();
-    window.openSeenByModal(seenBy);
-  };
+  el.onclick = (e) => { e.stopPropagation(); window.openSeenByModal(seenBy); };
   lastGroup.appendChild(el);
 }
 
@@ -2386,20 +2468,16 @@ window.openSeenByModal = function(seenByList) {
   const modal = document.getElementById('seen-by-modal');
   const body = document.getElementById('seen-by-modal-body');
   if (!modal || !body) return;
-
   if (!seenByList || seenByList.length === 0) {
     body.innerHTML = '<div class="seen-by-empty">No one has seen this message yet.</div>';
   } else {
-    body.innerHTML = seenByList
-      .map(name => `
-        <div class="seen-by-row">
-          <i class="fas fa-check-double"></i>
-          <span>${window.escapeHTML(name)}</span>
-        </div>
-      `)
-      .join('');
+    body.innerHTML = seenByList.map(name => `
+      <div class="seen-by-row">
+        <i class="fas fa-check-double"></i>
+        <span>${window.escapeHTML(name)}</span>
+      </div>
+    `).join('');
   }
-
   modal.classList.add('show');
 };
 
@@ -2410,48 +2488,30 @@ window.closeSeenByModal = function(e) {
 };
 
 function subscribeMessageReads(conversationId) {
-  if (readsChannel) {
-    window.supabaseClient.removeChannel(readsChannel);
-    readsChannel = null;
-  }
+  if (readsChannel) { window.supabaseClient.removeChannel(readsChannel); readsChannel = null; }
   if (!conversationId) return;
 
   readsChannel = window.supabaseClient
     .channel('reads-' + conversationId + '-' + Date.now())
     .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'message_reads',
+      event: '*', schema: 'public', table: 'message_reads',
       filter: `conversation_id=eq.${conversationId}`
     }, (payload) => {
       const row = payload.new;
       if (!row) return;
-
       const idx = messageReadsCache.findIndex(r => r.username === row.username);
       if (idx >= 0) {
-        messageReadsCache[idx] = {
-          username: row.username,
-          display_name: row.display_name,
-          last_read_at: row.last_read_at
-        };
+        messageReadsCache[idx] = { username: row.username, display_name: row.display_name, last_read_at: row.last_read_at };
       } else {
-        messageReadsCache.push({
-          username: row.username,
-          display_name: row.display_name,
-          last_read_at: row.last_read_at
-        });
+        messageReadsCache.push({ username: row.username, display_name: row.display_name, last_read_at: row.last_read_at });
       }
-
       renderSeenBy();
     })
     .subscribe();
 }
 
 function teardownMessageReads() {
-  if (readsChannel) {
-    window.supabaseClient.removeChannel(readsChannel);
-    readsChannel = null;
-  }
+  if (readsChannel) { window.supabaseClient.removeChannel(readsChannel); readsChannel = null; }
   messageReadsCache = [];
   document.querySelectorAll('.msg-seen-by').forEach(el => el.remove());
 }
@@ -2461,10 +2521,9 @@ function teardownMessageReads() {
 // ═══════════════════════════════════════════════════════════
 function attachAllReceipts() {
   document.querySelectorAll('.msg-receipt').forEach(el => el.remove());
-
   if (!activeChat || activeChat.type !== 'dm') return;
 
-  const groups = Array.from(document.querySelectorAll('.msg-group.own'));
+  const groups = Array.from(document.querySelectorAll('.msg-group.own:not(.msg-group-broadcast)'));
   if (groups.length === 0) return;
   const lastOwn = groups[groups.length - 1];
 
@@ -2484,16 +2543,13 @@ function attachAllReceipts() {
 function updateReceiptForMessage(msg) {
   if (!activeChat || activeChat.type !== 'dm') return;
   if (msg.username !== username) return;
-
   const group = document.querySelector(`.msg-group[data-id="${msg.id}"]`);
   if (group) group.dataset.seen_at = msg.seen_at || '';
 
-  const ownGroups = Array.from(document.querySelectorAll('.msg-group.own'));
+  const ownGroups = Array.from(document.querySelectorAll('.msg-group.own:not(.msg-group-broadcast)'));
   if (ownGroups.length === 0) return;
   const lastOwn = ownGroups[ownGroups.length - 1];
-  if (lastOwn.dataset.id === msg.id) {
-    attachAllReceipts();
-  }
+  if (lastOwn.dataset.id === msg.id) attachAllReceipts();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2532,16 +2588,14 @@ function appendMessage(msg, scroll = true) {
   }
 
   const timeDiff = lastTimestamp ? (new Date(msg.created_at) - new Date(lastTimestamp)) / 60000 : 999;
-  const isContinued = msg.username === lastUser && timeDiff < 5 && !msg.reply_to;
+  const isContinued = !msg.system_type && msg.username === lastUser && timeDiff < 5 && !msg.reply_to;
 
   const group = buildMessageGroup(msg, isContinued);
   container.appendChild(group);
-  lastUser = msg.username;
+  lastUser = msg.system_type ? null : msg.username;
   lastTimestamp = msg.created_at;
 
-  if (scroll && wasNearBottom) {
-    container.scrollTop = container.scrollHeight;
-  }
+  if (scroll && wasNearBottom) container.scrollTop = container.scrollHeight;
 
   attachAllReceipts();
 }
@@ -2565,30 +2619,22 @@ function buildMsgAvatar(uname) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── CHAT: URL DETECTION + LINK PREVIEW ──
+// ── URL / LINK PREVIEW ──
 // ═══════════════════════════════════════════════════════════
-
-// Find the first http(s) URL in a plain text string. Returns null if none.
 function extractFirstUrl(text) {
   if (!text) return null;
-  // Match http(s) URLs. Trailing punctuation (.,!?;:) gets trimmed off.
   const re = /\bhttps?:\/\/[^\s<>"']+/gi;
   const m = text.match(re);
   if (!m || m.length === 0) return null;
   let url = m[0];
-  // Strip common trailing punctuation that was probably not part of the URL
   url = url.replace(/[.,!?;:)\]]+$/, '');
   return url;
 }
 
-// Turn URLs in plain text into clickable <a> tags. Escapes everything else.
 function linkifyText(text) {
   if (!text) return '';
-  // Escape first, then linkify
   const escaped = window.escapeHTML(text);
-  // URL regex over escaped text — safe because http(s):// won't be altered by escaping
   return escaped.replace(/\bhttps?:\/\/[^\s<>"']+/gi, (match) => {
-    // Trim trailing punctuation
     const trailingMatch = match.match(/[.,!?;:)\]]+$/);
     const trailing = trailingMatch ? trailingMatch[0] : '';
     const clean = trailing ? match.slice(0, -trailing.length) : match;
@@ -2596,24 +2642,17 @@ function linkifyText(text) {
   });
 }
 
-// Extract domain from a URL (without www.)
 function extractDomain(url) {
-  try {
-    const u = new URL(url);
-    return u.hostname.replace(/^www\./, '');
-  } catch {
-    return '';
-  }
+  try { return new URL(url).hostname.replace(/^www\./, ''); }
+  catch { return ''; }
 }
 
-// Build a link preview card element for the first URL in the message.
-// Returns null if no URL exists, or if the message already has an image.
 function buildChatLinkPreview(msg) {
   if (!msg || msg.image_url) return null;
+  if (msg.system_type) return null;
   if (!msg.content) return null;
   const url = extractFirstUrl(msg.content);
   if (!url) return null;
-
   const domain = extractDomain(url);
   if (!domain) return null;
 
@@ -2637,23 +2676,44 @@ function buildChatLinkPreview(msg) {
     </div>
     <div class="chat-link-preview-arrow"><i class="fas fa-external-link-alt"></i></div>
   `;
-
   return card;
 }
 
+// ═══════════════════════════════════════════════════════════
+// ── BUILD MESSAGE GROUP ──
+// ═══════════════════════════════════════════════════════════
 function buildMessageGroup(msg, isContinued) {
+  // Broadcast / system messages render as centered lines — no bubble, no actions
+  if (msg.system_type) {
+    const div = document.createElement('div');
+    div.className = 'msg-group msg-group-broadcast';
+    div.dataset.id = msg.id;
+    div.dataset.created_at = msg.created_at;
+    div.dataset.system_type = msg.system_type;
+    div.innerHTML = `
+      <div class="msg-broadcast">
+        <span class="msg-broadcast-text">${window.escapeHTML(msg.content || '')}</span>
+        <span class="msg-broadcast-time">${fmtTime(msg.created_at)}</span>
+      </div>
+    `;
+    return div;
+  }
+
   const group = document.createElement('div');
   group.className = 'msg-group' + (isContinued ? '' : ' first-in-group');
   group.dataset.id = msg.id;
   group.dataset.username = msg.username;
-  group.dataset.display_name = msg.display_name || msg.username;
+  group.dataset.userId = msg.user_id || '';
   group.dataset.content = msg.content;
   group.dataset.created_at = msg.created_at;
   group.dataset.image_url = msg.image_url || '';
   group.dataset.seen_at = msg.seen_at || '';
 
-  const displayName = msg.display_name || msg.username;
   const isOwn = msg.username === username;
+  const resolvedName = resolveChatName(msg.user_id, msg.username, msg.display_name);
+  group.dataset.display_name = msg.display_name || msg.username;
+  group.dataset.effective_name = resolvedName;
+
   if (isOwn) group.classList.add('own');
 
   const maskedContent = maskBadWords(msg.content);
@@ -2665,7 +2725,7 @@ function buildMessageGroup(msg, isContinued) {
   const replyBtn = document.createElement('button');
   replyBtn.className = 'action-btn';
   replyBtn.innerHTML = '<i class="fas fa-reply"></i>';
-  replyBtn.onclick = (e) => { e.stopPropagation(); window.startReply(msg.id, displayName, maskedContent.slice(0, 80)); };
+  replyBtn.onclick = (e) => { e.stopPropagation(); window.startReply(msg.id, resolvedName, maskedContent.slice(0, 80)); };
   actions.appendChild(replyBtn);
   if (isOwn) {
     const canEdit = canEditMessage(msg.created_at);
@@ -2687,17 +2747,27 @@ function buildMessageGroup(msg, isContinued) {
 
   let replyHTML = '';
   if (msg.reply_to && msg.reply_username) {
+    let replyWhoName = msg.reply_username;
+    if (activeChat?.type === 'dm') {
+      let replyUserId = null;
+      if (activeChat.otherProfile?.username === msg.reply_username) replyUserId = activeChat.otherProfile.id;
+      else if (msg.reply_username === username) replyUserId = myUserId;
+      if (replyUserId) {
+        replyWhoName = resolveChatName(replyUserId, msg.reply_username, msg.reply_username);
+      }
+    }
     replyHTML = `
       <div class="reply-quote" onclick="event.stopPropagation(); window.scrollToMsg('${msg.reply_to}')">
         <div class="reply-body">
-          <div class="reply-who">${window.escapeHTML(msg.reply_username)}</div>
+          <div class="reply-who" data-reply-username="${window.escapeHTML(msg.reply_username)}" data-original-name="${window.escapeHTML(msg.reply_username)}">${window.escapeHTML(replyWhoName)}</div>
           <div class="reply-text">${window.escapeHTML(maskBadWords(msg.reply_preview || ''))}</div>
         </div>
       </div>`;
   }
+
   let imageHTML = '';
   if (msg.image_url) {
-    imageHTML = `<img src="${msg.image_url}" alt="Image" onclick="event.stopPropagation(); window.openChatImageModal('${msg.image_url}')"/>`;
+    imageHTML = `<img src="${window.escapeHTML(msg.image_url)}" alt="Image" onclick="event.stopPropagation(); window.openChatImageModal('${window.escapeHTML(msg.image_url)}')"/>`;
   }
 
   if (!isContinued) {
@@ -2709,7 +2779,7 @@ function buildMessageGroup(msg, isContinued) {
     bubble.innerHTML = `
       ${replyHTML}
       <div class="msg-header">
-        <span class="msg-username">${window.escapeHTML(displayName)}</span>
+        <span class="msg-username">${window.escapeHTML(resolvedName)}</span>
         ${isMentioned ? '<span class="mention-badge">@you</span>' : ''}
         <span class="msg-time">${fmtTime(msg.created_at)}</span>
         ${msg.edited ? '<span class="msg-edited">(edited)</span>' : ''}
@@ -2735,7 +2805,6 @@ function buildMessageGroup(msg, isContinued) {
 
   group.appendChild(row);
 
-  // Link preview — only if message has no image and contains a URL
   const linkPreview = buildChatLinkPreview(msg);
   if (linkPreview) {
     const previewWrap = document.createElement('div');
@@ -2749,7 +2818,7 @@ function buildMessageGroup(msg, isContinued) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── REALTIME (active chat) ──
+// ── REALTIME ──
 // ═══════════════════════════════════════════════════════════
 function setupRealtimeForChat() {
   teardownRealtime();
@@ -2770,9 +2839,7 @@ function setupRealtimeForChat() {
     ch = ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages', filter }, p => handleIncoming(p.new));
     ch = ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'dm_messages', filter }, p => {
       const msg = p.new;
-      if (msg.username === username && msg.seen_at) {
-        updateReceiptForMessage(msg);
-      }
+      if (msg.username === username && msg.seen_at) updateReceiptForMessage(msg);
       handleMessageUpdate(msg);
     });
     ch = ch.on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'dm_messages', filter }, p => {
@@ -2794,10 +2861,7 @@ function setupRealtimeForChat() {
 }
 
 function teardownRealtime() {
-  if (activeChannel) {
-    window.supabaseClient.removeChannel(activeChannel);
-    activeChannel = null;
-  }
+  if (activeChannel) { window.supabaseClient.removeChannel(activeChannel); activeChannel = null; }
 }
 
 function handleIncoming(msg) {
@@ -2807,40 +2871,51 @@ function handleIncoming(msg) {
   const sys = document.querySelector('#messages .system-msg');
   if (sys) sys.remove();
 
-  if (msg.username && msg.username !== username) {
+  // If it's a nickname_change broadcast, refresh local nickname state silently
+  if (msg.system_type === 'nickname_change' && activeChat.type === 'dm' && activeChat.conversationId) {
+    loadDmNicknames(activeChat.conversationId).then(data => {
+      activeChat.nicknames = data.nicknames || {};
+      _refreshChatHeaderName();
+      patchRenderedNames();
+      renderInbox();
+    }).catch(() => {});
+  }
+
+  if (msg.system_type !== 'nickname_change' && msg.username && msg.username !== username) {
     if (!document.hidden) playNotificationSound();
     sendChatNotification(msg.display_name || msg.username, msg.content || '', msg.image_url || null);
   }
-  if (window.pfpCache && !window.pfpCache[msg.username]) {
+
+  if (!msg.system_type && window.pfpCache && !window.pfpCache[msg.username]) {
     window.supabaseClient.from('profiles').select('pfp_url').eq('username', msg.username).maybeSingle()
       .then(({ data }) => { if (data?.pfp_url) window.pfpCache[msg.username] = data.pfp_url; });
   }
+
   appendMessage(msg);
 
-  // Their message means they stopped typing
-  if (msg.username && msg.username !== username) {
+  if (msg.system_type !== 'nickname_change' && msg.username && msg.username !== username) {
     delete typingState[msg.username];
     renderTypingLine();
   }
 
-  if (activeChat.type === 'dm' && msg.receiver_username === username && !msg.seen_at) {
+  if (activeChat.type === 'dm' && msg.receiver_username === username && !msg.seen_at && msg.system_type !== 'nickname_change') {
     markDMMessagesSeen(activeChat.conversationId);
   }
 
-  // Refresh seen-by line on new incoming message
   if (activeChat.type === 'global' || activeChat.type === 'group') {
     renderSeenBy();
   }
 }
 
 function handleMessageUpdate(msg) {
+  if (msg.system_type) return;
   const textEl = document.getElementById(`text-${msg.id}`);
   if (textEl) {
     let imageHTML = '';
     if (msg.image_url) {
-      imageHTML = `<img src="${msg.image_url}" alt="Image" onclick="event.stopPropagation(); window.openChatImageModal('${msg.image_url}')"/>`;
+      imageHTML = `<img src="${window.escapeHTML(msg.image_url)}" alt="Image" onclick="event.stopPropagation(); window.openChatImageModal('${window.escapeHTML(msg.image_url)}')"/>`;
     }
-    textEl.innerHTML = window.escapeHTML(maskBadWords(msg.content)) + ' ' + imageHTML;
+    textEl.innerHTML = linkifyText(maskBadWords(msg.content)) + ' ' + imageHTML;
     const header = textEl.closest('.msg-content')?.querySelector('.msg-header');
     if (header && msg.edited && !header.querySelector('.msg-edited')) {
       const badge = document.createElement('span');
@@ -2854,6 +2929,16 @@ function handleMessageUpdate(msg) {
     group.dataset.content = msg.content;
     group.dataset.image_url = msg.image_url || '';
     if (msg.seen_at !== undefined) group.dataset.seen_at = msg.seen_at || '';
+
+    const oldPreview = group.querySelector('.chat-link-preview-wrap');
+    if (oldPreview) oldPreview.remove();
+    const newPreview = buildChatLinkPreview(msg);
+    if (newPreview) {
+      const wrap = document.createElement('div');
+      wrap.className = 'chat-link-preview-wrap';
+      wrap.appendChild(newPreview);
+      group.appendChild(wrap);
+    }
   }
 
   if (msg.username === username && msg.seen_at) {
@@ -2862,7 +2947,7 @@ function handleMessageUpdate(msg) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── INBOX REALTIME (all DMs & GCs) ──
+// ── INBOX REALTIME ──
 // ═══════════════════════════════════════════════════════════
 function setupInboxRealtime() {
   if (inboxChannel) window.supabaseClient.removeChannel(inboxChannel);
@@ -2902,13 +2987,13 @@ function handleInboxMessage(msg, kind) {
   }
 
   if (msg.username === username) return;
+  if (msg.system_type === 'nickname_change') return;
 
   if (!document.hidden) playNotificationSound();
   sendChatNotification(msg.display_name || msg.username, msg.content || '', msg.image_url || null);
 
   if (kind === 'dm' && msg.receiver_username === username && !msg.seen_at) {
-    window.supabaseClient
-      .from('dm_messages')
+    window.supabaseClient.from('dm_messages')
       .update({ seen_at: new Date().toISOString() })
       .eq('id', msg.id)
       .then(() => {}, () => {});
@@ -3049,11 +3134,10 @@ function saveMentionSpamMap(map) {
 }
 function canSendMentionNotification(recipientUsername) {
   const map = loadMentionSpamMap();
-  const key = recipientUsername;
   const now = Date.now();
-  const last = map[key] || 0;
+  const last = map[recipientUsername] || 0;
   if (now - last < MENTION_SPAM_WINDOW_MS) return false;
-  map[key] = now;
+  map[recipientUsername] = now;
   saveMentionSpamMap(map);
   return true;
 }
@@ -3066,9 +3150,7 @@ async function sendMentionNotifications(content, messageId) {
   const filtered = unames.filter(u => u !== myU);
   if (filtered.length === 0) return;
   const { data: profiles, error } = await window.supabaseClient
-    .from('profiles')
-    .select('id, username, display_name, pfp_url')
-    .in('username', filtered);
+    .from('profiles').select('id, username, display_name, pfp_url').in('username', filtered);
   if (error || !profiles || profiles.length === 0) return;
   const toNotify = profiles.filter(p => p.id && canSendMentionNotification(p.username));
   if (toNotify.length === 0) return;
@@ -3085,25 +3167,21 @@ async function sendMentionNotifications(content, messageId) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── TYPING INDICATOR ──
+// ── TYPING ──
 // ═══════════════════════════════════════════════════════════
 function onInputTyping() {
   if (!activeChat || !activeChat.conversationId) return;
   const now = Date.now();
   if (now - lastTypingSent < TYPING_THROTTLE_MS) return;
   lastTypingSent = now;
-
   window.supabaseClient.rpc('set_typing', {
-    p_conversation_id: activeChat.conversationId,
-    p_is_typing: true,
+    p_conversation_id: activeChat.conversationId, p_is_typing: true,
   }).then(() => {}, () => {});
-
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
     if (!activeChat || !activeChat.conversationId) return;
     window.supabaseClient.rpc('set_typing', {
-      p_conversation_id: activeChat.conversationId,
-      p_is_typing: false,
+      p_conversation_id: activeChat.conversationId, p_is_typing: false,
     }).then(() => {}, () => {});
   }, TYPING_THROTTLE_MS);
 }
@@ -3113,58 +3191,46 @@ function stopTyping() {
   clearTimeout(typingTimeout);
   lastTypingSent = 0;
   window.supabaseClient.rpc('set_typing', {
-    p_conversation_id: activeChat.conversationId,
-    p_is_typing: false,
+    p_conversation_id: activeChat.conversationId, p_is_typing: false,
   }).then(() => {}, () => {});
 }
 
 function subscribeTyping() {
-  if (typingChannel) {
-    window.supabaseClient.removeChannel(typingChannel);
-    typingChannel = null;
-  }
-  if (typingPruneInterval) {
-    clearInterval(typingPruneInterval);
-    typingPruneInterval = null;
-  }
+  if (typingChannel) { window.supabaseClient.removeChannel(typingChannel); typingChannel = null; }
+  if (typingPruneInterval) { clearInterval(typingPruneInterval); typingPruneInterval = null; }
   for (const k in typingState) delete typingState[k];
-
   if (!activeChat || !activeChat.conversationId) return;
 
   typingChannel = window.supabaseClient
     .channel('typing-' + activeChat.conversationId)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'typing_status',
-        filter: `conversation_id=eq.${activeChat.conversationId}`,
-      },
-      (payload) => {
-        const row = payload.new;
-        if (!row || row.username === username) return;
-        if (row.is_typing) {
-          typingState[row.username] = {
-            displayName: row.display_name || row.username,
-            ts: Date.now(),
-          };
-        } else {
-          delete typingState[row.username];
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'typing_status',
+      filter: `conversation_id=eq.${activeChat.conversationId}`,
+    }, (payload) => {
+      const row = payload.new;
+      if (!row || row.username === username) return;
+      if (row.is_typing) {
+        // Resolve name using nicknames if DM
+        let displayName = row.display_name || row.username;
+        if (activeChat?.type === 'dm') {
+          const uid = activeChat.otherProfile?.username === row.username
+            ? activeChat.otherProfile.id
+            : (row.username === username ? myUserId : null);
+          if (uid) displayName = resolveChatName(uid, row.username, displayName);
         }
-        renderTypingLine();
+        typingState[row.username] = { displayName, ts: Date.now() };
+      } else {
+        delete typingState[row.username];
       }
-    )
+      renderTypingLine();
+    })
     .subscribe();
 
   typingPruneInterval = setInterval(() => {
     let changed = false;
     const now = Date.now();
     for (const u in typingState) {
-      if (now - typingState[u].ts > TYPING_EXPIRE_MS) {
-        delete typingState[u];
-        changed = true;
-      }
+      if (now - typingState[u].ts > TYPING_EXPIRE_MS) { delete typingState[u]; changed = true; }
     }
     if (changed) renderTypingLine();
   }, 2000);
@@ -3181,11 +3247,9 @@ function renderTypingLine() {
     return;
   }
   const text =
-    names.length === 1
-      ? `${names[0]} is typing…`
-      : names.length === 2
-      ? `${names[0]} and ${names[1]} are typing…`
-      : `${names.length} people are typing…`;
+    names.length === 1 ? `${names[0]} is typing…` :
+    names.length === 2 ? `${names[0]} and ${names[1]} are typing…` :
+    `${names.length} people are typing…`;
   subEl.textContent = text;
   subEl.classList.add('active-now');
 }
@@ -3199,10 +3263,7 @@ window.sendMsg = function() {
   askNotificationPermissionOnce();
   if (editingId) { saveEdit(); return; }
   if (!activeChat) return;
-  if (!text && !pendingImageFile) {
-    window.showToast('write something or add an image 💀', 'error');
-    return;
-  }
+  if (!text && !pendingImageFile) { window.showToast('write something or add an image 💀', 'error'); return; }
   if (!window.session) { window.showToast('Not logged in', 'error'); return; }
   if (isUploading) return;
   const btn = document.getElementById('send-btn');
@@ -3231,7 +3292,7 @@ async function sendMessageToActive(text, btn) {
 
   const payload = {
     user_id: window.session.user.id,
-    username: username,
+    username,
     display_name: currentDisplayName,
     content: text || '📷',
     image_url: image_url || null,
@@ -3246,8 +3307,7 @@ async function sendMessageToActive(text, btn) {
   const wasNewConversation = activeChat.type === 'dm' && !activeChat.conversationId;
 
   if (activeChat.type === 'global') {
-    ({ data: insertedRow, error } = await window.supabaseClient
-      .from('messages').insert(payload).select('*').single());
+    ({ data: insertedRow, error } = await window.supabaseClient.from('messages').insert(payload).select('*').single());
   } else if (activeChat.type === 'dm') {
     if (!activeChat.conversationId) {
       const ok = await createDMConversation();
@@ -3255,16 +3315,14 @@ async function sendMessageToActive(text, btn) {
     }
     payload.conversation_id = activeChat.conversationId;
     payload.receiver_username = activeChat.otherUsername;
-    ({ data: insertedRow, error } = await window.supabaseClient
-      .from('dm_messages').insert(payload).select('*').single());
+    ({ data: insertedRow, error } = await window.supabaseClient.from('dm_messages').insert(payload).select('*').single());
   } else if (activeChat.type === 'group') {
     if (!activeChat.conversationId) {
       window.showToast('Group not found', 'error'); btn.disabled = false; isUploading = false;
       return;
     }
     payload.conversation_id = activeChat.conversationId;
-    ({ data: insertedRow, error } = await window.supabaseClient
-      .from('gc_messages').insert(payload).select('*').single());
+    ({ data: insertedRow, error } = await window.supabaseClient.from('gc_messages').insert(payload).select('*').single());
   }
 
   if (error) {
@@ -3283,15 +3341,19 @@ async function sendMessageToActive(text, btn) {
     if (container) container.scrollTop = container.scrollHeight;
   }
 
-  if (text && text.includes('@')) {
-    sendMentionNotifications(text, insertedRow?.id).catch(() => {});
-  }
+  if (text && text.includes('@')) sendMentionNotifications(text, insertedRow?.id).catch(() => {});
 
   if (activeChat.type !== 'global') {
-    if (wasNewConversation) setupRealtimeForChat();
+    if (wasNewConversation) {
+      setupRealtimeForChat();
+      if (!activeChat.nicknames) activeChat.nicknames = {};
+      _refreshChatSettingsButton();
+    }
     await loadConversations();
     renderInbox();
   }
+
+  if (activeChat.type === 'global' || activeChat.type === 'group') renderSeenBy();
 
   await window.updateLastSeen();
   document.getElementById('msg-input').value = '';
@@ -3306,14 +3368,9 @@ async function sendMessageToActive(text, btn) {
 async function createDMConversation() {
   if (!activeChat.otherProfile || !activeChat.otherProfile.id) {
     const { data: p } = await window.supabaseClient
-      .from('profiles')
-      .select('id, username, display_name, pfp_url')
-      .eq('username', activeChat.otherUsername)
-      .maybeSingle();
-    if (!p) {
-      window.showToast('User not found', 'error');
-      return false;
-    }
+      .from('profiles').select('id, username, display_name, pfp_url')
+      .eq('username', activeChat.otherUsername).maybeSingle();
+    if (!p) { window.showToast('User not found', 'error'); return false; }
     activeChat.otherProfile = p;
     profilesIndex[p.username] = p;
   }
@@ -3322,6 +3379,9 @@ async function createDMConversation() {
     .from('conversations').select('id').eq('slug', activeChat.slug).maybeSingle();
   if (existing) {
     activeChat.conversationId = existing.id;
+    activeChat.ephemeral = false;
+    const data = await loadDmNicknames(existing.id);
+    activeChat.nicknames = data.nicknames || {};
     await ensureMembership(existing.id);
     return true;
   }
@@ -3331,16 +3391,13 @@ async function createDMConversation() {
   const { data: newConvo, error: cErr } = await window.supabaseClient
     .from('conversations')
     .insert({
-      type: 'dm',
-      slug: activeChat.slug,
+      type: 'dm', slug: activeChat.slug,
       name: `${sorted[0]}-${sorted[1]}`,
       created_by: window.session.user.id,
       owner_id: null,
-      dm_user_a: sorted[0],
-      dm_user_b: sorted[1]
+      dm_user_a: sorted[0], dm_user_b: sorted[1]
     })
-    .select('id')
-    .single();
+    .select('id').single();
 
   if (cErr) {
     if (cErr.code === '23505') {
@@ -3348,6 +3405,8 @@ async function createDMConversation() {
         .from('conversations').select('id').eq('slug', activeChat.slug).maybeSingle();
       if (retry) {
         activeChat.conversationId = retry.id;
+        activeChat.ephemeral = false;
+        activeChat.nicknames = {};
         await ensureMembership(retry.id);
         return true;
       }
@@ -3359,16 +3418,12 @@ async function createDMConversation() {
 
   activeChat.conversationId = newConvo.id;
   activeChat.ephemeral = false;
+  activeChat.nicknames = {};
 
   const { error: selfErr } = await window.supabaseClient
     .from('conversation_members')
-    .insert({
-      conversation_id: newConvo.id,
-      user_id: window.session.user.id,
-      role: 'member'
-    })
-    .select('user_id')
-    .single();
+    .insert({ conversation_id: newConvo.id, user_id: window.session.user.id, role: 'member' })
+    .select('user_id').single();
 
   if (selfErr) {
     console.error('add self as member failed:', selfErr);
@@ -3379,14 +3434,8 @@ async function createDMConversation() {
   if (activeChat.otherProfile?.id) {
     const { error: otherErr } = await window.supabaseClient
       .from('conversation_members')
-      .insert({
-        conversation_id: newConvo.id,
-        user_id: activeChat.otherProfile.id,
-        role: 'member'
-      })
-      .select('user_id')
-      .single();
-
+      .insert({ conversation_id: newConvo.id, user_id: activeChat.otherProfile.id, role: 'member' })
+      .select('user_id').single();
     if (otherErr) {
       console.error('add other as member failed:', otherErr);
       window.showToast('Note: recipient not added yet: ' + otherErr.message, 'error');
@@ -3398,28 +3447,19 @@ async function createDMConversation() {
 
 async function ensureMembership(conversationId) {
   const { data: existing } = await window.supabaseClient
-    .from('conversation_members')
-    .select('user_id')
-    .eq('conversation_id', conversationId);
-
+    .from('conversation_members').select('user_id').eq('conversation_id', conversationId);
   const existingIds = new Set((existing || []).map(r => r.user_id));
   const toAdd = [];
-
   if (!existingIds.has(window.session.user.id)) {
     toAdd.push({ conversation_id: conversationId, user_id: window.session.user.id, role: 'member' });
   }
   if (activeChat.otherProfile?.id && !existingIds.has(activeChat.otherProfile.id)) {
     toAdd.push({ conversation_id: conversationId, user_id: activeChat.otherProfile.id, role: 'member' });
   }
-
   if (toAdd.length === 0) return;
-
   for (const row of toAdd) {
     const { error } = await window.supabaseClient
-      .from('conversation_members')
-      .insert(row)
-      .select('user_id')
-      .single();
+      .from('conversation_members').insert(row).select('user_id').single();
     if (error) {
       console.error('ensureMembership insert row failed:', error);
       await window.supabaseClient.from('conversation_members').insert(row);
@@ -3428,39 +3468,36 @@ async function ensureMembership(conversationId) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── CHAT-HEAD ACTIONS: refresh + read all ──
+// ── CHAT-HEAD ACTIONS ──
 // ═══════════════════════════════════════════════════════════
 window.refreshChat = async function() {
   const btn = document.getElementById('chat-head-refresh');
   if (btn) btn.classList.add('spinning');
-
   try {
     await loadProfilesIndex();
     await loadConversations();
     renderInbox();
     await loadNotes();
     if (activeChat) {
+      if (activeChat.type === 'dm' && activeChat.conversationId) {
+        const data = await loadDmNicknames(activeChat.conversationId);
+        activeChat.nicknames = data.nicknames || {};
+        _refreshChatHeaderName();
+      }
       await loadMessagesForChat();
       if (activeChat.conversationId) subscribeTyping();
     }
-  } catch (e) {
-    console.error('refreshChat:', e);
-  }
-
-  setTimeout(() => {
-    if (btn) btn.classList.remove('spinning');
-  }, 600);
+  } catch (e) { console.error('refreshChat:', e); }
+  setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 600);
   window.showToast('Refreshed ✅', 'success');
 };
 
 window.markAllChatRead = async function() {
   if (!activeChat || !activeChat.conversationId) {
-    window.showToast('No chat open', 'info');
-    return;
+    window.showToast('No chat open', 'info'); return;
   }
   if (activeChat.type === 'dm') {
-    await window.supabaseClient
-      .from('dm_messages')
+    await window.supabaseClient.from('dm_messages')
       .update({ seen_at: new Date().toISOString() })
       .eq('conversation_id', activeChat.conversationId)
       .eq('receiver_username', username)
@@ -3479,6 +3516,7 @@ window.markAllChatRead = async function() {
 window.startEditMode = function(id) {
   const group = document.querySelector(`.msg-group[data-id="${id}"]`);
   if (!group) return;
+  if (group.classList.contains('msg-group-broadcast')) return;
   const createdAt = group.dataset.created_at;
   if (!canEditMessage(createdAt)) {
     window.showToast('Edit window expired (15 min)', 'error');
@@ -3535,13 +3573,11 @@ async function saveEdit() {
   const input = document.getElementById('msg-input');
   const newText = input.value.trim();
   if (!newText && !pendingImageFile && !editingImageUrl) {
-    window.showToast('Message cannot be empty', 'error');
-    return;
+    window.showToast('Message cannot be empty', 'error'); return;
   }
   if (!canEditMessage(editingMsgCreatedAt)) {
     window.showToast('Edit window expired (15 min)', 'error');
-    window.cancelEditMode();
-    return;
+    window.cancelEditMode(); return;
   }
 
   let image_url = editingImageUrl;
@@ -3568,9 +3604,7 @@ async function saveEdit() {
              : 'gc_messages';
 
   const { error } = await window.supabaseClient.from(table)
-    .update(updateData)
-    .eq('id', editingId)
-    .eq('user_id', window.session.user.id);
+    .update(updateData).eq('id', editingId).eq('user_id', window.session.user.id);
 
   if (error) { window.showToast('Edit failed: ' + error.message, 'error'); return; }
 
@@ -3622,12 +3656,9 @@ window.deleteMsg = async function(id) {
              : activeChat.type === 'dm' ? 'dm_messages'
              : 'gc_messages';
   const { error } = await window.supabaseClient.from(table)
-    .delete()
-    .eq('id', id)
-    .eq('user_id', window.session.user.id);
+    .delete().eq('id', id).eq('user_id', window.session.user.id);
   if (error) { window.showToast('Delete failed: ' + error.message, 'error'); return; }
   document.querySelector(`.msg-group[data-id="${id}"]`)?.remove();
-
   if (activeChat && activeChat.type !== 'global') {
     await loadConversations();
     renderInbox();
@@ -3675,12 +3706,7 @@ window.toggleEmojiPicker = function(e) {
   if (!picker) return;
   if (!emojiPickerInitialized) initEmojiPicker();
   if (picker.classList.contains('open')) picker.classList.remove('open');
-  else {
-    positionEmojiPicker();
-    picker.classList.add('open');
-    closeMentionPanel();
-    closeContextMenu();
-  }
+  else { positionEmojiPicker(); picker.classList.add('open'); closeMentionPanel(); closeContextMenu(); }
 };
 function insertEmoji(emoji) {
   const input = document.getElementById('msg-input');
@@ -3852,6 +3878,7 @@ window.closeChatImageModal = function() {
 function openContextMenu(msgId) {
   const group = document.querySelector(`.msg-group[data-id="${msgId}"]`);
   if (!group) return;
+  if (group.classList.contains('msg-group-broadcast')) return;
   contextMenuOpen = true;
   const menu = document.getElementById('context-menu');
   const body = menu.querySelector('.ctx-menu-body');
@@ -3860,7 +3887,7 @@ function openContextMenu(msgId) {
   const content = group.dataset.content || '';
   const createdAt = group.dataset.created_at;
   const canEdit = isOwn && canEditMessage(createdAt);
-  const displayName = group.dataset.display_name || group.dataset.username;
+  const displayName = group.dataset.effective_name || group.dataset.display_name || group.dataset.username;
 
   const replyBtn = document.createElement('button');
   replyBtn.className = 'ctx-item';
@@ -3891,18 +3918,15 @@ function openContextMenu(msgId) {
     delBtn.onclick = () => { closeContextMenu(); window.deleteMsg(msgId); };
     body.appendChild(delBtn);
   } else {
-    // Not your message → Report option
     const reportBtn = document.createElement('button');
     reportBtn.className = 'ctx-item danger';
     reportBtn.innerHTML = '<i class="fas fa-flag"></i> Report';
     const msgPreview = (content || '').slice(0, 60);
     reportBtn.onclick = () => {
       closeContextMenu();
-      const targetType = activeChat.type === 'global'
-        ? 'dm_message'     // use valid enum — global chat uses "messages" table but the enum doesn't have a specific "chat_message" value
-        : activeChat.type === 'dm'
-          ? 'dm_message'
-          : 'gc_message';
+      const targetType = activeChat.type === 'global' ? 'chat_message'
+        : activeChat.type === 'dm' ? 'dm_message'
+        : 'gc_message';
       window.openQuickReport(targetType, msgId, msgPreview);
     };
     body.appendChild(reportBtn);
@@ -3983,6 +4007,7 @@ document.addEventListener('keydown', (e) => {
     window.closeChatImageModal();
     const noteModal = document.getElementById('note-modal');
     if (noteModal && noteModal.classList.contains('show')) window.closeNoteModal();
+    if (_settingsOpen) window.closeChatSettings();
   }
 });
 window.addEventListener('scroll', () => {
@@ -3997,12 +4022,11 @@ window.addEventListener('resize', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// ── BACK BUTTON (mobile) ──
+// ── BACK BUTTON ──
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   const backBtn = document.getElementById('chat-back-btn');
   if (backBtn) backBtn.onclick = () => { closeChat(); };
-
   const noteInput = document.getElementById('note-input');
   if (noteInput) noteInput.addEventListener('input', updateNoteCharCount);
 });
@@ -4041,9 +4065,7 @@ function initMsgInput() {
 // ═══════════════════════════════════════════════════════════
 window.openChatAdView = openChatAdView;
 window.closeChatAdView = closeChatAdView;
-window.refreshChatAds = () => {
-  renderInbox();
-};
+window.refreshChatAds = () => { renderInbox(); };
 
 // ═══════════════════════════════════════════════════════════
 // ── PAGE INIT ──
@@ -4108,17 +4130,10 @@ async function pageInit() {
   }
 
   await loadProfilesIndex();
-
-  // Ensure global-chat conversation exists and we're a member of it
-  // so it appears in the inbox as a real conversation
   try {
     const globalConvId = await ensureGlobalChatConversation();
-    if (globalConvId) {
-      await ensureGlobalMembership(globalConvId);
-    }
-  } catch (e) {
-    console.error('global chat membership init:', e);
-  }
+    if (globalConvId) await ensureGlobalMembership(globalConvId);
+  } catch (e) { console.error('global chat membership init:', e); }
 
   nextLoadingStep();
   await loadConversations();
@@ -4130,7 +4145,6 @@ async function pageInit() {
   setupNotesRealtime();
 
   startChatAdRotation();
-
   nextLoadingStep();
   nextLoadingStep();
 
@@ -4140,14 +4154,10 @@ async function pageInit() {
   nextLoadingStep();
 
   const slug = parseChatRoute();
-  if (slug) {
-    await openChatBySlug(slug);
-  } else {
-    closeChat();
-  }
+  if (slug) await openChatBySlug(slug);
+  else closeChat();
 }
 
-// Cleanup on unload
 window.addEventListener('beforeunload', () => {
   teardownRealtime();
   teardownMessageReads();
